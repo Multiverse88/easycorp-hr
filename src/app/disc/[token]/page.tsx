@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { getCandidateByToken, saveDiscTestResult, Candidate } from '@/lib/db';
+import { getCandidateByToken, saveDiscTestResult, getDiscByCandidateId, Candidate } from '@/lib/db';
 import { discQuestions } from '@/lib/discData';
 import { calculateDiscResult } from '@/lib/discParser';
 import { Award, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, Loader2, CheckCircle } from 'lucide-react';
@@ -42,6 +42,13 @@ export default function DiscTestPage() {
 
         if (data.status === 'screening') {
           router.push(`/apply/${token}`);
+          return;
+        }
+
+        // Check if DISC test already completed
+        const existingTest = await getDiscByCandidateId(data.id);
+        if (existingTest) {
+          setError('ALREADY_COMPLETED');
           return;
         }
 
@@ -156,7 +163,11 @@ export default function DiscTestPage() {
     } catch (err: unknown) {
       console.error('DISC submit error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan';
-      setSubmitError(`Gagal mengirim jawaban tes: ${errorMsg}`);
+      if (errorMsg === 'DISC_TEST_ALREADY_COMPLETED') {
+        setSubmitError('Tes DISC sudah pernah diselesaikan. Token hanya bisa digunakan sekali.');
+      } else {
+        setSubmitError(`Gagal mengirim jawaban tes: ${errorMsg}`);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -167,6 +178,28 @@ export default function DiscTestPage() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-[hsl(15_60%_97%)]">
         <Loader2 className="w-10 h-10 animate-spin text-[hsl(350_60%_50%)]" />
         <p className="mt-4 text-slate-600 text-sm font-medium">Menyiapkan Asesmen DISC...</p>
+      </div>
+    );
+  }
+
+  if (error === 'ALREADY_COMPLETED') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[hsl(15_60%_97%)] px-4">
+        <div className="w-full max-w-md bg-white border border-slate-200 shadow-xl rounded-2xl p-8 text-center">
+          <div className="inline-flex p-3 rounded-full bg-blue-50 text-blue-600 mb-4">
+            <CheckCircle className="w-10 h-10" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Tes DISC Sudah Selesai</h2>
+          <p className="text-slate-600 mb-6">
+            Token ini sudah digunakan untuk menyelesaikan tes DISC. Setiap token hanya bisa digunakan satu kali.
+          </p>
+          <p className="text-slate-500 text-sm mb-6">
+            Jika Anda memerlukan bantuan, silakan hubungi tim HR EasyLegal.
+          </p>
+          <div className="border-t border-slate-100 pt-4 text-xs text-slate-400">
+            EasyLegal Recruitment System
+          </div>
+        </div>
       </div>
     );
   }

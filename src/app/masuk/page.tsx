@@ -30,9 +30,9 @@ export default function MasukPage() {
       }
 
       if (candidate.status === 'screening') {
-        router.push(`/apply/${candidate.token}`);
+        window.location.href = `/apply/${candidate.token}`;
       } else {
-        router.push(`/disc/${candidate.token}`);
+        window.location.href = `/disc/${candidate.token}`;
       }
     } catch {
       setError('Terjadi kesalahan. Silakan coba lagi.');

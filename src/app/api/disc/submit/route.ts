@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCandidateByToken, saveDiscTestResult } from '@/lib/db';
+import { getCandidateByToken, saveDiscTestResult, getDiscByCandidateId } from '@/lib/db';
 import { calculateDiscResult } from '@/lib/discParser';
 
 export async function POST(request: Request) {
@@ -14,6 +14,15 @@ export async function POST(request: Request) {
     const candidate = await getCandidateByToken(token);
     if (!candidate) {
       return NextResponse.json({ error: 'Token tidak valid' }, { status: 404 });
+    }
+
+    // Check if DISC test already completed
+    const existingTest = await getDiscByCandidateId(candidate.id);
+    if (existingTest) {
+      return NextResponse.json(
+        { error: 'DISC_TEST_ALREADY_COMPLETED', message: 'Tes DISC sudah pernah diselesaikan. Token hanya bisa digunakan sekali.' },
+        { status: 403 }
+      );
     }
 
     // Calculate DISC scores using the parser
@@ -37,7 +46,13 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(discResult);
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.message === 'DISC_TEST_ALREADY_COMPLETED') {
+      return NextResponse.json(
+        { error: 'DISC_TEST_ALREADY_COMPLETED', message: 'Tes DISC sudah pernah diselesaikan. Token hanya bisa digunakan sekali.' },
+        { status: 403 }
+      );
+    }
     return NextResponse.json({ error: 'Gagal menyimpan' }, { status: 500 });
   }
 }

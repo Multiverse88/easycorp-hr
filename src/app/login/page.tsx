@@ -30,7 +30,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push('/dashboard');
+    // Redirect to dashboard subdomain after login
+    window.location.href = '/dashboard';
   }
 
   return (

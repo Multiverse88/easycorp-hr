@@ -34,7 +34,7 @@ export default function ApplyPage() {
         // Cek jika sudah pernah mengisi bio dan sudah di tahap DISC / selanjutnya
         if (data.status !== 'screening') {
           // Arahkan langsung ke DISC test
-          router.push(`/disc/${token}`);
+          window.location.href = `/disc/${token}`;
           return;
         }
 
@@ -66,7 +66,7 @@ export default function ApplyPage() {
       setSaving(true);
       await saveCandidateBio(token, { pendidikan, pengalaman, keahlian });
       // Sukses, arahkan ke DISC Test
-      router.push(`/disc/${token}`);
+      window.location.href = `/disc/${token}`;
     } catch (err) {
       console.error(err);
       alert('Gagal menyimpan biodata. Silakan coba lagi.');

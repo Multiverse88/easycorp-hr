@@ -473,14 +473,15 @@ export async function getDiscTestResultByCandidate(candidateId: string): Promise
 }
 
 export async function saveDiscTestResult(res: Omit<DiscTestResult, 'id'>): Promise<DiscTestResult> {
-  // Delete existing test if any
-  const { error: deleteError } = await supabaseAdmin
+  // Check if DISC test already exists for this candidate
+  const { data: existing } = await supabaseAdmin
     .from('disc_tests')
-    .delete()
-    .eq('candidate_id', res.candidate_id);
+    .select('id')
+    .eq('candidate_id', res.candidate_id)
+    .maybeSingle();
 
-  if (deleteError) {
-    console.error('DISC delete error:', deleteError);
+  if (existing) {
+    throw new Error('DISC_TEST_ALREADY_COMPLETED');
   }
 
   const id = `dt-${Date.now()}`;

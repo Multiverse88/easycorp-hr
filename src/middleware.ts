@@ -2,46 +2,104 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  const hostname = request.headers.get('host') || '';
+  const url = request.nextUrl;
+  const path = url.pathname;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
+  // Detect subdomain
+  const isDiscSubdomain = hostname.startsWith('disc.');
+  const isDashboardSubdomain = hostname.startsWith('dashboard.');
+  const isMainDomain = !isDiscSubdomain && !isDashboardSubdomain;
+
+  // === SUBDOMAIN: disc.easyai.id (Kandidat) ===
+  if (isDiscSubdomain) {
+    // Allowed paths for candidate
+    const candidatePaths = ['/masuk', '/apply/', '/disc/', '/api/disc/submit', '/api/candidate'];
+
+    // Root → redirect to /masuk
+    if (path === '/') {
+      url.pathname = '/masuk';
+      return NextResponse.rewrite(url);
     }
-  );
 
-  const { data: { user } } = await supabase.auth.getUser();
+    // Block dashboard routes on disc subdomain
+    if (path.startsWith('/dashboard') || path.startsWith('/login')) {
+      url.pathname = '/masuk';
+      return NextResponse.redirect(url);
+    }
 
-  const isPublicPath = [
-    '/login',
-    '/masuk',
-    '/apply/',
-    '/disc/',
-    '/api/disc/submit',
-  ].some((p) => request.nextUrl.pathname.startsWith(p));
+    // Rewrite candidate paths (remove /disc prefix if someone navigates directly)
+    return NextResponse.next();
+  }
 
-  if (!user && !isPublicPath && request.nextUrl.pathname !== '/') {
-    const url = request.nextUrl.clone();
+  // === SUBDOMAIN: dashboard.easyai.id (HR Internal) ===
+  if (isDashboardSubdomain) {
+    let supabaseResponse = NextResponse.next({ request });
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            supabaseResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Root → redirect to /dashboard or /login
+    if (path === '/') {
+      url.pathname = user ? '/dashboard' : '/login';
+      return NextResponse.rewrite(url);
+    }
+
+    // Block candidate routes on dashboard subdomain
+    if (path.startsWith('/masuk') || path.startsWith('/apply/') || (path.startsWith('/disc/') && !path.includes('/dashboard'))) {
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+
+    // Auth check for protected routes
+    const isPublicPath = ['/login'].some((p) => path.startsWith(p));
+    if (!user && !isPublicPath) {
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+
+    return supabaseResponse;
+  }
+
+  // === MAIN DOMAIN: easyai.id ===
+  // Redirect to appropriate subdomain
+  if (path === '/' || path === '/login') {
+    url.hostname = 'dashboard.easyai.id';
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  if (path === '/masuk' || path.startsWith('/apply/') || path.startsWith('/disc/')) {
+    url.hostname = 'disc.easyai.id';
+    return NextResponse.redirect(url);
+  }
+
+  if (path.startsWith('/dashboard')) {
+    url.hostname = 'dashboard.easyai.id';
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

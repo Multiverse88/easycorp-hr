@@ -55,6 +55,11 @@ export function DiscCandidateView({ token, candidateName, position }: DiscCandid
 
       if (response.ok) {
         router.push(`/disc/${token}/success`);
+      } else {
+        const data = await response.json();
+        if (data.error === 'DISC_TEST_ALREADY_COMPLETED') {
+          alert('Tes DISC sudah pernah diselesaikan. Token hanya bisa digunakan sekali.');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
