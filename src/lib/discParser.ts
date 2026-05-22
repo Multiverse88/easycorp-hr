@@ -59,7 +59,7 @@ export function calculateFitScores(D: number, S: number, C: number, I: number) {
   const cLvl = getLevel(C);
   const iLvl = getLevel(I);
 
-  // 1. Cek kecocokan persis dengan data historis spreadsheet
+  // 1. Cek kecocokan persis dengan data historis spreadsheet (sheet_5.txt)
   const matched = HISTORICAL_CANDIDATES.find(
     c => c.D === dLvl && c.S === sLvl && c.C === cLvl && c.I === iLvl
   );
@@ -73,68 +73,67 @@ export function calculateFitScores(D: number, S: number, C: number, I: number) {
     };
   }
 
-  // 2. Jika tidak cocok persis, gunakan formula heuristik dinamis yang konsisten
+  // 2. Formula dinamis sesuai panduan rekrutmen (sheet_3.txt & sheet_5.txt)
   // Skala level: Rendah = 1, Sedang = 2, Tinggi = 3, Sgt Tinggi = 4
-  const dW = getLevelWeight(dLvl);
-  const sW = getLevelWeight(sLvl);
-  const cW = getLevelWeight(cLvl);
-  const iW = getLevelWeight(iLvl);
 
-  // A. LEGAL OFFICER (LO): C tinggi (>=Tinggi), D sedang (>=Sedang), S & I rendah
+  // A. LEGAL OFFICER (LO): C primer (≥40%), D sekunder (≥20-30%), rendah I & S
   let loScore = 20;
-  if (cLvl === 'Sangat Tinggi') loScore += 45;
-  else if (cLvl === 'Tinggi') loScore += 30;
+  if (cLvl === 'Sangat Tinggi') loScore += 35;
+  else if (cLvl === 'Tinggi') loScore += 25;
   else if (cLvl === 'Sedang') loScore += 10;
 
-  if (dLvl === 'Sangat Tinggi') loScore += 10;
-  else if (dLvl === 'Tinggi') loScore += 15;
-  else if (dLvl === 'Sedang') loScore += 12;
+  if (dLvl === 'Sangat Tinggi') loScore += 8;
+  else if (dLvl === 'Tinggi') loScore += 12;
+  else if (dLvl === 'Sedang') loScore += 8;
 
   // Penalti jika I atau S terlalu tinggi untuk LO
-  if (iW > 2) loScore -= (iW - 2) * 10;
-  if (sW > 2) loScore -= (sW - 2) * 5;
+  if (iLvl === 'Sangat Tinggi' || iLvl === 'Tinggi') loScore -= 10;
+  if (sLvl === 'Sangat Tinggi' || sLvl === 'Tinggi') loScore -= 5;
   loScore = Math.max(10, Math.min(95, loScore));
 
-  // B. CUSTOMER CARE / CRM: S tinggi (>=Tinggi), I tinggi (>=Sedang), C tidak boleh terlalu tinggi
-  let crmScore = 30;
-  if (sLvl === 'Sangat Tinggi') crmScore += 40;
-  else if (sLvl === 'Tinggi') crmScore += 30;
-  else if (sLvl === 'Sedang') crmScore += 15;
+  // B. CUSTOMER CARE / CRM: I primer (≥35%), S sekunder (25-35%), tidak boleh C tinggi
+  let crmScore = 25;
+  if (sLvl === 'Sangat Tinggi') crmScore += 35;
+  else if (sLvl === 'Tinggi') crmScore += 25;
+  else if (sLvl === 'Sedang') crmScore += 10;
 
   if (iLvl === 'Sangat Tinggi') crmScore += 20;
   else if (iLvl === 'Tinggi') crmScore += 15;
-  else if (iLvl === 'Sedang') crmScore += 10;
+  else if (iLvl === 'Sedang') crmScore += 5;
 
-  // Penalti jika C terlalu tinggi untuk CRM (kaku)
-  if (cW > 2) crmScore -= (cW - 2) * 8;
+  // Penalti jika C terlalu tinggi (kaku untuk handle klien emosional)
+  if (cLvl === 'Sangat Tinggi') crmScore -= 15;
+  else if (cLvl === 'Tinggi') crmScore -= 5;
   crmScore = Math.max(10, Math.min(95, crmScore));
 
-  // C. PLA (Pre-Closing Lead Agent): D tinggi (>=Tinggi), I tinggi (>=Sedang), S rendah
+  // C. PLA (Pre-Closing Lead Agent): D primer (≥35%), I sekunder (≥30%), S rendah
   let plaScore = 15;
-  if (dLvl === 'Sangat Tinggi') plaScore += 40;
-  else if (dLvl === 'Tinggi') plaScore += 30;
-  else if (dLvl === 'Sedang') plaScore += 15;
+  if (dLvl === 'Sangat Tinggi') plaScore += 35;
+  else if (dLvl === 'Tinggi') plaScore += 25;
+  else if (dLvl === 'Sedang') plaScore += 10;
 
-  if (iLvl === 'Sangat Tinggi') plaScore += 30;
-  else if (iLvl === 'Tinggi') plaScore += 25;
-  else if (iLvl === 'Sedang') plaScore += 15;
+  if (iLvl === 'Sangat Tinggi') plaScore += 25;
+  else if (iLvl === 'Tinggi') plaScore += 20;
+  else if (iLvl === 'Sedang') plaScore += 10;
 
   // Penalti jika S terlalu tinggi (kurang agresif)
-  if (sW > 2) plaScore -= (sW - 2) * 12;
+  if (sLvl === 'Sangat Tinggi') plaScore -= 15;
+  else if (sLvl === 'Tinggi') plaScore -= 5;
   plaScore = Math.max(10, Math.min(95, plaScore));
 
-  // D. MARKETING: I tinggi (>=Tinggi), D tinggi (>=Sedang), C rendah
+  // D. MARKETING: I primer (≥40%), D sekunder (≥25%), C rendah
   let mktScore = 15;
-  if (iLvl === 'Sangat Tinggi') mktScore += 45;
-  else if (iLvl === 'Tinggi') mktScore += 35;
-  else if (iLvl === 'Sedang') mktScore += 15;
+  if (iLvl === 'Sangat Tinggi') mktScore += 40;
+  else if (iLvl === 'Tinggi') mktScore += 30;
+  else if (iLvl === 'Sedang') mktScore += 10;
 
-  if (dLvl === 'Sangat Tinggi') mktScore += 25;
-  else if (dLvl === 'Tinggi') mktScore += 20;
-  else if (dLvl === 'Sedang') mktScore += 10;
+  if (dLvl === 'Sangat Tinggi') mktScore += 20;
+  else if (dLvl === 'Tinggi') mktScore += 15;
+  else if (dLvl === 'Sedang') mktScore += 5;
 
   // Penalti jika C terlalu tinggi (kurang fleksibel/kreatif)
-  if (cW > 2) mktScore -= (cW - 2) * 15;
+  if (cLvl === 'Sangat Tinggi') mktScore -= 15;
+  else if (cLvl === 'Tinggi') mktScore -= 5;
   mktScore = Math.max(10, Math.min(95, mktScore));
 
   return {

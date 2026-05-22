@@ -8,7 +8,7 @@ PLA (Pre-Closing Lead) | D TINGGI / SANGAT TINGGI  +  I TINGGI  =  Fit tinggi
 Marketing | I SANGAT TINGGI  +  D TINGGI  +  C RENDAH  =  Fit tinggi
 No | Nama Kandidat | Posisi
 Dilamar | D | S | C | I | Fit LO
-(%) | Fit CRM
+(%) | Fbuait CRM
 (%) | Fit PLA
 (%) | Fit Mkt
 (%) | ✅ REKOMENDASI

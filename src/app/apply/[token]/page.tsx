@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getCandidateByToken, saveCandidateBio, Candidate } from '@/lib/db';
 import { FileText, Award, Briefcase, GraduationCap, ChevronRight, AlertCircle, Loader2 } from 'lucide-react';
+import { LoadingOverlay } from '@/components/loading-overlay';
 
 export default function ApplyPage() {
   const router = useRouter();
@@ -69,15 +70,14 @@ export default function ApplyPage() {
     } catch (err) {
       console.error(err);
       alert('Gagal menyimpan biodata. Silakan coba lagi.');
-    } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-800" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[hsl(15_60%_97%)]">
+        <Loader2 className="w-10 h-10 animate-spin text-[hsl(350_60%_50%)]" />
         <p className="mt-4 text-slate-600 text-sm font-medium">Memuat formulir kandidat...</p>
       </div>
     );
@@ -85,7 +85,7 @@ export default function ApplyPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 px-4">
+      <div className="flex items-center justify-center min-h-screen bg-[hsl(15_60%_97%)] px-4">
         <div className="w-full max-w-md bg-white border border-slate-200 shadow-xl rounded-2xl p-8 text-center">
           <div className="inline-flex p-3 rounded-full bg-red-50 text-red-600 mb-4">
             <AlertCircle className="w-8 h-8" />
@@ -101,11 +101,13 @@ export default function ApplyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6">
+    <div className="min-h-screen bg-[hsl(15_60%_97%)] py-10 px-4 sm:px-6">
+      <LoadingOverlay visible={saving} message="Menyimpan biodata..." />
+
       <div className="max-w-3xl mx-auto">
         {/* Header Portal */}
         <div className="text-center mb-8">
-          <div className="inline-block bg-blue-800 text-white font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest shadow-md mb-3">
+          <div className="inline-block bg-gradient-to-r from-[hsl(350_25%_14%)] to-[hsl(350_30%_18%)] text-white font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest shadow-md mb-3">
             EasyLegal
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -118,14 +120,14 @@ export default function ApplyPage() {
 
         {/* Info Strip */}
         {candidate && (
-          <div className="bg-gradient-to-r from-blue-850 to-blue-700 bg-blue-900 text-white shadow-lg rounded-2xl p-6 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="bg-gradient-to-r from-[hsl(350_25%_14%)] to-[hsl(350_30%_18%)] text-white shadow-lg rounded-2xl p-6 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider">Nama Kandidat</p>
               <h2 className="text-xl font-bold">{candidate.nama}</h2>
             </div>
             <div>
               <p className="text-blue-200 text-xs font-semibold uppercase tracking-wider">Posisi Yang Dilamar</p>
-              <div className="inline-flex items-center bg-blue-800 text-white font-bold px-3 py-1 rounded-md text-xs mt-1 border border-blue-500">
+              <div className="inline-flex items-center bg-gradient-to-r from-[hsl(350_25%_14%)] to-[hsl(350_30%_18%)] text-white font-bold px-3 py-1 rounded-md text-xs mt-1 border border-blue-500">
                 {candidate.posisi_dilamar}
               </div>
             </div>
@@ -134,7 +136,7 @@ export default function ApplyPage() {
 
         {/* Form Card */}
         <form onSubmit={handleSubmit} className="bg-white border border-slate-200 shadow-lg rounded-2xl overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center gap-2.5">
+          <div className="bg-[hsl(15_60%_97%)] border-b border-slate-200 px-6 py-4 flex items-center gap-2.5">
             <FileText className="w-5 h-5 text-blue-800" />
             <h3 className="font-bold text-slate-800">Formulir Riwayat Hidup (Biodata)</h3>
           </div>
@@ -196,12 +198,12 @@ export default function ApplyPage() {
           </div>
 
           {/* Submit Action */}
-          <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center">
+          <div className="bg-[hsl(15_60%_97%)] border-t border-slate-200 px-6 py-4 flex justify-between items-center">
             <span className="text-xs text-slate-500 font-medium">Langkah 1 dari 2</span>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow-md hover:shadow-lg transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[hsl(350_25%_14%)] to-[hsl(350_30%_18%)] hover:opacity-90 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow-md hover:shadow-lg transition disabled:opacity-50"
             >
               {saving ? (
                 <>
@@ -219,7 +221,7 @@ export default function ApplyPage() {
         </form>
 
         <div className="text-center mt-6 text-xs text-slate-400">
-          EasyLegal © 2026. All rights reserved.
+          EasyLegal &copy; 2026. All rights reserved.
         </div>
       </div>
     </div>
