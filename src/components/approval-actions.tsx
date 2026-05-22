@@ -19,20 +19,26 @@ export function ApprovalActions({ id, status }: ApprovalActionsProps) {
   async function handleApprove(role: 'hrga' | 'management') {
     setLoading(true);
     setLoadingMessage(role === 'hrga' ? 'Memproses verifikasi HRGA...' : 'Memproses approval management...');
+    console.log('handleApprove called:', { id, role });
     try {
       const res = await fetch('/api/manpower/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, action: 'approve', role }),
       });
+      console.log('API response status:', res.status);
       if (res.ok) {
+        const data = await res.json();
+        console.log('API success:', data);
         router.push('/dashboard/manpower');
       } else {
         const data = await res.json();
+        console.error('API error:', data);
         alert(data.error || 'Gagal approve');
         setLoading(false);
       }
-    } catch {
+    } catch (err) {
+      console.error('Fetch error:', err);
       alert('Terjadi kesalahan');
       setLoading(false);
     }
