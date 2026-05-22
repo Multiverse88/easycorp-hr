@@ -1,0 +1,24 @@
+=== 📊 Hasil & Analisa ===
+HASIL DISC TEST — ANALISA & REKOMENDASI POSISI
+Easy Legal | HR Recruitment Assessment Tool
+BAGIAN A — SKOR MENTAH (Raw Score)
+Dimensi | M Score | L Score | Net Score | % Total
+D — Dominance | 0 | 0 | 0 | 0
+I — Influence | 0 | 0 | 0 | 0
+S — Steadiness | 0 | 0 | 0 | 0
+C — Conscientiousness | 0 | 0 | 0 | 0
+TOTAL | 0 | 0 | 0 | 100%
+BAGIAN B — PROFIL DOMINAN
+Tipe Primer: | D — Dominance
+Tipe Sekunder: | D — Dominance
+BAGIAN C — ANALISA KESESUAIAN POSISI
+Posisi | Skor Fit (%) | Status | Catatan HR
+Legal Officer (LO) | 20 | ❌ KURANG COCOK | C dominan (akurat, sistematis) + D mendukung (decisive)
+Customer Care / CRM | 20 | ❌ KURANG COCOK | I dominan (komunikatif) + S mendukung (sabar, empati)
+PLA (Pre-Closing Lead Agent) | 20 | ❌ KURANG COCOK | D+I dominan (agresif, persuasif, target-driven)
+Marketing | 20 | ❌ KURANG COCOK | I dominan (kreatif, storytelling) + D mendukung (driven)
+BAGIAN D — REKOMENDASI FINAL HR
+Posisi Paling Direkomendasikan: | Legal Officer (LO)
+Skor Fit Posisi Terpilih: | 20
+CATATAN TAMBAHAN HR:
+⚠️  DISC adalah alat bantu seleksi, bukan penentu tunggal. Kombinasikan dengan wawancara mendalam, tes kemampuan, & referensi.

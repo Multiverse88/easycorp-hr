@@ -1,0 +1,69 @@
+=== 📝 DISC Test ===
+DISC TEST — EASY LEGAL RECRUITMENT
+Tandai kolom M (Most) = paling menggambarkan Anda  |  Tandai kolom L (Least) = paling tidak menggambarkan Anda  |  Isi dengan huruf  X
+No | Kata Sifat | M
+(Paling
+Sesuai) | L
+(Paling Tidak
+Sesuai) | Tipe | No | Kata Sifat | M
+(Paling
+Sesuai) | L
+(Paling Tidak
+Sesuai) | Tipe
+1.1 | Kuat | D | 15.1 | Keras | D
+Menyenangkan | I | Ceria | I
+Setia | S | Toleran | S
+Tepat | C | Disiplin | C
+2.1 | Berani | D | 16.1 | Penuh Tekad | D
+Antusias | I | Spontan | I
+Tenang | S | Pendengar | S
+Teliti | C | Teratur | C
+3.1 | Dominan | D | 17.1 | Agresif | D
+Berpengaruh | I | Terbuka | I
+Sabar | S | Lembut | S
+Hati-hati | C | Cermat | C
+4.1 | Tegas | D | 18.1 | Cepat | D
+Ramah | I | Antusias | I
+Kooperatif | S | Santai | S
+Akurat | C | Hati-hati | C
+5.1 | Mandiri | D | 19.1 | Keras Kepala | D
+Persuasif | I | Dramatis | I
+Konsisten | S | Menolong | S
+Analitis | C | Sistemik | C
+6.1 | Kompetitif | D | 20.1 | Berorientasi Tujuan | D
+Optimis | I | Meyakinkan | I
+Dapat Diandalkan | S | Terduga | S
+Perfeksionis | C | Analitis | C
+7.1 | Langsung | D | 21.1 | Risk Taker | D
+Ekspresif | I | Ceria | I
+Stabil | S | Berhati-hati | S
+Sistematis | C | Akurat | C
+8.1 | Menantang | D | 22.1 | Pemimpin | D
+Inspiratif | I | Populer | I
+Sabar | S | Setia Kawan | S
+Logis | C | Bijaksana | C
+9.1 | Hasil-oriented | D | 23.1 | Proaktif | D
+Sosial | I | Antusias | I
+Loyal | S | Suportif | S
+Kritis | C | Faktual | C
+10.1 | Berinisiatif | D | 24.1 | Otoriter | D
+Komunikatif | I | Persuasif | I
+Empati | S | Pemaaf | S
+Terstruktur | C | Perfeksionis | C
+11.1 | Percaya Diri | D | 25.1 | Tegas | D
+Populer | I | Ekspresiif | I
+Harmonis | S | Akomodatif | S
+Objektif | C | Rasional | C
+12.1 | Decisive | D | 26.1 | Penantang | D
+Hangat | I | Emosional | I
+Tulus | S | Pendukung | S
+Presisi | C | Kritis | C
+13.1 | Ambisius | D | 27.1 | Langsung | D
+Verbal | I | Optimistis | I
+Pengertian | S | Pendengar | S
+Metodis | C | Logis | C
+14.1 | Pionir | D | 28.1 | Menguasai | D
+Demonstratif | I | Kreatif | I
+Penyabar | S | Sabar | S
+Konservatif | C | Detail-oriented | C
+KETERANGAN WARNA TIPE DISC:

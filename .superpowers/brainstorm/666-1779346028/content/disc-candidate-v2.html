@@ -1,0 +1,197 @@
+<h2>Mockup — DISC Test Kandidat (Interaksi Geser)</h2>
+<p class="subtitle">Desktop: drag & drop · Mobile: tap kata → pilih via popup</p>
+
+<div class="split">
+
+  <!-- Desktop view -->
+  <div class="mockup">
+    <div class="mockup-header">🖥️ Desktop — Drag & Drop</div>
+    <div class="mockup-body" style="background:#f1f5f9;padding:0;overflow:hidden;">
+      <div style="height:480px;overflow-y:auto;">
+
+        <!-- Top bar -->
+        <div style="background:#1e3a8a;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="background:#fff;border-radius:5px;padding:3px 6px;"><div style="font-size:8px;font-weight:800;color:#1e3a8a;">EL</div></div>
+            <div style="font-size:9px;font-weight:600;color:#fff;">DISC Personality Test</div>
+          </div>
+          <div style="background:#1d4ed8;border-radius:20px;padding:3px 8px;display:flex;align-items:center;gap:5px;">
+            <div style="background:#e2e8f0;border-radius:4px;height:4px;width:48px;">
+              <div style="width:21%;background:#38bdf8;border-radius:4px;height:4px;"></div>
+            </div>
+            <div style="font-size:7px;font-weight:700;color:#fff;">6/28</div>
+          </div>
+        </div>
+
+        <div style="padding:14px 16px;">
+
+          <!-- Soal card (answered) -->
+          <div style="background:#fff;border-radius:10px;border:1.5px solid #bbf7d0;padding:12px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+              <div style="background:#15803d;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;"><div style="font-size:7px;color:#fff;font-weight:700;">✓</div></div>
+              <div style="font-size:8px;font-weight:700;color:#15803d;">Soal 2 dari 28</div>
+              <div style="margin-left:auto;font-size:7px;color:#15803d;background:#f0fdf4;border-radius:3px;padding:1px 6px;">Terjawab</div>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;align-items:start;">
+              <div>
+                <div style="font-size:7px;color:#94a3b8;margin-bottom:3px;text-align:center;">Kata-kata</div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="background:#f1f5f9;border-radius:4px;padding:5px 8px;font-size:8px;color:#94a3b8;text-decoration:line-through;text-align:center;">Berani</div>
+                  <div style="background:#f1f5f9;border-radius:4px;padding:5px 8px;font-size:8px;color:#94a3b8;text-decoration:line-through;text-align:center;">Antusias</div>
+                  <div style="background:#f1f5f9;border-radius:4px;padding:5px 8px;font-size:8px;color:#94a3b8;text-decoration:line-through;text-align:center;">Tenang</div>
+                  <div style="background:#f1f5f9;border-radius:4px;padding:5px 8px;font-size:8px;color:#94a3b8;text-decoration:line-through;text-align:center;">Teliti</div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:7px;color:#15803d;font-weight:600;text-align:center;margin-bottom:3px;">M — Sesuai</div>
+                <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:6px;padding:6px;min-height:40px;display:flex;align-items:center;justify-content:center;">
+                  <div style="background:#15803d;border-radius:4px;padding:4px 8px;font-size:8px;color:#fff;text-align:center;">Antusias</div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:7px;color:#dc2626;font-weight:600;text-align:center;margin-bottom:3px;">L — Tidak</div>
+                <div style="background:#fff5f5;border:1.5px solid #fca5a5;border-radius:6px;padding:6px;min-height:40px;display:flex;align-items:center;justify-content:center;">
+                  <div style="background:#dc2626;border-radius:4px;padding:4px 8px;font-size:8px;color:#fff;text-align:center;">Tenang</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Soal aktif dengan drag in progress -->
+          <div style="background:#fff;border-radius:10px;border:2px solid #1d4ed8;padding:12px;margin-bottom:10px;box-shadow:0 0 0 3px #dbeafe;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+              <div style="background:#1d4ed8;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;"><div style="font-size:7px;color:#fff;font-weight:700;">3</div></div>
+              <div style="font-size:8px;font-weight:700;color:#1d4ed8;">Soal 3 dari 28</div>
+              <div style="margin-left:auto;font-size:7px;color:#1d4ed8;background:#dbeafe;border-radius:3px;padding:1px 6px;">Sedang diisi</div>
+            </div>
+
+            <div style="background:#eff6ff;border-radius:5px;padding:5px 8px;margin-bottom:8px;font-size:7px;color:#1e40af;">
+              🖱️ <strong>Drag</strong> kata ke kolom M (hijau) atau L (merah)
+            </div>
+
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;align-items:start;">
+              <!-- Kata-kata -->
+              <div>
+                <div style="font-size:7px;color:#94a3b8;margin-bottom:3px;text-align:center;">Seret salah satu kata</div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <!-- Being dragged -->
+                  <div style="background:#dbeafe;border:2px dashed #1d4ed8;border-radius:4px;padding:5px 8px;font-size:8px;color:#1d4ed8;font-weight:600;text-align:center;cursor:grab;">⋮⋮ Dominan</div>
+                  <!-- Already dropped -->
+                  <div style="background:#f1f5f9;border-radius:4px;padding:5px 8px;font-size:8px;color:#94a3b8;text-decoration:line-through;text-align:center;">Berpengaruh</div>
+                  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:5px 8px;font-size:8px;color:#374151;text-align:center;cursor:grab;">⋮⋮ Sabar</div>
+                  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:5px 8px;font-size:8px;color:#374151;text-align:center;cursor:grab;">⋮⋮ Hati-hati</div>
+                </div>
+              </div>
+              <!-- Kolom M (active drop target) -->
+              <div>
+                <div style="font-size:7px;color:#15803d;font-weight:600;text-align:center;margin-bottom:3px;">M — Sesuai</div>
+                <div style="background:#f0fdf4;border:2px dashed #15803d;border-radius:6px;padding:6px;min-height:80px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;">
+                  <div style="font-size:7px;color:#86efac;text-align:center;">Lepas di sini</div>
+                </div>
+              </div>
+              <!-- Kolom L (has item) -->
+              <div>
+                <div style="font-size:7px;color:#dc2626;font-weight:600;text-align:center;margin-bottom:3px;">L — Tidak</div>
+                <div style="background:#fff5f5;border:1.5px solid #fca5a5;border-radius:6px;padding:6px;min-height:80px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;">
+                  <div style="background:#dc2626;border-radius:4px;padding:4px 6px;font-size:8px;color:#fff;text-align:center;width:100%;box-sizing:border-box;">Berpengaruh</div>
+                  <div style="font-size:7px;color:#fca5a5;text-align:center;margin-top:2px;">✕ klik untuk hapus</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Soal belum aktif -->
+          <div style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:10px;padding:10px;text-align:center;opacity:0.5;">
+            <div style="font-size:8px;color:#94a3b8;">Soal 4–28 terbuka setelah soal ini selesai</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile view -->
+  <div class="mockup">
+    <div class="mockup-header">📱 Mobile — Tap + Popup</div>
+    <div class="mockup-body" style="background:#f1f5f9;padding:0;overflow:hidden;">
+      <div style="height:480px;overflow-y:auto;position:relative;">
+
+        <!-- Top bar -->
+        <div style="background:#1e3a8a;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;">
+          <div style="font-size:9px;font-weight:600;color:#fff;">DISC Test</div>
+          <div style="background:#1d4ed8;border-radius:20px;padding:3px 8px;">
+            <div style="font-size:7px;font-weight:700;color:#fff;">6/28</div>
+          </div>
+        </div>
+
+        <div style="padding:12px;">
+          <!-- Soal aktif mobile -->
+          <div style="background:#fff;border-radius:10px;border:2px solid #1d4ed8;padding:12px;margin-bottom:10px;box-shadow:0 0 0 3px #dbeafe;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:8px;font-weight:700;color:#1d4ed8;">Soal 3 dari 28</div>
+              <div style="font-size:7px;color:#1d4ed8;background:#dbeafe;border-radius:3px;padding:1px 6px;">Sedang diisi</div>
+            </div>
+
+            <div style="background:#eff6ff;border-radius:5px;padding:5px 8px;margin-bottom:8px;font-size:7px;color:#1e40af;">
+              👆 <strong>Tap</strong> kata untuk memilih M atau L
+            </div>
+
+            <!-- Status indicator -->
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+              <div style="flex:1;background:#fff5f5;border:1.5px solid #fca5a5;border-radius:5px;padding:5px;text-align:center;">
+                <div style="font-size:7px;color:#dc2626;font-weight:600;">L — Tidak Sesuai</div>
+                <div style="background:#dc2626;border-radius:3px;padding:3px;font-size:7px;color:#fff;margin-top:3px;">Berpengaruh</div>
+              </div>
+              <div style="flex:1;background:#f0fdf4;border:1.5px dashed #86efac;border-radius:5px;padding:5px;text-align:center;">
+                <div style="font-size:7px;color:#86efac;font-weight:600;">M — Paling Sesuai</div>
+                <div style="font-size:7px;color:#94a3b8;margin-top:5px;">Belum dipilih</div>
+              </div>
+            </div>
+
+            <!-- Kata-kata (full width cards, tap to select) -->
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:11px;color:#374151;font-weight:500;">Dominan</div>
+                <div style="font-size:7px;color:#94a3b8;">Tap untuk pilih →</div>
+              </div>
+              <!-- Berpengaruh — L selected -->
+              <div style="background:#fff5f5;border:2px solid #dc2626;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:11px;color:#dc2626;font-weight:700;">Berpengaruh</div>
+                <div style="background:#dc2626;color:#fff;border-radius:4px;padding:2px 8px;font-size:8px;font-weight:700;">L ✓</div>
+              </div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:11px;color:#374151;font-weight:500;">Sabar</div>
+                <div style="font-size:7px;color:#94a3b8;">Tap untuk pilih →</div>
+              </div>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:11px;color:#374151;font-weight:500;">Hati-hati</div>
+                <div style="font-size:7px;color:#94a3b8;">Tap untuk pilih →</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- POPUP overlay (muncul saat tap kata) -->
+          <div style="background:rgba(15,23,42,0.6);border-radius:10px;padding:14px;margin-bottom:10px;">
+            <div style="font-size:8px;color:#94a3b8;text-align:center;margin-bottom:8px;">Popup muncul saat tap "Dominan"</div>
+            <div style="background:#fff;border-radius:8px;padding:12px;">
+              <div style="font-size:9px;font-weight:700;color:#0f172a;text-align:center;margin-bottom:10px;">Pilih untuk kata "Dominan"</div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="background:#f0fdf4;border:2px solid #15803d;border-radius:8px;padding:10px;text-align:center;cursor:pointer;">
+                  <div style="font-size:10px;font-weight:700;color:#15803d;">✓ Paling Sesuai (M)</div>
+                  <div style="font-size:8px;color:#64748b;margin-top:2px;">Kata ini paling menggambarkan saya</div>
+                </div>
+                <div style="background:#fff5f5;border:2px solid #dc2626;border-radius:8px;padding:10px;text-align:center;cursor:pointer;">
+                  <div style="font-size:10px;font-weight:700;color:#dc2626;">✗ Paling Tidak Sesuai (L)</div>
+                  <div style="font-size:8px;color:#64748b;margin-top:2px;">Kata ini paling tidak menggambarkan saya</div>
+                </div>
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;cursor:pointer;">
+                  <div style="font-size:9px;color:#64748b;">Batal</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
