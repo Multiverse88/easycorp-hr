@@ -12,19 +12,18 @@ export async function middleware(request: NextRequest) {
 
   // === SUBDOMAIN: disc.easyai.id (Kandidat) ===
   if (isDiscSubdomain) {
-    // Root → redirect to /masuk
+    // Root → rewrite to /masuk
     if (path === '/') {
       url.pathname = '/masuk';
       return NextResponse.rewrite(url);
     }
 
-    // Block dashboard routes on disc subdomain
+    // Block dashboard & login routes on disc subdomain
     if (path.startsWith('/dashboard') || path.startsWith('/login')) {
       url.pathname = '/masuk';
       return NextResponse.redirect(url);
     }
 
-    // Rewrite candidate paths (remove /disc prefix if someone navigates directly)
     return NextResponse.next();
   }
 
@@ -62,8 +61,8 @@ export async function middleware(request: NextRequest) {
     }
 
     // Block candidate routes on dashboard subdomain
-    if (path.startsWith('/masuk') || path.startsWith('/apply/') || (path.startsWith('/disc/') && !path.includes('/dashboard'))) {
-      url.pathname = '/dashboard';
+    if (path.startsWith('/masuk') || path.startsWith('/apply/') || path === '/disc') {
+      url.pathname = user ? '/dashboard' : '/login';
       return NextResponse.redirect(url);
     }
 
@@ -77,8 +76,7 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // === MAIN DOMAIN: easyai.id ===
-  // Redirect to appropriate subdomain
+  // === MAIN DOMAIN: easyai.id → redirect to subdomains ===
   if (path === '/' || path === '/login') {
     url.hostname = 'dashboard.easyai.id';
     url.pathname = '/login';
