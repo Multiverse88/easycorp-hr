@@ -11,19 +11,31 @@ export async function middleware(request: NextRequest) {
 
   // === SUBDOMAIN: disc.easyai.id (Kandidat) ===
   if (isDiscSubdomain) {
+    // Root → redirect to /masuk
+    if (path === '/') {
+      return NextResponse.redirect(new URL('/masuk', request.url));
+    }
+
     // Block dashboard & login routes
     if (path.startsWith('/dashboard') || path.startsWith('/login')) {
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL('/masuk', request.url));
     }
+
     return NextResponse.next();
   }
 
   // === SUBDOMAIN: dashboard.easyai.id (HR Internal) ===
   if (isDashboardSubdomain) {
+    // Root → redirect to /login
+    if (path === '/') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
     // Block candidate routes
     if (path.startsWith('/masuk') || path.startsWith('/apply/') || path === '/disc') {
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL('/login', request.url));
     }
+
     return NextResponse.next();
   }
 
