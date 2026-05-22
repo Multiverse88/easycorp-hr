@@ -9,13 +9,9 @@ export async function middleware(request: NextRequest) {
   // Detect subdomain
   const isDiscSubdomain = hostname.startsWith('disc.');
   const isDashboardSubdomain = hostname.startsWith('dashboard.');
-  const isMainDomain = !isDiscSubdomain && !isDashboardSubdomain;
 
   // === SUBDOMAIN: disc.easyai.id (Kandidat) ===
   if (isDiscSubdomain) {
-    // Allowed paths for candidate
-    const candidatePaths = ['/masuk', '/apply/', '/disc/', '/api/disc/submit', '/api/candidate'];
-
     // Root → redirect to /masuk
     if (path === '/') {
       url.pathname = '/masuk';

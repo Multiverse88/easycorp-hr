@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { getCandidateByToken, saveDiscTestResult, getDiscByCandidateId, Candidate } from '@/lib/db';
+import { getCandidateByToken, saveDiscTestResult, getDiscTestResultByCandidate, Candidate } from '@/lib/db';
 import { discQuestions } from '@/lib/discData';
 import { calculateDiscResult } from '@/lib/discParser';
 import { Award, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, Loader2, CheckCircle } from 'lucide-react';
@@ -46,7 +46,7 @@ export default function DiscTestPage() {
         }
 
         // Check if DISC test already completed
-        const existingTest = await getDiscByCandidateId(data.id);
+        const existingTest = await getDiscTestResultByCandidate(data.id);
         if (existingTest) {
           setError('ALREADY_COMPLETED');
           return;

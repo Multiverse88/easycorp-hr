@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCandidateByToken, saveDiscTestResult, getDiscByCandidateId } from '@/lib/db';
+import { getCandidateByToken, saveDiscTestResult, getDiscTestResultByCandidate } from '@/lib/db';
 import { calculateDiscResult } from '@/lib/discParser';
 
 export async function POST(request: Request) {
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     // Check if DISC test already completed
-    const existingTest = await getDiscByCandidateId(candidate.id);
+    const existingTest = await getDiscTestResultByCandidate(candidate.id);
     if (existingTest) {
       return NextResponse.json(
         { error: 'DISC_TEST_ALREADY_COMPLETED', message: 'Tes DISC sudah pernah diselesaikan. Token hanya bisa digunakan sekali.' },
