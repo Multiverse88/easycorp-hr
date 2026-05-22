@@ -12,15 +12,9 @@ export async function middleware(request: NextRequest) {
 
   // === SUBDOMAIN: disc.easyai.id (Kandidat) ===
   if (isDiscSubdomain) {
-    // Root → rewrite to /masuk
-    if (path === '/') {
-      url.pathname = '/masuk';
-      return NextResponse.rewrite(url);
-    }
-
     // Block dashboard & login routes on disc subdomain
     if (path.startsWith('/dashboard') || path.startsWith('/login')) {
-      url.pathname = '/masuk';
+      url.pathname = '/';
       return NextResponse.redirect(url);
     }
 
@@ -29,8 +23,18 @@ export async function middleware(request: NextRequest) {
 
   // === SUBDOMAIN: dashboard.easyai.id (HR Internal) ===
   if (isDashboardSubdomain) {
-    let supabaseResponse = NextResponse.next({ request });
+    // Block candidate routes on dashboard subdomain
+    if (path.startsWith('/masuk') || path.startsWith('/apply/') || path === '/disc') {
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
 
+    // Skip middleware for login page to avoid redirect loop
+    if (path === '/login') {
+      return NextResponse.next();
+    }
+
+    // Auth check for other routes
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -43,10 +47,6 @@ export async function middleware(request: NextRequest) {
             cookiesToSet.forEach(({ name, value }) =>
               request.cookies.set(name, value)
             );
-            supabaseResponse = NextResponse.next({ request });
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            );
           },
         },
       }
@@ -54,26 +54,13 @@ export async function middleware(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Root → redirect to /dashboard or /login
-    if (path === '/') {
-      url.pathname = user ? '/dashboard' : '/login';
-      return NextResponse.rewrite(url);
-    }
-
-    // Block candidate routes on dashboard subdomain
-    if (path.startsWith('/masuk') || path.startsWith('/apply/') || path === '/disc') {
-      url.pathname = user ? '/dashboard' : '/login';
-      return NextResponse.redirect(url);
-    }
-
-    // Auth check for protected routes
-    const isPublicPath = ['/login'].some((p) => path.startsWith(p));
-    if (!user && !isPublicPath) {
+    // Not authenticated → redirect to login
+    if (!user) {
       url.pathname = '/login';
       return NextResponse.redirect(url);
     }
 
-    return supabaseResponse;
+    return NextResponse.next();
   }
 
   // === MAIN DOMAIN: easyai.id → redirect to subdomains ===
