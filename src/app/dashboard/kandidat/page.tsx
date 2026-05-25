@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye } from 'lucide-react';
-import { formatDate, statusColor } from '@/lib/utils';
+import { formatDate, statusColor, statusLabel } from '@/lib/utils';
+import { RefreshOnMount } from '@/components/refresh-on-mount';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,7 @@ export default async function KandidatListPage() {
 
   return (
     <div>
+      <RefreshOnMount />
       <h1 className="text-2xl font-bold mb-6">Kandidat</h1>
 
       <Card>
@@ -47,7 +49,7 @@ export default async function KandidatListPage() {
                     <td className="py-3 px-4">{getRequestName(cand.manpower_request_id)}</td>
                     <td className="py-3 px-4">
                       <Badge className={statusColor(cand.status)}>
-                        {cand.status}
+                        {statusLabel(cand.status)}
                       </Badge>
                     </td>
                     <td className="py-3 px-4">{formatDate(cand.created_at)}</td>

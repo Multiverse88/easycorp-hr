@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const stats = {
     activeRequests: requests.filter(r => r.status === 'submitted' || r.status === 'verified').length,
     totalCandidates: candidates.length,
-    candidatesInProcess: candidates.filter(c => c.status !== 'hired' && c.status !== 'rejected').length,
+    candidatesInProcess: candidates.filter(c => c.status !== 'reject').length,
     pendingApproval: pendingRequests.length,
   };
 
@@ -115,8 +115,8 @@ export default async function DashboardPage() {
                     <div className="text-xs text-muted-foreground">{cand.posisi_dilamar}</div>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    cand.status === 'hired' ? 'bg-green-100 text-green-700' :
-                    cand.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                    cand.status === 'offering' ? 'bg-yellow-100 text-yellow-700' :
+                    cand.status === 'reject' ? 'bg-red-100 text-red-700' :
                     'bg-blue-100 text-blue-700'
                   }`}>
                     {cand.status}

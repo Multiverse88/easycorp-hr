@@ -40,7 +40,8 @@ export default function DiscTestPage() {
           return;
         }
 
-        if (data.status === 'screening') {
+        // Jika belum isi biodata, arahkan ke halaman apply
+        if (!data.pendidikan) {
           router.push(`/apply/${token}`);
           return;
         }

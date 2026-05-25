@@ -7,7 +7,7 @@ export type JenisKebutuhan = 'Posisi Baru' | 'Replacement' | 'Tambahan Tim';
 export type StatusKaryawan = 'PKWT' | 'PKWTT' | 'Magang' | 'Outsource';
 export type Urgensi = 'Tinggi' | 'Sedang' | 'Rendah';
 
-export type CandidateStatus = 'screening' | 'interview' | 'psikotes' | 'offering' | 'hired' | 'rejected';
+export type CandidateStatus = 'interview_user' | 'offering' | 'reject';
 
 export type TahapInterview = 'HRGA' | 'User' | 'Final';
 export type MetodeInterview = 'Online' | 'Offline';

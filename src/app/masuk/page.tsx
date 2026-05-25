@@ -27,11 +27,7 @@ export default function MasukPage() {
         return;
       }
 
-      if (candidate.status === 'screening') {
-        window.location.href = `/apply/${candidate.token}`;
-      } else {
-        window.location.href = `/disc/${candidate.token}`;
-      }
+      window.location.href = `/disc/${candidate.token}`;
     } catch {
       setError('Terjadi kesalahan. Silakan coba lagi.');
       setLoading(false);

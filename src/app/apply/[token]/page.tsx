@@ -31,9 +31,8 @@ export default function ApplyPage() {
           return;
         }
 
-        // Cek jika sudah pernah mengisi bio dan sudah di tahap DISC / selanjutnya
-        if (data.status !== 'screening') {
-          // Arahkan langsung ke DISC test
+        // Cek jika sudah pernah mengisi bio → arahkan ke DISC test
+        if (data.pendidikan) {
           window.location.href = `/disc/${token}`;
           return;
         }

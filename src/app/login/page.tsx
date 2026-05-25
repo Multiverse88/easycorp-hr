@@ -28,6 +28,13 @@ export default function LoginPage() {
       return;
     }
 
+    // Set session date cookie (WIB = UTC+7)
+    const now = new Date();
+    const wibOffset = 7 * 60; // +7 jam dalam menit
+    const wibDate = new Date(now.getTime() + (wibOffset - now.getTimezoneOffset()) * 60000);
+    const dateStr = wibDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    document.cookie = `session_date=${dateStr}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+
     // Redirect to dashboard subdomain after login
     window.location.href = '/dashboard';
   }

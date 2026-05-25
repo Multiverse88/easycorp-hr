@@ -12,6 +12,7 @@ import {
   LogOut,
   UserPlus,
   BarChart3,
+  ScrollText,
 } from 'lucide-react';
 
 const menuItems = [
@@ -21,6 +22,7 @@ const menuItems = [
   { href: '/dashboard/kandidat/new', label: 'Tambah Kandidat', icon: UserPlus },
   { href: '/dashboard/kandidat/analisa', label: 'Analisa Batch', icon: BarChart3 },
   { href: '/dashboard/export', label: 'Export & Laporan', icon: Download },
+  { href: '/dashboard/logs', label: 'Log Aktivitas', icon: ScrollText },
 ];
 
 export function Sidebar() {

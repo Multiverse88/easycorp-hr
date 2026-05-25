@@ -48,7 +48,7 @@ export interface Candidate {
   manpower_request_id?: string;
   token: string;
   token_expires_at: string;
-  status: 'screening' | 'interview' | 'psikotes' | 'offering' | 'hired' | 'rejected';
+  status: 'interview_user' | 'offering' | 'reject';
   created_at: string;
   pendidikan?: string;
   pengalaman?: string;
@@ -106,6 +106,58 @@ export interface DiscTestResult {
   tipe_primer: string;
   tipe_sekunder: string;
   completed_at: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  table_name: string;
+  record_id: string;
+  description: string;
+  details: Record<string, unknown> | null;
+  user_email: string | null;
+  created_at: string;
+}
+
+// ==========================================
+// LOG FUNCTIONS
+// ==========================================
+
+export async function logActivity(params: {
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  table_name: string;
+  record_id: string;
+  description: string;
+  details?: Record<string, unknown>;
+  user_email?: string;
+}): Promise<void> {
+  try {
+    await supabaseAdmin.from('logs').insert({
+      id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      action: params.action,
+      table_name: params.table_name,
+      record_id: params.record_id,
+      description: params.description,
+      details: params.details || null,
+      user_email: params.user_email || null,
+    });
+  } catch (err) {
+    console.error('logActivity error:', err);
+  }
+}
+
+export async function getLogs(limit: number = 100): Promise<ActivityLog[]> {
+  const { data, error } = await supabaseAdmin
+    .from('logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('getLogs error:', error);
+    return [];
+  }
+  return (data || []) as ActivityLog[];
 }
 
 // ==========================================
@@ -166,6 +218,7 @@ export async function saveManpowerRequest(req: Omit<ManpowerRequest, 'id' | 'no_
       .single();
 
     if (error) throw new Error(`Gagal update: ${error.message}`);
+    logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: req.id!, description: `Manpower request ${req.id} diperbarui - posisi: ${req.posisi}`, details: { posisi: req.posisi, divisi: req.divisi, jumlah: req.jumlah } });
     return data as ManpowerRequest;
   }
 
@@ -213,6 +266,7 @@ export async function saveManpowerRequest(req: Omit<ManpowerRequest, 'id' | 'no_
     .single();
 
   if (error) throw new Error(`Gagal simpan: ${error.message}`);
+  logActivity({ action: 'CREATE', table_name: 'manpower_requests', record_id: id, description: `Manpower request baru ${no_request} dibuat - posisi: ${req.posisi} oleh ${req.pemohon}`, details: { no_request, posisi: req.posisi, divisi: req.divisi, pemohon: req.pemohon } });
   return data as ManpowerRequest;
 }
 
@@ -242,6 +296,7 @@ export async function approveManpowerRequest(id: string, role: 'hrga' | 'managem
     return undefined;
   }
   console.log('approveManpowerRequest success:', data);
+  logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: id, description: `Manpower request ${id} disetujui oleh ${role === 'hrga' ? 'HRGA' : 'Management'} - status: ${update.status}`, details: { role, new_status: update.status } });
   return data as ManpowerRequest;
 }
 
@@ -254,6 +309,7 @@ export async function rejectManpowerRequest(id: string): Promise<ManpowerRequest
     .single();
 
   if (error) return undefined;
+  logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: id, description: `Manpower request ${id} ditolak`, details: { new_status: 'rejected' } });
   return data as ManpowerRequest;
 }
 
@@ -315,17 +371,29 @@ export async function createCandidate(cand: Omit<Candidate, 'id' | 'token' | 'to
       manpower_request_id: cand.manpower_request_id || null,
       token,
       token_expires_at: expiry.toISOString().split('T')[0],
-      status: 'screening',
+      status: 'interview_user',
       created_at: new Date().toISOString(),
     })
     .select()
     .single();
 
   if (error) throw new Error(`Gagal buat kandidat: ${error.message}`);
+  logActivity({ action: 'CREATE', table_name: 'candidates', record_id: id, description: `Kandidat baru "${cand.nama}" dibuat untuk posisi ${cand.posisi_dilamar}`, details: { nama: cand.nama, email: cand.email, posisi_dilamar: cand.posisi_dilamar } });
   return data as Candidate;
 }
 
 export async function updateCandidateStatus(id: string, status: Candidate['status']): Promise<Candidate | undefined> {
+  // Ambil data sebelum update untuk logging
+  const { data: current, error: fetchError } = await supabaseAdmin
+    .from('candidates')
+    .select('status, nama, email')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) {
+    console.error('updateCandidateStatus: gagal ambil data kandidat:', fetchError.message);
+  }
+
   const { data, error } = await supabaseAdmin
     .from('candidates')
     .update({ status })
@@ -333,7 +401,12 @@ export async function updateCandidateStatus(id: string, status: Candidate['statu
     .select()
     .single();
 
-  if (error) return undefined;
+  if (error) {
+    console.error('updateCandidateStatus: gagal update:', error.message);
+    return undefined;
+  }
+
+  logActivity({ action: 'UPDATE', table_name: 'candidates', record_id: id, description: `Status kandidat ${current?.nama || id}: "${current?.status}" diubah menjadi "${status}"`, details: { old_status: current?.status, new_status: status, nama: current?.nama }, user_email: current?.email });
   return data as Candidate;
 }
 
@@ -344,13 +417,13 @@ export async function saveCandidateBio(token: string, bio: { pendidikan: string;
       pendidikan: bio.pendidikan,
       pengalaman: bio.pengalaman,
       keahlian: bio.keahlian,
-      status: 'psikotes',
     })
     .eq('token', token)
     .select()
     .single();
 
   if (error) return undefined;
+  logActivity({ action: 'UPDATE', table_name: 'candidates', record_id: data?.id || token, description: `Bio kandidat ${data?.nama || token} diperbarui`, details: { pendidikan: bio.pendidikan, pengalaman: bio.pengalaman }, user_email: data?.email });
   return data as Candidate;
 }
 
@@ -402,15 +475,8 @@ export async function saveInterviewEvaluation(evalData: Omit<InterviewEvaluation
     throw new Error(`Gagal simpan evaluasi: ${error.message}`);
   }
 
-  // Update candidate status to 'interview' if currently 'psikotes'
-  const candidate = await getCandidateById(evalData.candidate_id);
-  if (candidate && candidate.status === 'psikotes') {
-    await supabaseAdmin
-      .from('candidates')
-      .update({ status: 'interview' })
-      .eq('id', evalData.candidate_id);
-  }
-
+  const evalAction = evalData.id ? 'UPDATE' : 'CREATE';
+  logActivity({ action: evalAction, table_name: 'interview_evaluations', record_id: data.id, description: `${evalAction === 'CREATE' ? 'Evaluasi interview baru' : 'Evaluasi interview diperbarui'} - tahap ${evalData.tahap} untuk kandidat ${evalData.candidate_id}`, details: { candidate_id: evalData.candidate_id, tahap: evalData.tahap, rekomendasi: evalData.rekomendasi, total_skor: evalData.total_skor } });
   return data as InterviewEvaluation;
 }
 
@@ -454,6 +520,8 @@ export async function saveSelectionTestResult(resultData: Omit<SelectionTestResu
     console.error('Selection test error:', JSON.stringify(error, null, 2));
     throw new Error(`Gagal simpan tes seleksi: ${error.message}`);
   }
+  const testAction = resultData.id ? 'UPDATE' : 'CREATE';
+  logActivity({ action: testAction, table_name: 'selection_test_results', record_id: data.id, description: `${testAction === 'CREATE' ? 'Hasil tes seleksi baru' : 'Hasil tes seleksi diperbarui'} - kandidat ${resultData.candidate_id}`, details: { candidate_id: resultData.candidate_id, kesimpulan: resultData.kesimpulan, penyelenggara: resultData.penyelenggara } });
   return data as SelectionTestResult;
 }
 
@@ -516,11 +584,6 @@ export async function saveDiscTestResult(res: Omit<DiscTestResult, 'id'>): Promi
     throw new Error(`Gagal simpan DISC: ${error.message} (code: ${error.code})`);
   }
 
-  // Update candidate status to 'interview'
-  await supabaseAdmin
-    .from('candidates')
-    .update({ status: 'interview' })
-    .eq('id', res.candidate_id);
-
+  logActivity({ action: 'CREATE', table_name: 'disc_tests', record_id: id, description: `Hasil tes DISC baru untuk kandidat ${res.candidate_id} - tipe primer: ${res.tipe_primer}`, details: { candidate_id: res.candidate_id, tipe_primer: res.tipe_primer, tipe_sekunder: res.tipe_sekunder } });
   return data as DiscTestResult;
 }

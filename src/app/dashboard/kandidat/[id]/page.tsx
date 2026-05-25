@@ -2,11 +2,10 @@ import Link from 'next/link';
 import { getCandidateById, getDiscTestResultByCandidate, getManpowerRequests } from '@/lib/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
+import { StatusSelector } from '@/components/status-selector';
 
 export const dynamic = 'force-dynamic';
-import { statusColor } from '@/lib/utils';
 
 export default async function KandidatDetailPage({ params }: { params: { id: string } }) {
   const candidate = await getCandidateById(params.id);
@@ -27,7 +26,7 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
           </Link>
           <h1 className="text-2xl font-bold mt-2">Detail Kandidat</h1>
         </div>
-        <Badge className={statusColor(candidate.status)}>{candidate.status}</Badge>
+        <StatusSelector candidateId={params.id} currentStatus={candidate.status} />
       </div>
 
       <CandidateQuickActions candidateId={params.id} />
