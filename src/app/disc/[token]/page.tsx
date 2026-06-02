@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { getCandidateByToken, saveDiscTestResult, getDiscTestResultByCandidate, Candidate } from '@/lib/db';
 import { discQuestions } from '@/lib/discData';
 import { calculateDiscResult } from '@/lib/discParser';
-import { Award, CheckCircle2, AlertTriangle, Loader2, CheckCircle } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Loader2, CheckCircle } from 'lucide-react';
 import { LoadingOverlay } from '@/components/loading-overlay';
 
 interface AnswerState {
