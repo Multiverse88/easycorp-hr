@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { getCandidateByToken, saveDiscTestResult, getDiscTestResultByCandidate, Candidate } from '@/lib/db';
 import { discQuestions } from '@/lib/discData';
 import { calculateDiscResult } from '@/lib/discParser';
-import { Award, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, Loader2, CheckCircle } from 'lucide-react';
+import { Award, CheckCircle2, AlertTriangle, Loader2, CheckCircle } from 'lucide-react';
 import { LoadingOverlay } from '@/components/loading-overlay';
 
 interface AnswerState {
@@ -22,12 +22,11 @@ export default function DiscTestPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showInstructions, setShowInstructions] = useState(true);
 
   // DISC state
-  const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<AnswerState[]>([]);
 
   useEffect(() => {
@@ -97,29 +96,11 @@ export default function DiscTestPage() {
     }));
   };
 
-  const currentQuestion = discQuestions[currentIdx];
-  const currentAnswer = answers.find(a => a.questionId === currentQuestion?.id) || null;
-  const isCurrentQuestionComplete = currentAnswer && currentAnswer.most !== null && currentAnswer.least !== null;
-
   const completedCount = answers.filter(a => a.most !== null && a.least !== null).length;
   const isTestComplete = completedCount === discQuestions.length;
 
-  // Find unanswered questions
   const unansweredQuestions = answers
-    .map((a, idx) => ({ ...a, idx }))
     .filter(a => a.most === null || a.least === null);
-
-  const handleNext = () => {
-    if (currentIdx < discQuestions.length - 1) {
-      setCurrentIdx(prev => prev + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentIdx > 0) {
-      setCurrentIdx(prev => prev - 1);
-    }
-  };
 
   const handleSubmit = async () => {
     if (!isTestComplete || !candidate) {
@@ -160,7 +141,8 @@ export default function DiscTestPage() {
 
       await saveDiscTestResult(discData);
 
-      setSubmitted(true);
+      // Redirect ke halaman WPT setelah DISC selesai
+      router.push(`/wpt/${token}`);
     } catch (err: unknown) {
       console.error('DISC submit error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan';
@@ -222,279 +204,266 @@ export default function DiscTestPage() {
     );
   }
 
-  if (submitted) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[hsl(15_60%_97%)] px-4">
-        <div className="w-full max-w-md bg-white border border-slate-200 shadow-xl rounded-2xl p-8 text-center">
-          <div className="inline-flex p-3 rounded-full bg-emerald-50 text-emerald-600 mb-4">
-            <CheckCircle className="w-10 h-10" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Tes Selesai</h2>
-          <p className="text-slate-600 mb-2">
-            Terima kasih, <strong>{candidate?.nama}</strong>.
-          </p>
-          <p className="text-slate-500 text-sm mb-6">
-            Jawaban asesmen DISC Anda telah berhasil dikirimkan. Tim HR akan menghubungi Anda untuk tahap selanjutnya.
-          </p>
-          <div className="border-t border-slate-100 pt-4 text-xs text-slate-400">
-            EasyLegal Recruitment System
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[hsl(15_60%_97%)] py-8 px-4 sm:px-6">
+    <div className="min-h-screen bg-[hsl(15_60%_97%)] flex flex-col page-enter">
       <LoadingOverlay visible={submitting} message="Mengirim jawaban DISC..." />
 
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="bg-white border border-slate-200 shadow-md rounded-2xl p-4 sm:p-6 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[hsl(350_50%_92%)] text-[hsl(350_60%_40%)] rounded-xl">
-              <Award className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-lg font-extrabold text-slate-950">Asesmen Kepribadian DISC</h1>
-              <p className="text-xs text-slate-500 font-medium">EasyLegal Recruitment • 28 Soal Pilihan</p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end text-center sm:text-right">
-            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Kandidat</span>
-            <span className="text-sm font-bold text-slate-700">{candidate?.nama}</span>
-          </div>
+      {/* Bespoke Top Navbar for EasyLegal Assessment Portal - White SaaS Header */}
+      <nav className="bg-white border-b border-slate-200 py-3 px-4 sm:px-6 shadow-sm flex items-center justify-between text-sm font-semibold select-none z-10 sticky top-0">
+        <div className="flex items-center gap-3">
+          <img src="/logo-easylegal.png" alt="EasyLegal Logo" className="h-9 w-auto object-contain" />
+          <span className="hidden sm:inline-block text-slate-400 text-xs font-semibold pl-3 border-l border-slate-200">
+            Assessment Portal
+          </span>
         </div>
-
-        {/* Petunjuk Pengisian */}
-        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 sm:p-5 mb-6 text-xs sm:text-sm">
-          <h4 className="font-extrabold flex items-center gap-1.5 mb-1.5 text-amber-950 text-sm">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            PETUNJUK PENGISIAN PENTING:
-          </h4>
-          <ul className="list-decimal list-inside space-y-1.5 text-amber-800 leading-relaxed font-medium">
-            <li>Di setiap kelompok kata, pilih tepat <strong>1 kata yang PALING menggambarkan diri Anda (M - Most)</strong>.</li>
-            <li>Di setiap kelompok kata, pilih tepat <strong>1 kata yang PALING TIDAK menggambarkan diri Anda (L - Least)</strong>.</li>
-            <li>Kolom <strong>M (Most) di sebelah Kiri (Hijau)</strong> dan kolom <strong>L (Least) di sebelah Kanan (Merah)</strong>.</li>
-            <li>Jawaban M dan L tidak boleh berada pada kata yang sama.</li>
-          </ul>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="bg-white border border-slate-200 shadow-md rounded-2xl p-4 mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs text-slate-500 font-extrabold">Progress Pengerjaan Asesmen</span>
-            <span className="text-xs font-extrabold text-[hsl(350_60%_40%)]">
-              {completedCount} dari 28 Kelompok Soal Selesai ({Math.round((completedCount / 28) * 100)}%)
+        
+        <div className="flex items-center gap-4 text-xs font-semibold">
+          <span className="bg-[#9A0000]/10 text-[#9A0000] border border-[#9A0000]/25 rounded-full px-3 py-0.5 font-bold uppercase tracking-wider text-[10px] hidden md:inline-block">
+            DISC Test
+          </span>
+          {candidate && (
+            <span className="text-slate-600 text-xs pl-3 border-l border-slate-200 md:border-l-0">
+              Kandidat: <strong className="text-slate-800 font-extrabold">{candidate.nama}</strong>
             </span>
-          </div>
-          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-[hsl(350_55%_55%)] to-[hsl(350_60%_45%)] h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${(completedCount / 28) * 100}%` }}
-            />
+          )}
+        </div>
+      </nav>
+
+      {/* Main Container */}
+      <div className="flex-1 py-8 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          
+          {/* Page Title & Intro Paragraph - Brand Crimson Branded */}
+          <div className="bg-white p-6 rounded-2xl border border-[hsl(15_30%_88%)] shadow-sm space-y-3.5">
+            <h1 className="text-3xl font-extrabold text-[#9A0000] tracking-tight leading-none">
+              Asesmen Kepribadian DISC
+            </h1>
+            <p className="text-sm text-slate-600 leading-relaxed font-medium">
+              Tes DISC (<em>Dominance, Influence, Steadiness, Conscientiousness</em>) adalah alat asesmen kepribadian profesional yang dirancang khusus untuk menganalisis profil perilaku, gaya komunikasi, dan potensi kecocokan posisi kerja Anda di <strong>EasyLegal</strong>. Silakan pilih jawaban dengan jujur, objektif, dan spontan untuk membantu kami mengenal potensi terbaik Anda.
+            </p>
           </div>
 
-          {/* Stepper Dots */}
-          <div className="mt-4 flex flex-wrap gap-1 bg-[hsl(15_60%_97%)] p-2.5 rounded-xl border border-slate-150 justify-center">
-            {answers.map((ans, idx) => {
-              const isDone = ans.most !== null && ans.least !== null;
-              const isActive = idx === currentIdx;
-              return (
+          {/* Instructions Box in Brand Crimson & Soft Pinkish-Cream */}
+          {showInstructions && (
+            <div className="border border-[hsl(15_30%_88%)] rounded-xl overflow-hidden shadow-sm transition-all duration-300 animate-fadeIn">
+              {/* Instruksi Header - Brand Crimson */}
+              <div className="bg-[#9A0000] text-white px-4 py-2.5 flex items-center justify-between font-bold text-sm tracking-wide">
+                <span>INSTRUKSI PENGISIAN ASESMEN</span>
                 <button
-                  key={ans.questionId}
-                  onClick={() => setCurrentIdx(idx)}
-                  className={`w-6 h-6 rounded-md text-[10px] font-bold transition flex items-center justify-center border
-                    ${isActive
-                      ? 'bg-[hsl(350_25%_14%)] text-white border-[hsl(350_30%_10%)] shadow'
-                      : isDone
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-100'
-                    }`}
+                  type="button"
+                  onClick={() => setShowInstructions(false)}
+                  className="hover:bg-white/10 active:bg-white/20 rounded-md w-6 h-6 flex items-center justify-center transition font-extrabold text-xs cursor-pointer select-none"
+                  title="Tutup Petunjuk"
                 >
-                  {idx + 1}
+                  X
                 </button>
+              </div>
+              {/* Instruksi Body - Soft Pinkish-Cream */}
+              <div className="bg-[#FAF2F2] p-4 sm:p-5 text-slate-700 text-xs sm:text-[13px] font-semibold space-y-2.5 leading-relaxed">
+                <p>Setiap nomor di bawah ini memuat 4 (empat) kalimat. Tugas Anda adalah:</p>
+                <ol className="list-decimal list-inside space-y-1.5 pl-1 text-slate-800 font-bold">
+                  <li>Beri tanda/cek pada kolom di bawah huruf <span className="text-[#9A0000] font-black">[P]</span> di samping kalimat yang <strong>PALING</strong> menggambarkan diri Anda.</li>
+                  <li>Beri tanda/cek pada kolom di bawah huruf <span className="text-[#9A0000] font-black">[K]</span> di samping kalimat yang <strong>PALING TIDAK</strong> menggambarkan diri Anda.</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Candidate Profile & Progress Panel */}
+          <div className="bg-white border border-[hsl(15_30%_88%)] shadow-sm rounded-2xl p-4 sm:p-5 flex flex-col gap-3.5">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium">
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Kandidat:</span>
+                <span className="font-bold text-slate-800">{candidate?.nama}</span>
+                <span className="hidden sm:inline text-slate-350">•</span>
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Posisi:</span>
+                <span className="font-bold text-slate-800">{candidate?.posisi_dilamar || 'Pelamar'}</span>
+              </div>
+              <span className="text-xs font-extrabold text-[#9A0000]">
+                {completedCount} dari 28 Kelompok Soal Selesai ({Math.round((completedCount / 28) * 100)}%)
+              </span>
+            </div>
+            
+            {/* Progress bar brand crimson */}
+            <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-[#9A0000] to-[#E30000] h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${(completedCount / 28) * 100}%` }}
+              />
+            </div>
+
+            {/* Stepper Dots */}
+            <div className="mt-1 flex flex-wrap gap-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 justify-center">
+              {answers.map((ans, idx) => {
+                const isDone = ans.most !== null && ans.least !== null;
+                return (
+                  <div
+                    key={ans.questionId}
+                    className={`w-6 h-6 rounded-md text-[10px] font-bold flex items-center justify-center border transition-all duration-150
+                      ${isDone
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-extrabold scale-105 shadow-sm'
+                        : 'bg-white text-slate-400 border-slate-200'
+                      }`}
+                  >
+                    {idx + 1}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* All Questions in Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {discQuestions.map((q) => {
+              const answer = answers.find(a => a.questionId === q.id) || { questionId: q.id, most: null, least: null };
+              const isEven = q.id % 2 === 0;
+
+              return (
+                <div 
+                  key={q.id} 
+                  className={`border rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md ${
+                    isEven 
+                      ? 'bg-[#FAF2F2]/50 border-[#9A0000]/15 hover:border-[#9A0000]/30' 
+                      : 'bg-white border-slate-200 hover:border-slate-350'
+                  }`}
+                >
+                  {/* Mini Table Header - Brand Crimson */}
+                  <div className="bg-[#9A0000] text-white text-[11px] font-extrabold uppercase tracking-wider grid grid-cols-12 py-2 px-3 items-center">
+                    <div className="col-span-2 text-center">No</div>
+                    <div className="col-span-6 text-left pl-1">Gambaran Diri</div>
+                    <div className="col-span-2 text-center">P</div>
+                    <div className="col-span-2 text-center">K</div>
+                  </div>
+
+                  {/* Words Rows */}
+                  <div className="flex flex-col">
+                    {q.words.map((word, wordIdx) => {
+                      const isMost = answer.most === word.text;
+                      const isLeast = answer.least === word.text;
+
+                      return (
+                        <div
+                          key={word.text}
+                          className={`grid grid-cols-12 items-center py-2 px-3 text-[13px] transition-colors duration-150 ${
+                            isEven
+                              ? 'hover:bg-[#9A0000]/5 border-b border-[#9A0000]/10 last:border-b-0'
+                              : 'hover:bg-slate-50 border-b border-slate-100 last:border-b-0'
+                          }`}
+                        >
+                          {/* Number */}
+                          <div className="col-span-2 text-center font-extrabold text-slate-800">
+                            {wordIdx === 0 ? q.id : ''}
+                          </div>
+
+                          {/* Word Text */}
+                          <div className="col-span-6 text-left font-semibold text-slate-700 leading-tight">
+                            {word.text}
+                          </div>
+
+                          {/* P (Most) Radio Button - Emerald Green */}
+                          <div className="col-span-2 flex justify-center">
+                            <button
+                              type="button"
+                              onClick={() => handleSelect(q.id, 'most', word.text)}
+                              className={`w-5.5 h-5.5 rounded-full border-2 flex items-center justify-center transition-all duration-200 focus:outline-none ${
+                                isMost
+                                  ? 'border-emerald-500 bg-white ring-2 ring-emerald-100/50'
+                                  : 'border-slate-300 bg-white hover:border-emerald-400'
+                              }`}
+                              aria-label={`Paling menggambarkan: ${word.text}`}
+                            >
+                              <span 
+                                className={`w-2.5 h-2.5 rounded-full bg-emerald-500 transition-all duration-200 transform ${
+                                  isMost ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                                }`} 
+                              />
+                            </button>
+                          </div>
+
+                          {/* K (Least) Radio Button - Brand Crimson */}
+                          <div className="col-span-2 flex justify-center">
+                            <button
+                              type="button"
+                              onClick={() => handleSelect(q.id, 'least', word.text)}
+                              className={`w-5.5 h-5.5 rounded-full border-2 flex items-center justify-center transition-all duration-200 focus:outline-none ${
+                                isLeast
+                                  ? 'border-[#9A0000] bg-white ring-2 ring-[#9A0000]/15'
+                                  : 'border-slate-300 bg-white hover:border-[#9A0000]'
+                              }`}
+                              aria-label={`Paling tidak menggambarkan: ${word.text}`}
+                            >
+                              <span 
+                                className={`w-2.5 h-2.5 rounded-full bg-[#9A0000] transition-all duration-200 transform ${
+                                  isLeast ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                                }`} 
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
-        </div>
 
-        {/* Warning for unanswered questions */}
-        {currentIdx === discQuestions.length - 1 && unansweredQuestions.length > 0 && (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-2xl p-4 mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <h4 className="font-extrabold text-sm">Masih Ada Soal Belum Dijawab</h4>
-            </div>
-            <p className="text-sm mb-2">
-              {unansweredQuestions.length} soal belum lengkap. Klik nomor soal di bawah untuk langsung ke soal tersebut:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {unansweredQuestions.map(q => (
-                <button
-                  key={q.questionId}
-                  onClick={() => setCurrentIdx(q.idx)}
-                  className="w-8 h-8 rounded-lg bg-red-100 text-red-700 font-bold text-xs border border-red-200 hover:bg-red-200 transition"
-                >
-                  {q.idx + 1}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Question Card */}
-        {currentQuestion && (
-          <div className="bg-white border border-slate-200 shadow-xl rounded-3xl overflow-hidden mb-6">
-            {/* Header Soal */}
-            <div className="bg-[hsl(15_60%_97%)] border-b border-slate-200 px-6 py-4 flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-500 tracking-wider">KELOMPOK KATA SIFAT</span>
-              <span className="text-sm font-extrabold bg-[hsl(350_50%_92%)] text-[hsl(350_60%_40%)] px-3 py-1 rounded-full border border-[hsl(350_30%_85%)]">
-                Soal {currentIdx + 1} dari 28
-              </span>
-            </div>
-
-            {/* Antarmuka Pemilihan */}
-            <div className="p-6">
-              <div className="grid grid-cols-12 gap-2 text-center font-bold text-xs text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3 mb-4">
-                <div className="col-span-3 text-left pl-4 text-emerald-700">M (Most)</div>
-                <div className="col-span-6">KATA SIFAT</div>
-                <div className="col-span-3 text-right pr-4 text-red-600">L (Least)</div>
+          {/* Warning for unanswered questions */}
+          {unansweredQuestions.length > 0 && (
+            <div className="bg-red-50 border border-red-200 text-red-800 rounded-2xl p-4 mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <h4 className="font-extrabold text-sm">Masih Ada Soal Belum Dijawab</h4>
               </div>
+              <p className="text-sm font-medium">
+                Ada {unansweredQuestions.length} kelompok soal yang belum lengkap terisi (setiap kelompok harus memiliki 1 jawaban P dan 1 jawaban K). Silakan periksa kembali kelompok soal di atas yang belum lengkap.
+              </p>
+            </div>
+          )}
 
-              <div className="space-y-3">
-                {currentQuestion.words.map((word) => {
-                  const isMost = currentAnswer?.most === word.text;
-                  const isLeast = currentAnswer?.least === word.text;
-
-                  return (
-                    <div
-                      key={word.text}
-                      className={`grid grid-cols-12 items-center border rounded-2xl py-3 px-2 sm:px-4 transition duration-150
-                        ${isMost
-                          ? 'border-emerald-250 bg-emerald-25/40 shadow-sm'
-                          : isLeast
-                            ? 'border-red-200 bg-red-25/30 shadow-sm'
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
-                        }`}
-                    >
-                      <div className="col-span-3 text-left">
-                        <button
-                          type="button"
-                          onClick={() => handleSelect(currentQuestion.id, 'most', word.text)}
-                          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl font-bold text-xs transition flex items-center justify-center border shadow-sm
-                            ${isMost
-                              ? 'bg-emerald-600 border-emerald-700 text-white shadow-emerald-100'
-                              : 'bg-white border-slate-200 hover:border-emerald-300 text-slate-400 hover:text-emerald-600'
-                            }`}
-                        >
-                          {isMost ? <CheckCircle2 className="w-5 h-5" /> : 'MOST'}
-                        </button>
-                      </div>
-
-                      <div className="col-span-6 text-center font-extrabold text-slate-800 sm:text-base tracking-wide">
-                        {word.text}
-                      </div>
-
-                      <div className="col-span-3 text-right flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => handleSelect(currentQuestion.id, 'least', word.text)}
-                          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl font-bold text-xs transition flex items-center justify-center border shadow-sm
-                            ${isLeast
-                              ? 'bg-red-550 bg-red-600 border-red-700 text-white shadow-red-100'
-                              : 'bg-white border-slate-200 hover:border-red-300 text-slate-400 hover:text-red-500'
-                            }`}
-                        >
-                          {isLeast ? <CheckCircle2 className="w-5 h-5" /> : 'LEAST'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-5 text-center">
-                {isCurrentQuestionComplete ? (
-                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 font-extrabold px-4 py-1.5 rounded-full text-xs border border-emerald-200">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Pilihan Kelompok Ini Lengkap
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 font-bold px-4 py-1.5 rounded-full text-xs border border-slate-200">
-                    Pilih 1 Most & 1 Least
-                  </span>
-                )}
+          {/* Submit Error */}
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 text-red-800 rounded-2xl p-4 mb-6">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <p className="text-sm font-bold">{submitError}</p>
               </div>
             </div>
+          )}
 
-            {/* Stepper Navigation */}
-            <div className="bg-[hsl(15_60%_97%)] border-t border-slate-200 px-6 py-4 flex justify-between items-center">
-              <button
-                type="button"
-                onClick={handlePrev}
-                disabled={currentIdx === 0}
-                className="inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-600 font-extrabold px-4 py-2 rounded-xl text-xs sm:text-sm border border-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Sebelumnya
-              </button>
-
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={currentIdx === discQuestions.length - 1}
-                className="inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-600 font-extrabold px-4 py-2 rounded-xl text-xs sm:text-sm border border-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-              >
-                Selanjutnya
-                <ChevronRight className="w-4 h-4" />
-              </button>
+          {/* Submit Action Box */}
+          <div className="bg-white border border-[hsl(15_30%_88%)] shadow-lg rounded-2xl p-5 text-center flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-left">
+              <h5 className="font-extrabold text-slate-800 text-sm">Selesaikan Seluruh Soal</h5>
+              <p className="text-xs text-slate-400 font-medium font-semibold">Tombol kirim akan aktif setelah semua 28 kelompok soal selesai dijawab.</p>
             </div>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!isTestComplete || submitting}
+              className={`inline-flex items-center gap-2 font-bold px-6 py-3 rounded-xl text-sm transition shadow-md
+                ${isTestComplete
+                  ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-emerald-100 hover:shadow-lg'
+                  : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                }`}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Mengirimkan Jawaban...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  Kirim Hasil Tes Asesmen
+                </>
+              )}
+            </button>
           </div>
-        )}
 
-        {/* Submit Error */}
-        {submitError && (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-2xl p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <p className="text-sm font-medium">{submitError}</p>
-            </div>
+          <div className="text-center mt-6 text-xs text-slate-400">
+            EasyLegal &copy; 2026. All rights reserved.
           </div>
-        )}
-
-        {/* Submit Action Box */}
-        <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 text-center flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-left">
-            <h5 className="font-extrabold text-slate-800 text-sm">Selesaikan Seluruh Soal</h5>
-            <p className="text-xs text-slate-400 font-medium">Tombol kirim akan aktif setelah semua 28 kelompok soal selesai.</p>
-          </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!isTestComplete || submitting}
-            className={`inline-flex items-center gap-2 font-bold px-6 py-3 rounded-xl text-sm transition shadow-md
-              ${isTestComplete
-                ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-emerald-100 hover:shadow-lg'
-                : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-              }`}
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Mengirimkan Jawaban...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                Kirim Hasil Tes Asesmen
-              </>
-            )}
-          </button>
-        </div>
-
-        <div className="text-center mt-6 text-xs text-slate-400">
-          EasyLegal &copy; 2026. All rights reserved.
         </div>
       </div>
     </div>

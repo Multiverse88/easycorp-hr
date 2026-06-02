@@ -34,3 +34,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Temp & Scanned Material (WPT PDF, OCR, Excel, Word)
+/Lembar Soal WPT*
+/Logo-EASYLEGAL*
+/Screenshot*
+/WPT_EasyLegal_Assessment*
+/extracted_pdf_images/
+/sheet_*.txt
+*.xlsx
+*.docx
+
+# OpenClaude & Tooling caches
+/.openclaude/
+/.superpowers/

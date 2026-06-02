@@ -1,9 +1,12 @@
 import Link from 'next/link';
-import { getCandidateById, getDiscTestResultByCandidate, getManpowerRequests } from '@/lib/db';
+import { Brain } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { getCandidateById, getDiscTestResultByCandidate, getWptTestResultByCandidate, getManpowerRequests } from '@/lib/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
 import { StatusSelector } from '@/components/status-selector';
+import { DownloadCandidatePdf } from '@/components/download-candidate-pdf';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +17,7 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
   }
 
   const discResult = await getDiscTestResultByCandidate(params.id);
+  const wptResult = await getWptTestResultByCandidate(params.id);
   const requests = await getManpowerRequests();
   const request = requests.find(r => r.id === candidate.manpower_request_id);
 
@@ -26,7 +30,10 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
           </Link>
           <h1 className="text-2xl font-bold mt-2">Detail Kandidat</h1>
         </div>
-        <StatusSelector candidateId={params.id} currentStatus={candidate.status} />
+        <div className="flex items-center gap-2">
+          <DownloadCandidatePdf candidateId={params.id} />
+          <StatusSelector candidateId={params.id} currentStatus={candidate.status} />
+        </div>
       </div>
 
       <CandidateQuickActions candidateId={params.id} />
@@ -130,6 +137,46 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
                 <div>
                   <span className="text-sm text-muted-foreground">Tipe Sekunder: </span>
                   <span className="font-medium">{discResult.tipe_sekunder}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {wptResult && (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  Hasil Tes IQ (WPT)
+                </CardTitle>
+                <Link href={`/dashboard/kandidat/${params.id}/wpt`}>
+                  <Button variant="outline" size="sm">Lihat Detail</Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">{wptResult.skor}<span className="text-sm text-slate-400">/{wptResult.total_soal}</span></div>
+                  <div className="text-sm text-muted-foreground">Skor</div>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{Math.round(wptResult.persen_benar * 100)}%</div>
+                  <div className="text-sm text-muted-foreground">Benar</div>
+                </div>
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <Badge className={
+                    wptResult.kategori === 'Superior' ? 'bg-purple-100 text-purple-700' :
+                    wptResult.kategori === 'Sangat Baik' ? 'bg-green-100 text-green-700' :
+                    wptResult.kategori === 'Baik' ? 'bg-blue-100 text-blue-700' :
+                    wptResult.kategori === 'Cukup' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-700'
+                  }>
+                    {wptResult.kategori}
+                  </Badge>
+                  <div className="text-sm text-muted-foreground mt-1">Kategori</div>
                 </div>
               </div>
             </CardContent>

@@ -22,8 +22,12 @@ export async function middleware(request: NextRequest) {
     if (path === '/') {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    // Session expiry check juga untuk localhost
-    if (!path.startsWith('/login')) {
+
+    // Halaman kandidat: skip session check (akses via token, bukan login HR)
+    const isCandidatePage = path.startsWith('/wpt/') || path.startsWith('/disc/') || path.startsWith('/apply/') || path.startsWith('/masuk');
+
+    // Session expiry check hanya untuk halaman HR (bukan halaman kandidat)
+    if (!path.startsWith('/login') && !isCandidatePage) {
       const sessionDate = request.cookies.get('session_date')?.value;
       const todayWIB = getWIBDate();
       if (!sessionDate || sessionDate !== todayWIB) {

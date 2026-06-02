@@ -108,6 +108,19 @@ export interface DiscTestResult {
   completed_at: string;
 }
 
+export interface WptTestResult {
+  id: string;
+  candidate_id: string;
+  answers: { questionId: number; answer: string }[];
+  skor: number;
+  total_soal: number;
+  persen_benar: number;
+  kategori: string;
+  profil_kemampuan: { category: string; total: number; benar: number; persen: number; keterangan: string }[];
+  rekomendasi_posisi: { posisi: string; skorMin: number; skorIdeal: string; status: string; rekomendasi: string }[];
+  completed_at: string;
+}
+
 export interface ActivityLog {
   id: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE';
@@ -586,4 +599,59 @@ export async function saveDiscTestResult(res: Omit<DiscTestResult, 'id'>): Promi
 
   logActivity({ action: 'CREATE', table_name: 'disc_tests', record_id: id, description: `Hasil tes DISC baru untuk kandidat ${res.candidate_id} - tipe primer: ${res.tipe_primer}`, details: { candidate_id: res.candidate_id, tipe_primer: res.tipe_primer, tipe_sekunder: res.tipe_sekunder } });
   return data as DiscTestResult;
+}
+
+// ==========================================
+// 7. WPT TEST RESULTS
+// ==========================================
+
+export async function getWptTestResultByCandidate(candidateId: string): Promise<WptTestResult | undefined> {
+  const { data, error } = await supabaseAdmin
+    .from('wpt_tests')
+    .select('*')
+    .eq('candidate_id', candidateId)
+    .maybeSingle();
+
+  if (error) return undefined;
+  return data as WptTestResult;
+}
+
+export async function saveWptTestResult(res: Omit<WptTestResult, 'id'>): Promise<WptTestResult> {
+  const { data: existing } = await supabaseAdmin
+    .from('wpt_tests')
+    .select('id')
+    .eq('candidate_id', res.candidate_id)
+    .maybeSingle();
+
+  if (existing) {
+    throw new Error('WPT_TEST_ALREADY_COMPLETED');
+  }
+
+  const id = `wpt-${Date.now()}`;
+
+  const payload = {
+    id,
+    candidate_id: res.candidate_id,
+    answers: res.answers,
+    skor: res.skor,
+    total_soal: res.total_soal,
+    persen_benar: res.persen_benar,
+    kategori: res.kategori,
+    profil_kemampuan: res.profil_kemampuan,
+    rekomendasi_posisi: res.rekomendasi_posisi,
+    completed_at: res.completed_at,
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from('wpt_tests')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Gagal simpan WPT: ${error.message}`);
+  }
+
+  logActivity({ action: 'CREATE', table_name: 'wpt_tests', record_id: id, description: `Hasil tes WPT baru untuk kandidat ${res.candidate_id} - skor: ${res.skor}/50 (${res.kategori})`, details: { candidate_id: res.candidate_id, skor: res.skor, kategori: res.kategori } });
+  return data as WptTestResult;
 }
