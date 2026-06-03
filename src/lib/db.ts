@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { sendAssessmentInvitation } from '@/lib/email';
+import crypto from 'crypto';
 
 // ==========================================
 // INTERFACES (unchanged)
@@ -728,6 +729,29 @@ export async function saveWptTestResult(res: Omit<WptTestResult, 'id'>): Promise
   return data as WptTestResult;
 }
 
+function base64UrlEncode(str: string | Buffer): string {
+  const base64 = typeof str === 'string' 
+    ? Buffer.from(str).toString('base64') 
+    : str.toString('base64');
+  return base64
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}
+
+function signJWT(payload: object, secret: string): string {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const tokenInput = `${encodedHeader}.${encodedPayload}`;
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(tokenInput)
+    .digest();
+  const encodedSignature = base64UrlEncode(signature);
+  return `${tokenInput}.${encodedSignature}`;
+}
+
 export async function sendWhatsAppInvitation(
   candidateId: string,
   origin: string
@@ -757,12 +781,30 @@ Token: ${candidate.token}
 Terima kasih,
 Tim HR EasyLegal`;
 
+  // Set up request headers
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // Sign JWT if JWT Secret is configured
+  const jwtSecret = process.env.N8N_JWT_SECRET;
+  if (jwtSecret && jwtSecret.trim() !== '') {
+    const now = Math.floor(Date.now() / 1000);
+    const token = signJWT(
+      {
+        iss: 'easylegal-recruitment',
+        iat: now,
+        exp: now + 300, // Valid for 5 minutes
+      },
+      jwtSecret
+    );
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   try {
     const res = await fetch(webhookUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         candidateId: candidate.id,
         candidateName: candidate.nama,
