@@ -22,7 +22,7 @@ export default async function InterviewPage({ params }: { params: { id: string }
       <Link href={`/dashboard/kandidat/${params.id}`} className="text-sm text-muted-foreground hover:underline">
         &larr; Kembali ke detail kandidat
       </Link>
-      <h1 className="text-2xl font-bold mt-2 mb-4">Evaluasi Interview</h1>
+      <h1 className="text-2xl font-bold mt-2 mb-4"> Evaluasi Interview</h1>
 
       <CandidateQuickActions candidateId={params.id} />
 
