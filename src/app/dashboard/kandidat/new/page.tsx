@@ -165,7 +165,7 @@ Tim HR EasyLegal`;
           setEmailStatus({ sent: false, error: res.error });
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error sending email share:', err);
       setEmailStatus({ sent: false, error: 'SYSTEM_ERROR' });
     } finally {

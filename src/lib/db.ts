@@ -425,10 +425,10 @@ export async function createCandidate(
       if (!emailRes.success) {
         result.emailError = emailRes.error;
       }
-    } catch (emailErr: any) {
+    } catch (emailErr) {
       console.error('Error sending email during candidate creation:', emailErr);
       result.emailSent = false;
-      result.emailError = emailErr.message || 'SMTP_ERROR';
+      result.emailError = emailErr instanceof Error ? emailErr.message : 'SMTP_ERROR';
     }
   }
 
@@ -460,9 +460,9 @@ export async function resendInvitationEmail(
       expiresAt: candidate.token_expires_at,
     });
     return res;
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error in resendInvitationEmail:', err);
-    return { success: false, error: err.message || 'SMTP_ERROR' };
+    return { success: false, error: err instanceof Error ? err.message : 'SMTP_ERROR' };
   }
 }
 

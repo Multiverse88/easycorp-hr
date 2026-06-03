@@ -224,11 +224,11 @@ Tim HR EasyLegal`,
 
     await transporter.sendMail(mailOptions);
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to send SMTP email:', error);
     return {
       success: false,
-      error: error.message || 'Unknown SMTP error',
+      error: error instanceof Error ? error.message : 'Unknown SMTP error',
     };
   }
 }

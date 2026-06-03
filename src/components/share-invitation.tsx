@@ -65,7 +65,7 @@ Tim HR EasyLegal`;
           setStatus({ type: 'error', message: `Gagal mengirim email: ${res.error}` });
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error sending email:', err);
       setStatus({ type: 'error', message: 'Terjadi kesalahan sistem saat mengirim email.' });
     } finally {
