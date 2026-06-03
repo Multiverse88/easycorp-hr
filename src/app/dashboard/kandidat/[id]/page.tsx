@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
 import { StatusSelector } from '@/components/status-selector';
 import { DownloadCandidatePdf } from '@/components/download-candidate-pdf';
+import { ShareInvitation } from '@/components/share-invitation';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,6 +69,7 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
               <div className="text-xs text-muted-foreground mt-1">
                 Link untuk kandidat: /masuk atau /disc/{candidate.token}
               </div>
+              <ShareInvitation candidate={candidate} />
             </div>
             {request && (
               <div>

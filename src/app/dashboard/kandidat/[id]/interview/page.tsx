@@ -22,7 +22,7 @@ export default async function InterviewPage({ params }: { params: { id: string }
       <Link href={`/dashboard/kandidat/${params.id}`} className="text-sm text-muted-foreground hover:underline">
         &larr; Kembali ke detail kandidat
       </Link>
-      <h1 className="text-2xl font-bold mt-2 mb-4">FR-001.03 Evaluasi Interview</h1>
+      <h1 className="text-2xl font-bold mt-2 mb-4">Evaluasi Interview</h1>
 
       <CandidateQuickActions candidateId={params.id} />
 
@@ -134,9 +134,9 @@ function InterviewEvaluationResult({
                     <td className="text-center py-2 px-3">
                       <Badge className={
                         p.skor >= 4 ? 'bg-green-100 text-green-800' :
-                        p.skor >= 3 ? 'bg-blue-100 text-blue-800' :
-                        p.skor >= 2 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                          p.skor >= 3 ? 'bg-blue-100 text-blue-800' :
+                            p.skor >= 2 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
                       }>
                         {p.skor}/5
                       </Badge>

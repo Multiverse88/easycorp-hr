@@ -1,6 +1,7 @@
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { sendAssessmentInvitation } from '@/lib/email';
 
 // ==========================================
 // INTERFACES (unchanged)
@@ -366,12 +367,16 @@ export async function getCandidateByToken(token: string): Promise<Candidate | un
   return data as Candidate;
 }
 
-export async function createCandidate(cand: Omit<Candidate, 'id' | 'token' | 'token_expires_at' | 'status' | 'created_at'>): Promise<Candidate> {
+export async function createCandidate(
+  cand: Omit<Candidate, 'id' | 'token' | 'token_expires_at' | 'status' | 'created_at'>,
+  options?: { sendEmail?: boolean; origin?: string }
+): Promise<Candidate & { emailSent?: boolean; emailError?: string }> {
   const id = `cnd-${Date.now()}`;
   const token = `token-${Math.random().toString(36).substring(2, 15)}`;
 
   const expiry = new Date();
   expiry.setDate(expiry.getDate() + 14);
+  const token_expires_at = expiry.toISOString().split('T')[0];
 
   const { data, error } = await supabaseAdmin
     .from('candidates')
@@ -383,7 +388,7 @@ export async function createCandidate(cand: Omit<Candidate, 'id' | 'token' | 'to
       posisi_dilamar: cand.posisi_dilamar,
       manpower_request_id: cand.manpower_request_id || null,
       token,
-      token_expires_at: expiry.toISOString().split('T')[0],
+      token_expires_at,
       status: 'interview_user',
       created_at: new Date().toISOString(),
     })
@@ -391,9 +396,76 @@ export async function createCandidate(cand: Omit<Candidate, 'id' | 'token' | 'to
     .single();
 
   if (error) throw new Error(`Gagal buat kandidat: ${error.message}`);
-  logActivity({ action: 'CREATE', table_name: 'candidates', record_id: id, description: `Kandidat baru "${cand.nama}" dibuat untuk posisi ${cand.posisi_dilamar}`, details: { nama: cand.nama, email: cand.email, posisi_dilamar: cand.posisi_dilamar } });
-  return data as Candidate;
+  
+  logActivity({ 
+    action: 'CREATE', 
+    table_name: 'candidates', 
+    record_id: id, 
+    description: `Kandidat baru "${cand.nama}" dibuat untuk posisi ${cand.posisi_dilamar}`, 
+    details: { nama: cand.nama, email: cand.email, posisi_dilamar: cand.posisi_dilamar } 
+  });
+
+  const result = data as Candidate & { emailSent?: boolean; emailError?: string };
+
+  if (options?.sendEmail && cand.email) {
+    const origin = options.origin || 'http://localhost:3000';
+    const link = `${origin}/disc/${token}`;
+    
+    try {
+      const emailRes = await sendAssessmentInvitation({
+        candidateName: cand.nama,
+        candidateEmail: cand.email,
+        position: cand.posisi_dilamar,
+        token,
+        link,
+        expiresAt: token_expires_at,
+      });
+      
+      result.emailSent = emailRes.success;
+      if (!emailRes.success) {
+        result.emailError = emailRes.error;
+      }
+    } catch (emailErr: any) {
+      console.error('Error sending email during candidate creation:', emailErr);
+      result.emailSent = false;
+      result.emailError = emailErr.message || 'SMTP_ERROR';
+    }
+  }
+
+  return result;
 }
+
+export async function resendInvitationEmail(
+  candidateId: string,
+  origin: string
+): Promise<{ success: boolean; error?: string }> {
+  const candidate = await getCandidateById(candidateId);
+  if (!candidate) {
+    return { success: false, error: 'KANDIDAT_TIDAK_DITEMUKAN' };
+  }
+  
+  if (!candidate.email) {
+    return { success: false, error: 'EMAIL_KANDIDAT_KOSONG' };
+  }
+  
+  const link = `${origin}/disc/${candidate.token}`;
+  
+  try {
+    const res = await sendAssessmentInvitation({
+      candidateName: candidate.nama,
+      candidateEmail: candidate.email,
+      position: candidate.posisi_dilamar,
+      token: candidate.token,
+      link,
+      expiresAt: candidate.token_expires_at,
+    });
+    return res;
+  } catch (err: any) {
+    console.error('Error in resendInvitationEmail:', err);
+    return { success: false, error: err.message || 'SMTP_ERROR' };
+  }
+}
+
 
 export async function updateCandidateStatus(id: string, status: Candidate['status']): Promise<Candidate | undefined> {
   // Ambil data sebelum update untuk logging
