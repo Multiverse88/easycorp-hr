@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import path from 'path';
 
 export interface SendEmailResult {
   success: boolean;
@@ -99,16 +100,10 @@ Tim HR EasyLegal`,
               box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             }
             .header {
-              background-color: #991b1b; /* Rose/Red tone to match branding */
+              background-color: #ffffff;
               padding: 32px;
               text-align: center;
-            }
-            .header h1 {
-              color: #ffffff;
-              margin: 0;
-              font-size: 24px;
-              font-weight: 800;
-              letter-spacing: -0.025em;
+              border-bottom: 1px solid #f1f5f9;
             }
             .content {
               padding: 40px 32px;
@@ -187,7 +182,7 @@ Tim HR EasyLegal`,
           <div class="wrapper">
             <div class="container">
               <div class="header">
-                <h1>EASYLEGAL RECRUITMENT</h1>
+                <img src="cid:logo-easylegal" alt="EasyLegal Logo" style="height: 56px; width: auto; max-width: 100%; display: block; margin: 0 auto;" />
               </div>
               <div class="content">
                 <h2>Halo ${params.candidateName},</h2>
@@ -220,6 +215,13 @@ Tim HR EasyLegal`,
         </body>
         </html>
       `,
+      attachments: [
+        {
+          filename: 'logo-easylegal.png',
+          path: path.join(process.cwd(), 'public', 'logo-easylegal.png'),
+          cid: 'logo-easylegal',
+        },
+      ],
     };
 
     await transporter.sendMail(mailOptions);
