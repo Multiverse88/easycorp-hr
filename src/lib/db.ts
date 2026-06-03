@@ -727,3 +727,70 @@ export async function saveWptTestResult(res: Omit<WptTestResult, 'id'>): Promise
   logActivity({ action: 'CREATE', table_name: 'wpt_tests', record_id: id, description: `Hasil tes WPT baru untuk kandidat ${res.candidate_id} - skor: ${res.skor}/50 (${res.kategori})`, details: { candidate_id: res.candidate_id, skor: res.skor, kategori: res.kategori } });
   return data as WptTestResult;
 }
+
+export async function sendWhatsAppInvitation(
+  candidateId: string,
+  origin: string
+): Promise<{ success: boolean; error?: string }> {
+  const candidate = await getCandidateById(candidateId);
+  if (!candidate) {
+    return { success: false, error: 'KANDIDAT_TIDAK_DITEMUKAN' };
+  }
+
+  const webhookUrl = process.env.N8N_WHATSAPP_WEBHOOK_URL;
+  if (!webhookUrl || webhookUrl.trim() === '') {
+    return { success: false, error: 'WHATSAPP_WEBHOOK_NOT_CONFIGURED' };
+  }
+
+  const link = `${origin}/disc/${candidate.token}`;
+  
+  const message = `Halo ${candidate.nama},
+
+Anda diundang untuk mengikuti tahapan asesmen di EasyLegal untuk posisi ${candidate.posisi_dilamar || 'Kandidat'}.
+
+Silakan akses tautan berikut untuk memulai:
+${link}
+
+Atau Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
+Token: ${candidate.token}
+
+Terima kasih,
+Tim HR EasyLegal`;
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        candidateId: candidate.id,
+        candidateName: candidate.nama,
+        candidatePhone: candidate.telepon || '',
+        candidateEmail: candidate.email || '',
+        position: candidate.posisi_dilamar || '',
+        token: candidate.token,
+        link,
+        message,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`n8n Webhook returned status ${res.status}`);
+    }
+
+    logActivity({
+      action: 'UPDATE',
+      table_name: 'candidates',
+      record_id: candidateId,
+      description: `Undangan WhatsApp dikirim via n8n ke "${candidate.nama}" (${candidate.telepon || 'tidak ada telepon'})`,
+      details: { telepon: candidate.telepon || '' },
+    });
+
+    return { success: true };
+  } catch (err) {
+    console.error('Error in sendWhatsAppInvitation:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'WEBHOOK_FAILED' };
+  }
+}
+

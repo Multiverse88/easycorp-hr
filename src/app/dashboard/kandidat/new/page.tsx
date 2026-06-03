@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createCandidate, resendInvitationEmail } from '@/lib/db';
+import { createCandidate, resendInvitationEmail, sendWhatsAppInvitation } from '@/lib/db';
 import {
   AlertCircle,
   ArrowLeft,
@@ -41,6 +41,8 @@ export default function TambahKandidatPage() {
   const [sendEmail, setSendEmail] = useState(true);
   const [emailStatus, setEmailStatus] = useState<{ sent: boolean; error?: string } | null>(null);
   const [sendingEmailShare, setSendingEmailShare] = useState(false);
+  const [whatsappStatus, setWhatsappStatus] = useState<{ sent: boolean; error?: string } | null>(null);
+  const [sendingWhatsAppShare, setSendingWhatsAppShare] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ id: string; token: string; link: string } | null>(null);
@@ -74,6 +76,7 @@ export default function TambahKandidatPage() {
     e.preventDefault();
     setError('');
     setEmailStatus(null);
+    setWhatsappStatus(null);
     setLoading(true);
 
     try {
@@ -131,18 +134,38 @@ Terima kasih,
 Tim HR EasyLegal`;
   };
 
-  const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(getShareMessage());
-    let url = `https://wa.me/?text=${text}`;
-    if (telepon) {
-      // Bersihkan karakter non-digit dan ganti awalan 0 dengan 62
-      let phoneStr = telepon.replace(/\D/g, '');
-      if (phoneStr.startsWith('0')) {
-        phoneStr = '62' + phoneStr.substring(1);
+  const handleShareWhatsApp = async () => {
+    if (!result) return;
+    setSendingWhatsAppShare(true);
+    setWhatsappStatus(null);
+    try {
+      const res = await sendWhatsAppInvitation(result.id, window.location.origin);
+      if (res.success) {
+        setWhatsappStatus({ sent: true });
+      } else {
+        if (res.error === 'WHATSAPP_WEBHOOK_NOT_CONFIGURED') {
+          // Fallback to manual wa.me
+          setWhatsappStatus({ sent: false, error: 'WHATSAPP_WEBHOOK_NOT_CONFIGURED' });
+          const text = encodeURIComponent(getShareMessage());
+          let url = `https://wa.me/?text=${text}`;
+          if (telepon) {
+            let phoneStr = telepon.replace(/\D/g, '');
+            if (phoneStr.startsWith('0')) {
+              phoneStr = '62' + phoneStr.substring(1);
+            }
+            url = `https://wa.me/${phoneStr}?text=${text}`;
+          }
+          window.open(url, '_blank');
+        } else {
+          setWhatsappStatus({ sent: false, error: res.error });
+        }
       }
-      url = `https://wa.me/${phoneStr}?text=${text}`;
+    } catch (err) {
+      console.error('Error sending WhatsApp share:', err);
+      setWhatsappStatus({ sent: false, error: 'SYSTEM_ERROR' });
+    } finally {
+      setSendingWhatsAppShare(false);
     }
-    window.open(url, '_blank');
   };
 
   const handleShareEmail = async () => {
@@ -180,7 +203,9 @@ Tim HR EasyLegal`;
     setTelepon('');
     setSendEmail(true);
     setEmailStatus(null);
+    setWhatsappStatus(null);
     setSendingEmailShare(false);
+    setSendingWhatsAppShare(false);
     setResult(null);
     setCopied(false);
     setError('');
@@ -538,6 +563,43 @@ Tim HR EasyLegal`;
                     </div>
                   )}
 
+                  {whatsappStatus && (
+                    <div className={`flex items-start gap-3 rounded-xl border p-4 text-sm font-semibold
+                      ${whatsappStatus.sent 
+                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' 
+                        : whatsappStatus.error === 'WHATSAPP_WEBHOOK_NOT_CONFIGURED'
+                          ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                          : 'border-destructive/20 bg-destructive/10 text-destructive'
+                      }`}
+                    >
+                      {whatsappStatus.sent ? (
+                        <>
+                          <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                          <div>
+                            <p className="font-bold">WhatsApp berhasil dikirim otomatis!</p>
+                            <p className="text-xs font-medium opacity-85 mt-0.5">Undangan asesmen telah dikirimkan ke {telepon} via webhook n8n.</p>
+                          </div>
+                        </>
+                      ) : whatsappStatus.error === 'WHATSAPP_WEBHOOK_NOT_CONFIGURED' ? (
+                        <>
+                          <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                          <div>
+                            <p className="font-bold">WhatsApp tidak dikirim otomatis</p>
+                            <p className="text-xs font-medium opacity-85 mt-0.5">Webhook n8n belum diatur di file env (`N8N_WHATSAPP_WEBHOOK_URL`). Membuka link manual WhatsApp di tab baru...</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                          <div>
+                            <p className="font-bold">Gagal mengirim WhatsApp otomatis</p>
+                            <p className="text-xs font-medium opacity-85 mt-0.5">Terjadi kesalahan webhook: {whatsappStatus.error}. Silakan kirim secara manual.</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-4">
                       <Label className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">
@@ -594,9 +656,14 @@ Tim HR EasyLegal`;
                     <Button 
                       type="button"
                       onClick={handleShareWhatsApp}
+                      disabled={sendingWhatsAppShare}
                       className="h-14 rounded-xl bg-[#25D366] font-black text-white shadow-xl shadow-[#25D366]/20 transition-all hover:bg-[#25D366]/90 active:scale-[0.98]"
                     >
-                      <MessageCircle className="mr-2 h-4 w-4" />
+                      {sendingWhatsAppShare ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                      )}
                       Kirim via WhatsApp
                     </Button>
                     <Button 
