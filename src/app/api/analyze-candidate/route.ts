@@ -4,7 +4,6 @@ import {
   getDiscTestResultByCandidate,
   getWptTestResultByCandidate,
   getKoranTestResultByCandidate,
-  getSelectionTestResultByCandidate,
   getInterviewEvaluationByCandidate,
 } from '@/lib/db';
 
@@ -21,10 +20,9 @@ function buildPrompt(data: {
   disc: Awaited<ReturnType<typeof getDiscTestResultByCandidate>>;
   wpt: Awaited<ReturnType<typeof getWptTestResultByCandidate>>;
   koran: Awaited<ReturnType<typeof getKoranTestResultByCandidate>>;
-  selection: Awaited<ReturnType<typeof getSelectionTestResultByCandidate>>;
   interview: Awaited<ReturnType<typeof getInterviewEvaluationByCandidate>>;
 }): string {
-  const { candidate, disc, wpt, koran, selection, interview } = data;
+  const { candidate, disc, wpt, koran, interview } = data;
   if (!candidate) return '';
 
   const lines: string[] = [];
@@ -82,21 +80,7 @@ function buildPrompt(data: {
     lines.push(`(Tes Koran belum dikerjakan)`);
   }
 
-  lines.push(`\n=== D. HASIL TES SELEKSI ===`);
-  if (selection) {
-    lines.push(`Tanggal Tes   : ${selection.tanggal_tes}`);
-    lines.push(`Penyelenggara : ${selection.penyelenggara}`);
-    lines.push(`Komponen:`);
-    selection.komponen.forEach(k => {
-      lines.push(`  - ${k.nama}: Nilai ${k.nilai || '-'}, Batas ${k.batas_lulus || '-'}${k.catatan ? `, Catatan: ${k.catatan}` : ''}`);
-    });
-    lines.push(`Kesimpulan    : ${selection.kesimpulan}`);
-    if (selection.catatan_akhir) lines.push(`Catatan Akhir : ${selection.catatan_akhir}`);
-  } else {
-    lines.push(`(Tes Seleksi belum dikerjakan)`);
-  }
-
-  lines.push(`\n=== E. EVALUASI INTERVIEW ===`);
+  lines.push(`\n=== D. EVALUASI INTERVIEW ===`);
   if (interview) {
     lines.push(`Tanggal      : ${interview.tanggal}`);
     lines.push(`Tahap        : ${interview.tahap}`);
@@ -137,20 +121,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
     }
 
-    const [disc, wpt, koran, selection, interview] = await Promise.all([
+    const [disc, wpt, koran, interview] = await Promise.all([
       getDiscTestResultByCandidate(candidateId),
       getWptTestResultByCandidate(candidateId),
       getKoranTestResultByCandidate(candidateId),
-      getSelectionTestResultByCandidate(candidateId),
       getInterviewEvaluationByCandidate(candidateId),
     ]);
 
-    const candidateDataText = buildPrompt({ candidate, disc, wpt, koran, selection, interview });
+    const candidateDataText = buildPrompt({ candidate, disc, wpt, koran, interview });
 
     const systemPrompt = `Anda adalah HR Psikolog Senior dan Konsultan Rekrutmen berpengalaman lebih dari 15 tahun di industri hukum (law firm). 
 Tugas Anda adalah menganalisis data kandidat secara komprehensif dan menghasilkan laporan psikologi rekrutmen yang profesional, objektif, dan terstruktur.
 Gunakan bahasa Indonesia yang formal, lugas, dan profesional.
-Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Tes Seleksi, Interview) menjadi satu narasi analisis yang kohesif.`;
+Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Interview) menjadi satu narasi analisis yang kohesif.`;
 
     const userPrompt = `Berikut adalah data lengkap kandidat yang perlu Anda analisis:
 
@@ -161,6 +144,12 @@ ${candidateDataText}
 Berdasarkan data di atas, buatlah LAPORAN ANALISIS PSIKOLOGI REKRUTMEN yang komprehensif dalam format JSON berikut:
 
 {
+  "fit_scores": {
+    "disc_fit": 85, // Angka 0-100 persen tingkat kecocokan kepribadian DISC dengan kriteria jabatan
+    "wpt_fit": 80, // Angka 0-100 persen tingkat kecocokan kognitif WPT dengan kriteria jabatan
+    "tes_koran_fit": 75, // Angka 0-100 persen tingkat kecocokan daya tahan/kecepatan Tes Koran dengan kriteria jabatan
+    "kesesuaian_overall": 80 // Angka 0-100 persen tingkat kesesuaian gabungan keseluruhan kandidat dengan posisi
+  },
   "ringkasan_eksekutif": "Paragraf ringkas 3-4 kalimat yang merangkum profil kandidat secara keseluruhan untuk pengambil keputusan.",
   
   "profil_kepribadian": {
@@ -203,41 +192,78 @@ PENTING:
 - Rekomendasi harus konsisten dengan data yang ada.
 - Jika data tertentu tidak tersedia (misalnya tes belum dikerjakan), tetap berikan analisis berdasarkan data yang ada dan tandai keterbatasan analisis tersebut.`;
 
-    const apiKey = process.env.OPENROUTER_API_KEY?.trim();
-    if (!apiKey) {
-      return NextResponse.json({ error: 'OPENROUTER_API_KEY tidak dikonfigurasi' }, { status: 500 });
+    let content: string | undefined;
+    const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+
+    if (apiKey) {
+      try {
+        const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            system: systemPrompt,
+            messages: [
+              { role: 'user', content: userPrompt },
+            ],
+            max_tokens: 4000,
+            temperature: 0.3,
+          }),
+        });
+
+        if (aiResponse.ok) {
+          const aiResult = await aiResponse.json();
+          content = aiResult.content?.[0]?.text as string | undefined;
+        } else {
+          const errText = await aiResponse.text();
+          console.warn('Anthropic API returned error, trying OpenAI fallback:', errText);
+        }
+      } catch (err) {
+        console.error('Anthropic API call failed, trying OpenAI fallback:', err);
+      }
     }
 
-    const aiResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://easylegal-recruitment.app',
-        'X-Title': 'EasyLegal HR Recruitment System',
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-sonnet-4-5',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        max_tokens: 4096,
-        temperature: 0.3,
-      }),
-    });
+    // Fallback to OpenAI if Anthropic didn't succeed
+    if (!content) {
+      console.log('Using OpenAI fallback for candidate analysis...');
+      const openAiKey = process.env.OPENAI_API_KEY?.trim();
+      if (!openAiKey) {
+        return NextResponse.json({ error: 'Tidak ada API Key yang valid (Anthropic & OpenAI tidak aktif)' }, { status: 500 });
+      }
 
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      console.error('OpenRouter error:', errText);
-      throw new Error(`OpenRouter API error ${aiResponse.status}: ${errText.substring(0, 300)}`);
+      const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          max_tokens: 4096,
+          temperature: 0.3,
+          response_format: { type: 'json_object' },
+        }),
+      });
+
+      if (!openAiResponse.ok) {
+        const errText = await openAiResponse.text();
+        throw new Error(`OpenAI API fallback error ${openAiResponse.status}: ${errText.substring(0, 300)}`);
+      }
+
+      const openAiResult = await openAiResponse.json();
+      content = openAiResult.choices?.[0]?.message?.content as string | undefined;
     }
-
-    const aiResult = await aiResponse.json();
-    const content = aiResult.choices?.[0]?.message?.content as string | undefined;
 
     if (!content) {
-      throw new Error('Respons AI kosong.');
+      throw new Error('Respons AI kosong (gagal pada Anthropic dan OpenAI).');
     }
 
     // Strip markdown fence if present

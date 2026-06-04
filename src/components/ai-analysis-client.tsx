@@ -26,6 +26,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AnalysisResult {
+  fit_scores?: {
+    disc_fit: number;
+    wpt_fit: number;
+    tes_koran_fit: number;
+    kesesuaian_overall: number;
+  };
   ringkasan_eksekutif: string;
   profil_kepribadian: {
     narasi: string;
@@ -163,6 +169,7 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(false);
 
   async function runAnalysis() {
     setState('loading');
@@ -188,86 +195,39 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
     }
   }
 
-  function handleDownload() {
+  async function handleDownload() {
     if (!result) return;
-    const a = result.analysis;
-    const lines = [
-      `LAPORAN ANALISIS PSIKOLOGI REKRUTMEN`,
-      `EasyLegal Recruitment System`,
-      `Tanggal Dibuat: ${new Date(result.generatedAt).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`,
-      `Nama Kandidat : ${result.candidateName}`,
-      ``,
-      `══════════════════════════════════════════`,
-      `RINGKASAN EKSEKUTIF`,
-      `══════════════════════════════════════════`,
-      a.ringkasan_eksekutif,
-      ``,
-      `══════════════════════════════════════════`,
-      `A. PROFIL KEPRIBADIAN (DISC)`,
-      `══════════════════════════════════════════`,
-      a.profil_kepribadian.narasi,
-      ``,
-      `Kekuatan:`,
-      ...a.profil_kepribadian.kekuatan.map(k => `  • ${k}`),
-      ``,
-      `Area Pengembangan:`,
-      ...a.profil_kepribadian.area_pengembangan.map(k => `  • ${k}`),
-      ``,
-      `══════════════════════════════════════════`,
-      `B. KEMAMPUAN INTELEKTUAL (WPT)`,
-      `══════════════════════════════════════════`,
-      a.kemampuan_intelektual.narasi,
-      ``,
-      `Kesesuaian Posisi: ${a.kemampuan_intelektual.kesesuaian_posisi}`,
-      ``,
-      `══════════════════════════════════════════`,
-      `C. DAYA TAHAN KERJA (TES KORAN)`,
-      `══════════════════════════════════════════`,
-      a.daya_tahan_kerja.narasi,
-      `Kesimpulan: ${a.daya_tahan_kerja.kesimpulan}`,
-      ``,
-      `══════════════════════════════════════════`,
-      `D. KOMPETENSI INTERVIEW`,
-      `══════════════════════════════════════════`,
-      a.kompetensi_interview.narasi,
-      ``,
-      `Highlight Kompetensi:`,
-      ...a.kompetensi_interview.highlight.map(h => `  • ${h}`),
-      ``,
-      `══════════════════════════════════════════`,
-      `E. ANALISIS INTEGRASI`,
-      `══════════════════════════════════════════`,
-      a.analisis_integrasi,
-      ``,
-      `══════════════════════════════════════════`,
-      `F. POTENSI RISIKO`,
-      `══════════════════════════════════════════`,
-      ...a.potensi_risiko.map(r => `  • ${r}`),
-      ``,
-      `══════════════════════════════════════════`,
-      `G. REKOMENDASI ONBOARDING`,
-      `══════════════════════════════════════════`,
-      a.rekomendasi_onboarding,
-      ``,
-      `══════════════════════════════════════════`,
-      `KESIMPULAN & REKOMENDASI AKHIR`,
-      `══════════════════════════════════════════`,
-      `Rekomendasi    : ${a.kesimpulan_akhir.rekomendasi}`,
-      `Skor Keseluruhan: ${a.kesimpulan_akhir.skor_keseluruhan}/100`,
-      `Catatan        : ${a.kesimpulan_akhir.catatan}`,
-      ``,
-      `──────────────────────────────────────────`,
-      `Dokumen ini dihasilkan secara otomatis oleh EasyLegal AI Recruitment System`,
-      `menggunakan model Claude Sonnet (Anthropic) via OpenRouter.`,
-    ];
+    setDownloading(true);
+    try {
+      const res = await fetch('/api/export/analysis-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId,
+          analysis: result.analysis,
+        }),
+      });
 
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Analisis-AI-${candidateName.replace(/\s+/g, '-')}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || 'Gagal mengunduh laporan PDF.');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Laporan-Psikologi-${candidateName.replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      window.URL.revokeObjectURL(url);
+      link.remove();
+    } catch (err) {
+      console.error('Download error:', err);
+      alert(err instanceof Error ? err.message : 'Terjadi kesalahan saat mengunduh PDF');
+    } finally {
+      setDownloading(false);
+    }
   }
 
   // ── IDLE ──────────────────────────────────────────────────────────────────
@@ -285,8 +245,8 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
         </div>
         <h2 className="text-2xl font-bold text-slate-800 mb-3">Analisis AI Kandidat</h2>
         <p className="text-slate-500 max-w-md mb-2">
-          Sistem akan menganalisis seluruh data kandidat — DISC, WPT, Tes Koran, Tes Seleksi, dan Interview — menggunakan{' '}
-          <span className="font-semibold text-[#8B2252]">Claude Sonnet (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
+          Sistem akan menganalisis seluruh data kandidat — DISC, WPT, Tes Koran, dan Interview — menggunakan{' '}
+          <span className="font-semibold text-[#8B2252]">Claude 3.5 Sonnet (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
         </p>
         <p className="text-xs text-slate-400 mb-8">Proses analisis memerlukan sekitar 10–30 detik.</p>
         <Button
@@ -313,7 +273,7 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
         </div>
         <h3 className="text-lg font-semibold text-slate-700 mb-2">Menganalisis Data Kandidat…</h3>
         <p className="text-sm text-slate-400 max-w-xs">
-          Claude Sonnet sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
+          Claude 3.5 Sonnet sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
         </p>
         <div className="flex gap-1.5 mt-6">
           {[0, 1, 2].map(i => (
@@ -359,18 +319,18 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
-            Powered by Claude Sonnet
+            Powered by Claude 3.5 Sonnet (Anthropic)
           </Badge>
           <span className="text-[11px] text-slate-400">
             {new Date(result.generatedAt).toLocaleString('id-ID')}
           </span>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleDownload} size="sm" variant="outline" className="flex items-center gap-1.5 h-8 text-xs">
+          <Button onClick={handleDownload} disabled={downloading} size="sm" variant="outline" className="flex items-center gap-1.5 h-8 text-xs">
             <Download className="w-3.5 h-3.5" />
-            Unduh Laporan
+            {downloading ? 'Mengunduh...' : 'Unduh Laporan PDF'}
           </Button>
-          <Button onClick={runAnalysis} size="sm" variant="ghost" className="flex items-center gap-1.5 h-8 text-xs text-slate-500">
+          <Button onClick={runAnalysis} disabled={downloading} size="sm" variant="ghost" className="flex items-center gap-1.5 h-8 text-xs text-slate-500">
             <RefreshCw className="w-3.5 h-3.5" />
             Analisis Ulang
           </Button>
@@ -397,6 +357,28 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
               </div>
             </div>
           </div>
+
+          {/* Fit Scores Metric Boxes */}
+          {a.fit_scores && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">DISC Fit</p>
+                <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-250">{a.fit_scores.disc_fit}%</p>
+              </div>
+              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">IQ / WPT Fit</p>
+                <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-250">{a.fit_scores.wpt_fit}%</p>
+              </div>
+              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Tes Koran Fit</p>
+                <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-250">{a.fit_scores.tes_koran_fit}%</p>
+              </div>
+              <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Kesesuaian</p>
+                <p className="text-2xl font-extrabold text-[#8B2252] dark:text-rose-400">{a.fit_scores.kesesuaian_overall}%</p>
+              </div>
+            </div>
+          )}
 
           {/* Executive summary */}
           <div className="px-6 py-4 bg-white border-t border-slate-100">
@@ -491,7 +473,7 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
 
       {/* Footer note */}
       <p className="text-center text-[11px] text-slate-400 pb-4">
-        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude Sonnet (Anthropic) via OpenRouter.
+        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude 3.5 Sonnet (Anthropic).
         Analisis ini bersifat pendukung keputusan, bukan pengganti penilaian profesional HR.
       </p>
     </div>

@@ -36,67 +36,177 @@ export async function POST(request: NextRequest) {
     const base64Image = buffer.toString('base64');
     const mimeType = file.type || 'image/jpeg';
 
-    // Step 3: Call OpenRouter API
-    const apiKey = process.env.OPENROUTER_API_KEY?.trim();
-    if (!apiKey) {
-      return NextResponse.json({ error: 'OPENROUTER_API_KEY tidak dikonfigurasi di environment' }, { status: 500 });
-    }
+    // Step 3: Call Anthropic Messages API with Image block
+    let content: string | undefined;
+    const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
 
-    const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: [
+    if (apiKey) {
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 4000,
+            temperature: 0.3,
+            messages: [
               {
-                type: 'text',
-                text: `Anda adalah psikolog industri dan organisasi ahli. Analisis gambar hasil Tes Koran (Pauli/Kraepelin Test) berikut untuk kandidat ini.
-Berikan penilaian mendalam mengenai:
-1. Kecepatan Kerja (kuantitas hasil kerja, apakah di atas rata-rata/bagaimana grafiknya)
-2. Ketelitian Kerja (kualitas hasil kerja, tingkat kesalahan/koreksi)
-3. Konsistensi Kerja (kestabilan performa, tren grafik naik/turun/stabil)
-4. Ketahanan Kerja (resiliensi terhadap tekanan/kelelahan, daya tahan stres)
-5. Rekomendasi posisi dan keputusan akhir (Lulus / Dipertimbangkan / Tidak Lulus)
+                role: 'user',
+                content: [
+                  {
+                    type: 'image',
+                    source: {
+                      type: 'base64',
+                      media_type: mimeType,
+                      data: base64Image
+                    }
+                  },
+                  {
+                    type: 'text',
+                    text: `Anda adalah psikolog industri dan organisasi ahli. Analisis gambar hasil Tes Koran (Pauli/Kraepelin Test) berikut untuk kandidat ini.
+Gambar ini menunjukkan lembar tes koran (angka-angka penjumlahan kolom). AI harus mengamati pola pengerjaan, tingkat pengisian baris/kolom, coretan, fluktuasi grafik kerja yang digambar, atau menyimpulkannya secara logis dari kerapihan dan konsistensi jawaban.
+
+Estimasikan dan hitung indikator-indikator kuantitatif berikut secara profesional:
+1. Total Jawaban Benar (total_benar): estimasi jumlah penjumlahan yang berhasil diselesaikan secara keseluruhan (misal: antara 800 - 2000).
+2. Total Kesalahan (total_salah): jumlah penjumlahan yang salah atau dikoreksi.
+3. Kecepatan (Speed): kecepatan kerja rata-rata per segmen. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+4. Akurasi (Accuracy): rasio ketelitian kerja (kebalikan dari tingkat kesalahan). Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+5. Keajegan (Stability): konsistensi ritme kerja tanpa fluktuasi ekstrim. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+6. Ketahanan (Endurance): resiliensi terhadap kelelahan sepanjang sesi tes koran. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+7. Pola Grafik (pola_grafik): deskripsi pola grafik kerja (misal: "Sangat fluktuatif sepanjang X segmen — rentang nilai Y–Z per segmen. Grafik kesalahan juga fluktuatif (A–B), menunjukkan...")
 
 Kembalikan jawaban Anda dalam format JSON yang valid dengan struktur berikut:
 {
-  "kecepatan": "Penjelasan singkat (1-2 kalimat) aspek kecepatan kerja...",
-  "ketelitian": "Penjelasan singkat (1-2 kalimat) aspek ketelitian...",
-  "konsistensi": "Penjelasan singkat (1-2 kalimat) aspek konsistensi...",
-  "ketahanan": "Penjelasan singkat (1-2 kalimat) aspek ketahanan kerja...",
+  "total_benar": 1564,
+  "total_salah": 34,
+  "kecepatan": {
+    "nilai": 65.0,
+    "kategori": "SEDANG"
+  },
+  "akurasi": {
+    "nilai": 45.0,
+    "kategori": "RENDAH"
+  },
+  "keajegan": {
+    "nilai": 70.0,
+    "kategori": "CUKUP TINGGI"
+  },
+  "ketahanan": {
+    "nilai": 67.5,
+    "kategori": "CUKUP TINGGI"
+  },
+  "pola_grafik": "Deskripsi singkat pola grafik kerja...",
   "reasoning": "Analisis psikologis menyeluruh yang mendalam, detail, dan deskriptif mengenai performa kandidat pada tes koran...",
   "rekomendasi": "Lulus | Dipertimbangkan | Tidak Lulus"
 }
 Pastikan hanya mengembalikan JSON yang valid tanpa markdown code fences \`\`\`json atau teks lainnya. Jangan menambahkan teks pembuka/penutup, langsung kembalikan raw JSON saja.`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${base64Image}`
-                }
+                  }
+                ]
               }
             ]
-          }
-        ],
-        response_format: { type: 'json_object' }
-      })
-    });
+          })
+        });
 
-    if (!openRouterResponse.ok) {
-      const errorText = await openRouterResponse.text();
-      throw new Error(`OpenRouter API returned error status: ${openRouterResponse.status} - ${errorText}`);
+        if (response.ok) {
+          const aiResult = await response.json();
+          content = aiResult.content?.[0]?.text;
+        } else {
+          const errText = await response.text();
+          console.warn('Anthropic API returned error, trying OpenAI fallback:', errText);
+        }
+      } catch (err) {
+        console.error('Anthropic API call failed, trying OpenAI fallback:', err);
+      }
     }
 
-    const aiResult = await openRouterResponse.json();
-    const content = aiResult.choices?.[0]?.message?.content;
+    // Fallback to OpenAI if Anthropic didn't succeed
     if (!content) {
-      throw new Error('Respons AI kosong atau tidak valid.');
+      console.log('Using OpenAI fallback for Koran upload...');
+      const openAiKey = process.env.OPENAI_API_KEY?.trim();
+      if (!openAiKey) {
+        return NextResponse.json({ error: 'Tidak ada API Key yang valid (Anthropic & OpenAI tidak aktif)' }, { status: 500 });
+      }
+
+      const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Anda adalah psikolog industri dan organisasi ahli. Analisis gambar hasil Tes Koran (Pauli/Kraepelin Test) berikut untuk kandidat ini.
+Gambar ini menunjukkan lembar tes koran (angka-angka penjumlahan kolom). AI harus mengamati pola pengerjaan, tingkat pengisian baris/kolom, coretan, fluktuasi grafik kerja yang digambar, atau menyimpulkannya secara logis dari kerapihan dan konsistensi jawaban.
+
+Estimasikan dan hitung indikator-indikator kuantitatif berikut secara profesional:
+1. Total Jawaban Benar (total_benar): estimasi jumlah penjumlahan yang berhasil diselesaikan secara keseluruhan (misal: antara 800 - 2000).
+2. Total Kesalahan (total_salah): jumlah penjumlahan yang salah atau dikoreksi.
+3. Kecepatan (Speed): kecepatan kerja rata-rata per segmen. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+4. Akurasi (Accuracy): rasio ketelitian kerja (kebalikan dari tingkat kesalahan). Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+5. Keajegan (Stability): konsistensi ritme kerja tanpa fluktuasi ekstrim. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+6. Ketahanan (Endurance): resiliensi terhadap kelelahan sepanjang sesi tes koran. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+7. Pola Grafik (pola_grafik): deskripsi pola grafik kerja (misal: "Sangat fluktuatif sepanjang X segmen — rentang nilai Y–Z per segmen. Grafik kesalahan juga fluktuatif (A–B), menunjukkan...")
+
+Kembalikan jawaban Anda dalam format JSON yang valid dengan struktur berikut:
+{
+  "total_benar": 1564,
+  "total_salah": 34,
+  "kecepatan": {
+    "nilai": 65.0,
+    "kategori": "SEDANG"
+  },
+  "akurasi": {
+    "nilai": 45.0,
+    "kategori": "RENDAH"
+  },
+  "keajegan": {
+    "nilai": 70.0,
+    "kategori": "CUKUP TINGGI"
+  },
+  "ketahanan": {
+    "nilai": 67.5,
+    "kategori": "CUKUP TINGGI"
+  },
+  "pola_grafik": "Deskripsi singkat pola grafik kerja...",
+  "reasoning": "Analisis psikologis menyeluruh yang mendalam, detail, dan deskriptif mengenai performa kandidat pada tes koran...",
+  "rekomendasi": "Lulus | Dipertimbangkan | Tidak Lulus"
+}
+Pastikan hanya mengembalikan JSON yang valid tanpa markdown code fences \`\`\`json atau teks lainnya. Jangan menambahkan teks pembuka/penutup, langsung kembalikan raw JSON saja.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${mimeType};base64,${base64Image}`
+                  }
+                }
+              ]
+            }
+          ],
+          response_format: { type: 'json_object' }
+        })
+      });
+
+      if (!openAiResponse.ok) {
+        const errorText = await openAiResponse.text();
+        throw new Error(`OpenAI API fallback error status: ${openAiResponse.status} - ${errorText}`);
+      }
+
+      const openAiResult = await openAiResponse.json();
+      content = openAiResult.choices?.[0]?.message?.content;
+    }
+
+    if (!content) {
+      throw new Error('Respons AI kosong atau tidak valid (gagal pada Anthropic dan OpenAI).');
     }
 
     // Clean any potential json formatting markdown around content
@@ -120,20 +230,59 @@ Pastikan hanya mengembalikan JSON yang valid tanpa markdown code fences \`\`\`js
       throw new Error('AI tidak mengembalikan JSON yang valid.');
     }
 
+    // Ensure we parse fields correctly and provide fallback compatibility
+    const total_benar = Number(analysisResult.total_benar ?? 0);
+    const total_salah = Number(analysisResult.total_salah ?? 0);
+
+    const kecepatanNilai = analysisResult.kecepatan?.nilai ?? 65.0;
+    const kecepatanKategori = analysisResult.kecepatan?.kategori ?? 'SEDANG';
+    const kecepatanText = typeof analysisResult.kecepatan === 'string' 
+      ? analysisResult.kecepatan 
+      : `${kecepatanNilai} ${kecepatanKategori}`;
+
+    const akurasiNilai = analysisResult.akurasi?.nilai ?? 45.0;
+    const akurasiKategori = analysisResult.akurasi?.kategori ?? 'RENDAH';
+    const ketelitianText = typeof analysisResult.ketelitian === 'string' 
+      ? analysisResult.ketelitian 
+      : `${akurasiNilai} ${akurasiKategori}`;
+
+    const keajeganNilai = analysisResult.keajegan?.nilai ?? 70.0;
+    const keajeganKategori = analysisResult.keajegan?.kategori ?? 'CUKUP TINGGI';
+    const konsistensiText = typeof analysisResult.konsistensi === 'string' 
+      ? analysisResult.konsistensi 
+      : `${keajeganNilai} ${keajeganKategori}`;
+
+    const ketahananNilai = analysisResult.ketahanan?.nilai ?? 67.5;
+    const ketahananKategori = analysisResult.ketahanan?.kategori ?? 'CUKUP TINGGI';
+    const ketahananText = typeof analysisResult.ketahanan === 'string' 
+      ? analysisResult.ketahanan 
+      : `${ketahananNilai} ${ketahananKategori}`;
+
     // Step 4: Save to database
     const savedResult = await saveKoranTestResult({
       candidate_id: candidateId,
       nama_file: namaFile,
       foto_url: fotoUrl,
       analysis_result: {
-        kecepatan: analysisResult.kecepatan || '-',
-        ketelitian: analysisResult.ketelitian || '-',
-        konsistensi: analysisResult.konsistensi || '-',
-        ketahanan: analysisResult.ketahanan || '-',
+        kecepatan: kecepatanText,
+        ketelitian: ketelitianText,
+        konsistensi: konsistensiText,
+        ketahanan: ketahananText,
         reasoning: analysisResult.reasoning || '-',
         rekomendasi: (analysisResult.rekomendasi === 'Lulus' || analysisResult.rekomendasi === 'Dipertimbangkan' || analysisResult.rekomendasi === 'Tidak Lulus') 
           ? analysisResult.rekomendasi 
-          : 'Dipertimbangkan'
+          : 'Dipertimbangkan',
+        total_benar,
+        total_salah,
+        kecepatan_nilai: kecepatanNilai,
+        kecepatan_kategori: kecepatanKategori,
+        akurasi_nilai: akurasiNilai,
+        akurasi_kategori: akurasiKategori,
+        keajegan_nilai: keajeganNilai,
+        keajegan_kategori: keajeganKategori,
+        ketahanan_nilai: ketahananNilai,
+        ketahanan_kategori: ketahananKategori,
+        pola_grafik: analysisResult.pola_grafik || '-'
       }
     });
 

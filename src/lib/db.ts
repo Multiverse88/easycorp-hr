@@ -852,6 +852,17 @@ export interface KoranTestResult {
     ketahanan: string;
     reasoning: string;
     rekomendasi: 'Lulus' | 'Dipertimbangkan' | 'Tidak Lulus';
+    total_benar?: number;
+    total_salah?: number;
+    kecepatan_nilai?: number;
+    kecepatan_kategori?: string;
+    akurasi_nilai?: number;
+    akurasi_kategori?: string;
+    keajegan_nilai?: number;
+    keajegan_kategori?: string;
+    ketahanan_nilai?: number;
+    ketahanan_kategori?: string;
+    pola_grafik?: string;
   };
   created_at?: string;
 }

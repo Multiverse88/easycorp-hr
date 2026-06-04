@@ -3,7 +3,6 @@ import {
   getCandidateById,
   getDiscTestResultByCandidate,
   getWptTestResultByCandidate,
-  getSelectionTestResultByCandidate,
   getInterviewEvaluationByCandidate,
 } from '@/lib/db';
 import { CandidatePdfDocument, type CandidatePdfData } from '@/lib/candidate-pdf-template';
@@ -23,10 +22,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
     }
 
-    const [disc, wpt, selection, interview] = await Promise.all([
+    const [disc, wpt, interview] = await Promise.all([
       getDiscTestResultByCandidate(candidateId),
       getWptTestResultByCandidate(candidateId),
-      getSelectionTestResultByCandidate(candidateId),
       getInterviewEvaluationByCandidate(candidateId),
     ]);
 
@@ -47,13 +45,6 @@ export async function GET(request: NextRequest) {
         kategori: wpt.kategori,
         profil_kemampuan: wpt.profil_kemampuan,
         rekomendasi_posisi: wpt.rekomendasi_posisi,
-      } : null,
-      selection: selection ? {
-        tanggal_tes: selection.tanggal_tes,
-        penyelenggara: selection.penyelenggara,
-        komponen: selection.komponen,
-        kesimpulan: selection.kesimpulan,
-        catatan_akhir: selection.catatan_akhir,
       } : null,
       interview: interview ? {
         tanggal: interview.tanggal,

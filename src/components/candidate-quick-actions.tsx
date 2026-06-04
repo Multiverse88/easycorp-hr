@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
-import { ClipboardList, MessageSquare, Award, Brain, FileText, Sparkles } from 'lucide-react';
+import { MessageSquare, Award, Brain, FileText, Sparkles } from 'lucide-react';
 
 interface CandidateQuickActionsProps {
   candidateId: string;
@@ -13,7 +13,6 @@ export function CandidateQuickActions({ candidateId }: CandidateQuickActionsProp
   const pathname = usePathname();
 
   const actions = [
-    { href: `/dashboard/kandidat/${candidateId}/tes-seleksi`, label: 'Tes Seleksi', icon: ClipboardList, ai: false },
     { href: `/dashboard/kandidat/${candidateId}/interview`, label: 'Interview', icon: MessageSquare, ai: false },
     { href: `/dashboard/kandidat/${candidateId}/disc`, label: 'DISC Test', icon: Award, ai: false },
     { href: `/dashboard/kandidat/${candidateId}/wpt`, label: 'Tes IQ (WPT)', icon: Brain, ai: false },

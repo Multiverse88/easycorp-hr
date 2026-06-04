@@ -20,14 +20,6 @@ interface WptData {
   rekomendasi_posisi: { posisi: string; skorMin: number; skorIdeal: string; status: string; rekomendasi: string }[];
 }
 
-interface SelectionData {
-  tanggal_tes: string;
-  penyelenggara: string;
-  komponen: { nama: string; nilai: string; batas_lulus: string; catatan: string }[];
-  kesimpulan: string;
-  catatan_akhir: string;
-}
-
 interface InterviewData {
   tanggal: string;
   tahap: string;
@@ -47,7 +39,6 @@ export interface CandidatePdfData {
   candidate: Candidate;
   disc: DiscData | null;
   wpt: WptData | null;
-  selection: SelectionData | null;
   interview: InterviewData | null;
 }
 
@@ -85,6 +76,22 @@ const s = StyleSheet.create({
   emptyNote: { fontSize: 9, color: colors.textMuted, fontStyle: 'italic', marginBottom: 8 },
   subHeader: { fontSize: 10, fontFamily: 'Helvetica-Bold', marginBottom: 6, color: colors.text },
 });
+
+// ─── WPT → IQ Conversion Table (Official Scoring) ───────────────────────────
+const WPT_IQ_TABLE: Record<number, number> = {
+  10: 80, 11: 81, 12: 83, 13: 86, 14: 88,
+  15: 90, 16: 93, 17: 95, 18: 97, 19: 98,
+  20: 100, 21: 102, 22: 104, 23: 106, 24: 108,
+  25: 111, 26: 113, 27: 114, 28: 116, 29: 119,
+  30: 121, 31: 123, 32: 125, 33: 127, 34: 130,
+  35: 132, 36: 136, 37: 139, 38: 142, 39: 145, 40: 150,
+};
+
+function getIqFromWpt(rawScore: number): number {
+  if (rawScore in WPT_IQ_TABLE) return WPT_IQ_TABLE[rawScore];
+  if (rawScore < 10) return 80;
+  return 150;
+}
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-';
@@ -143,12 +150,17 @@ function DiscSection({ disc }: { disc: DiscData }) {
 }
 
 function WptSection({ wpt }: { wpt: WptData }) {
+  const iqScore = getIqFromWpt(wpt.skor);
   return (
     <Section title="C. Hasil Tes IQ (WPT)">
       <View style={{ flexDirection: 'row', marginBottom: 10, gap: 10 }}>
         <View style={{ flex: 1, backgroundColor: colors.bgAlt, padding: 8, borderRadius: 4, alignItems: 'center' }}>
+          <Text style={{ fontSize: 18, fontFamily: 'Helvetica-Bold', color: colors.primary }}>{iqScore}</Text>
+          <Text style={{ fontSize: 8, color: colors.textMuted }}>Skor IQ</Text>
+        </View>
+        <View style={{ flex: 1, backgroundColor: colors.bgAlt, padding: 8, borderRadius: 4, alignItems: 'center' }}>
           <Text style={{ fontSize: 18, fontFamily: 'Helvetica-Bold', color: colors.primary }}>{wpt.skor}/{wpt.total_soal}</Text>
-          <Text style={{ fontSize: 8, color: colors.textMuted }}>Skor</Text>
+          <Text style={{ fontSize: 8, color: colors.textMuted }}>Skor Total</Text>
         </View>
         <View style={{ flex: 1, backgroundColor: colors.bgAlt, padding: 8, borderRadius: 4, alignItems: 'center' }}>
           <Text style={{ fontSize: 18, fontFamily: 'Helvetica-Bold', color: colors.primary }}>{Math.round(wpt.persen_benar * 100)}%</Text>
@@ -199,33 +211,6 @@ function WptSection({ wpt }: { wpt: WptData }) {
   );
 }
 
-function SelectionSection({ selection }: { selection: SelectionData }) {
-  return (
-    <Section title="D. Hasil Tes Seleksi">
-      <InfoRow label="Tanggal Tes" value={formatDate(selection.tanggal_tes)} />
-      <InfoRow label="Penyelenggara" value={selection.penyelenggara} />
-      <View style={[s.table, { marginTop: 6 }]}>
-        <View style={s.tableHeader}>
-          <Text style={[s.tableHeaderText, { flex: 1 }]}>Komponen</Text>
-          <Text style={[s.tableHeaderText, { width: 50 }]}>Nilai</Text>
-          <Text style={[s.tableHeaderText, { width: 50 }]}>Batas</Text>
-          <Text style={[s.tableHeaderText, { flex: 1 }]}>Catatan</Text>
-        </View>
-        {selection.komponen.map((k, i) => (
-          <View key={i} style={s.tableRow}>
-            <Text style={[s.tableCell, { flex: 1 }]}>{k.nama}</Text>
-            <Text style={[s.tableCell, { width: 50 }]}>{k.nilai || '-'}</Text>
-            <Text style={[s.tableCell, { width: 50 }]}>{k.batas_lulus || '-'}</Text>
-            <Text style={[s.tableCell, { flex: 1 }]}>{k.catatan || '-'}</Text>
-          </View>
-        ))}
-      </View>
-      <InfoRow label="Kesimpulan" value={selection.kesimpulan} />
-      {selection.catatan_akhir && <InfoRow label="Catatan" value={selection.catatan_akhir} />}
-    </Section>
-  );
-}
-
 function InterviewSection({ interview }: { interview: InterviewData }) {
   return (
     <Section title="E. Evaluasi Interview">
@@ -261,7 +246,7 @@ function InterviewSection({ interview }: { interview: InterviewData }) {
 }
 
 export function CandidatePdfDocument({ data }: { data: CandidatePdfData }) {
-  const { candidate, disc, wpt, selection, interview } = data;
+  const { candidate, disc, wpt, interview } = data;
   const now = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
@@ -304,20 +289,11 @@ export function CandidatePdfDocument({ data }: { data: CandidatePdfData }) {
           </Section>
         )}
 
-        {/* D. Tes Seleksi */}
-        {selection ? (
-          <SelectionSection selection={selection} />
-        ) : (
-          <Section title="D. Hasil Tes Seleksi">
-            <Text style={s.emptyNote}>Belum ada hasil tes seleksi.</Text>
-          </Section>
-        )}
-
-        {/* E. Interview */}
+        {/* D. Interview */}
         {interview ? (
           <InterviewSection interview={interview} />
         ) : (
-          <Section title="E. Evaluasi Interview">
+          <Section title="D. Evaluasi Interview">
             <Text style={s.emptyNote}>Belum ada evaluasi interview.</Text>
           </Section>
         )}
