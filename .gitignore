@@ -1,41 +1,56 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# ─── Dependencies ────────────────────────────────────────────
 /node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
 
-# testing
+# ─── Testing ─────────────────────────────────────────────────
 /coverage
 
-# next.js
+# ─── Next.js ─────────────────────────────────────────────────
 /.next/
 /out/
 
-# production
+# ─── Production build ────────────────────────────────────────
 /build
 
-# misc
+# ─── Misc ────────────────────────────────────────────────────
 .DS_Store
 *.pem
 
-# debug
+# ─── Debug logs ──────────────────────────────────────────────
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
+# ─── Environment variables ───────────────────────────────────
+.env
+.env.*
 .env*.local
+!.env.example
 
-# vercel
+# ─── Vercel ──────────────────────────────────────────────────
 .vercel
 
-# typescript
+# ─── TypeScript ──────────────────────────────────────────────
 *.tsbuildinfo
 next-env.d.ts
 
-# Temp & Scanned Material (WPT PDF, OCR, Excel, Word)
+# ─── AI Tooling (local only, tidak relevan untuk tim) ────────
+.mcp.json
+skills-lock.json
+/.openclaude/
+/.superpowers/
+/.agents/skills/
+/.codex/
+/.dsc_cache/
+
+# ─── AI session logs & temp markdown exports ─────────────────
+/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.md
+
+# ─── Temp & Scanned Material (WPT PDF, OCR, Excel, Word) ─────
 /Lembar Soal WPT*
 /Logo-EASYLEGAL*
 /Screenshot*
@@ -45,30 +60,23 @@ next-env.d.ts
 *.xlsx
 *.docx
 
-# OpenClaude & Tooling caches
-/.openclaude/
-/.superpowers/
-/.agents/skills/
-/.codex/
-/.dsc_cache/
-
-# Local uploads (preserve folder structure via .gitkeep)
+# ─── Local uploads ───────────────────────────────────────────
 /public/uploads/*
 !/public/uploads/.gitkeep
 
-# Local scratch scripts
+# ─── Scratch / eksperimen lokal ──────────────────────────────
 /scratch/*
 !/scratch/check_db.js
 !/scratch/docx_texts.json
 !/scratch/parse_docx.js
 
-# Temporary root files
+# ─── Temporary root files ────────────────────────────────────
 /photo_*
 /*.html
 /Analisis_HR_RIZQI_Staff Legal.pdf
 
-# Local database file
+# ─── Local database ──────────────────────────────────────────
 /db_local.json
 
-# Project documentation
+# ─── Project documentation (internal) ───────────────────────
 /docs/
