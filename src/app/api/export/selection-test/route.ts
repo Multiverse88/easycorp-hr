@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCandidateById, getSelectionTestResultByCandidate } from '@/lib/db';
+import {
+  getCandidateById,
+  getSelectionTestResultByCandidate,
+  getWptTestResultByCandidate,
+  getDiscTestResultByCandidate,
+} from '@/lib/db';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import PizZip from 'pizzip';
@@ -47,7 +52,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
     }
 
-    const testResult = await getSelectionTestResultByCandidate(candidateId);
+    const [testResult, wpt, disc] = await Promise.all([
+      getSelectionTestResultByCandidate(candidateId),
+      getWptTestResultByCandidate(candidateId),
+      getDiscTestResultByCandidate(candidateId),
+    ]);
     if (!testResult) {
       return NextResponse.json({ error: 'Belum ada hasil tes seleksi' }, { status: 404 });
     }
@@ -70,10 +79,27 @@ export async function GET(request: NextRequest) {
 
     const komponenData = komponenOrder.map((nama) => {
       const found = testResult.komponen?.find(k => k.nama === nama);
+      let nilai = found?.nilai || '-';
+      let batas = found?.batas_lulus || '-';
+      let catatan = found?.catatan || '-';
+
+      // Fallback for Psikotes/DISC if empty or hyphen but online test data exists
+      if (nama === 'Psikotes/DISC' && (nilai === '-' || nilai === '')) {
+        const parts = [];
+        if (wpt) parts.push(`WPT: ${wpt.skor}/50`);
+        if (disc) parts.push(`DISC: ${disc.tipe_primer.split('—')[0].trim()}`);
+        if (parts.length > 0) {
+          nilai = parts.join(' | ');
+          if (wpt) {
+            catatan = `WPT (${wpt.kategori}). ${catatan !== '-' ? catatan : ''}`;
+          }
+        }
+      }
+
       return {
-        nilai: found?.nilai || '-',
-        batas: found?.batas_lulus || '-',
-        catatan: found?.catatan || '-',
+        nilai,
+        batas,
+        catatan,
       };
     });
 

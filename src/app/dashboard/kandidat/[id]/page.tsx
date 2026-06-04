@@ -1,7 +1,13 @@
 import Link from 'next/link';
-import { Brain } from 'lucide-react';
+import { Brain, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getCandidateById, getDiscTestResultByCandidate, getWptTestResultByCandidate, getManpowerRequests } from '@/lib/db';
+import {
+  getCandidateById,
+  getDiscTestResultByCandidate,
+  getWptTestResultByCandidate,
+  getKoranTestResultByCandidate,
+  getManpowerRequests,
+} from '@/lib/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
@@ -17,9 +23,12 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
     return <div className="p-8">Kandidat tidak ditemukan</div>;
   }
 
-  const discResult = await getDiscTestResultByCandidate(params.id);
-  const wptResult = await getWptTestResultByCandidate(params.id);
-  const requests = await getManpowerRequests();
+  const [discResult, wptResult, koranResult, requests] = await Promise.all([
+    getDiscTestResultByCandidate(params.id),
+    getWptTestResultByCandidate(params.id),
+    getKoranTestResultByCandidate(params.id),
+    getManpowerRequests(),
+  ]);
   const request = requests.find(r => r.id === candidate.manpower_request_id);
 
   return (
@@ -181,6 +190,47 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
                   <div className="text-sm text-muted-foreground mt-1">Kategori</div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {koranResult && (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-emerald-600" />
+                  Hasil Tes Koran (Pauli/Kraepelin)
+                </CardTitle>
+                <Link href={`/dashboard/kandidat/${params.id}/tes-koran`}>
+                  <Button variant="outline" size="sm">Lihat Detail</Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="text-center p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
+                  <div className="text-base font-bold text-emerald-800 line-clamp-1">{koranResult.nama_file}</div>
+                  <div className="text-[10px] text-emerald-600 font-medium mt-0.5">Nama Asesmen</div>
+                </div>
+                <div className="text-center p-3 bg-blue-50/60 rounded-xl border border-blue-100">
+                  <div className="text-base font-bold text-blue-800">{koranResult.analysis_result.rekomendasi}</div>
+                  <div className="text-[10px] text-blue-600 font-medium mt-0.5">Rekomendasi AI</div>
+                </div>
+                <div className="text-center p-3 bg-slate-50 rounded-xl border">
+                  <Badge className={
+                    koranResult.analysis_result.rekomendasi === 'Lulus' ? 'bg-green-100 text-green-700' :
+                    koranResult.analysis_result.rekomendasi === 'Dipertimbangkan' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-700'
+                  }>
+                    {koranResult.analysis_result.rekomendasi}
+                  </Badge>
+                  <div className="text-[10px] text-slate-500 font-medium mt-1">Kesimpulan</div>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                {koranResult.analysis_result.reasoning}
+              </p>
             </CardContent>
           </Card>
         )}

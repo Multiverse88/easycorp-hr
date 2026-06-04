@@ -1,10 +1,15 @@
-import { getCandidateById, getSelectionTestResultByCandidate } from '@/lib/db';
+import {
+  getCandidateById,
+  getSelectionTestResultByCandidate,
+  getWptTestResultByCandidate,
+  getDiscTestResultByCandidate,
+} from '@/lib/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SelectionTestFormClient } from '@/components/selection-test-form';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
-import { FileDown } from 'lucide-react';
+import { FileDown, Brain } from 'lucide-react';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +20,11 @@ export default async function TesSeleksiPage({ params }: { params: { id: string 
     return <div className="p-8">Kandidat tidak ditemukan</div>;
   }
 
-  const testResult = await getSelectionTestResultByCandidate(params.id);
+  const [testResult, wptResult, discResult] = await Promise.all([
+    getSelectionTestResultByCandidate(params.id),
+    getWptTestResultByCandidate(params.id),
+    getDiscTestResultByCandidate(params.id),
+  ]);
 
   return (
     <div>
@@ -25,6 +34,35 @@ export default async function TesSeleksiPage({ params }: { params: { id: string 
       <h1 className="text-2xl font-bold mt-2 mb-4">Tes Seleksi</h1>
 
       <CandidateQuickActions candidateId={params.id} />
+
+      {/* Online Test Results Summary Alert */}
+      {(wptResult || discResult) && (
+        <div className="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-200 text-sm flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div className="flex items-center gap-2.5">
+            <Brain className="w-5 h-5 text-blue-600" />
+            <div>
+              <span className="font-bold text-blue-900 block">Hasil Asesmen Online Tersedia</span>
+              <span className="text-xs text-blue-700">
+                {wptResult ? `WPT (IQ): ${wptResult.skor}/50 (${wptResult.kategori})` : 'WPT belum selesai'}
+                {' · '}
+                {discResult ? `DISC: ${discResult.tipe_primer.split('—')[0].trim()}` : 'DISC belum selesai'}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {wptResult && (
+              <Link href={`/dashboard/kandidat/${params.id}/wpt`}>
+                <Button size="xs" variant="outline" className="text-xs bg-white">Detail WPT</Button>
+              </Link>
+            )}
+            {discResult && (
+              <Link href={`/dashboard/kandidat/${params.id}/disc`}>
+                <Button size="xs" variant="outline" className="text-xs bg-white">Detail DISC</Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6">
         {testResult ? (
@@ -57,14 +95,27 @@ export default async function TesSeleksiPage({ params }: { params: { id: string 
                     </tr>
                   </thead>
                   <tbody>
-                    {testResult.komponen.map((k, i) => (
-                      <tr key={i} className="border-b">
-                        <td className="py-2 px-3 font-medium">{k.nama}</td>
-                        <td className="text-center py-2 px-3">{k.nilai || '-'}</td>
-                        <td className="text-center py-2 px-3">{k.batas_lulus || '-'}</td>
-                        <td className="py-2 px-3">{k.catatan || '-'}</td>
-                      </tr>
-                    ))}
+                    {testResult.komponen.map((k, i) => {
+                      let nilai = k.nilai;
+                      let catatan = k.catatan;
+                      if (k.nama === 'Psikotes/DISC' && (!nilai || nilai === '-')) {
+                        const parts = [];
+                        if (wptResult) parts.push(`WPT: ${wptResult.skor}/50 (${wptResult.kategori})`);
+                        if (discResult) parts.push(`DISC: ${discResult.tipe_primer.split('—')[0].trim()}`);
+                        if (parts.length > 0) {
+                          nilai = parts.join(' | ');
+                          catatan = catatan || 'Diambil otomatis dari hasil tes online';
+                        }
+                      }
+                      return (
+                        <tr key={i} className="border-b">
+                          <td className="py-2 px-3 font-medium">{k.nama}</td>
+                          <td className="text-center py-2 px-3">{nilai || '-'}</td>
+                          <td className="text-center py-2 px-3">{k.batas_lulus || '-'}</td>
+                          <td className="py-2 px-3">{catatan || '-'}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -85,6 +136,8 @@ export default async function TesSeleksiPage({ params }: { params: { id: string 
             candidateId={params.id}
             candidateName={candidate.nama}
             position={candidate.posisi_dilamar}
+            wptResult={wptResult}
+            discResult={discResult}
           />
         )}
       </div>

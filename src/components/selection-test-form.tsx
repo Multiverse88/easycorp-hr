@@ -7,16 +7,50 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingOverlay } from '@/components/loading-overlay';
+import type { WptTestResult, DiscTestResult } from '@/lib/db';
 
-export function SelectionTestFormClient({ candidateId, candidateName, position }: { candidateId: string; candidateName: string; position: string }) {
-  const [komponen, setKomponen] = useState([
-    { nama: 'Psikotes/DISC', nilai: '', batas_lulus: '', catatan: '' },
-    { nama: 'PAPIKOSTIK', nilai: '', batas_lulus: '', catatan: '' },
-    { nama: 'Case Study', nilai: '', batas_lulus: '', catatan: '' },
-    { nama: 'Tes Adm/Typing/Writing', nilai: '', batas_lulus: '', catatan: '' },
-    { nama: 'Tes Bahasa/Komunikasi', nilai: '', batas_lulus: '', catatan: '' },
-    { nama: 'Lainnya', nilai: '', batas_lulus: '', catatan: '' },
-  ]);
+export function SelectionTestFormClient({
+  candidateId,
+  candidateName,
+  position,
+  wptResult,
+  discResult,
+}: {
+  candidateId: string;
+  candidateName: string;
+  position: string;
+  wptResult?: WptTestResult;
+  discResult?: DiscTestResult;
+}) {
+  const [komponen, setKomponen] = useState(() => {
+    const defaultKomponen = [
+      { nama: 'Psikotes/DISC', nilai: '', batas_lulus: '', catatan: '' },
+      { nama: 'PAPIKOSTIK', nilai: '', batas_lulus: '', catatan: '' },
+      { nama: 'Case Study', nilai: '', batas_lulus: '', catatan: '' },
+      { nama: 'Tes Adm/Typing/Writing', nilai: '', batas_lulus: '', catatan: '' },
+      { nama: 'Tes Bahasa/Komunikasi', nilai: '', batas_lulus: '', catatan: '' },
+      { nama: 'Lainnya', nilai: '', batas_lulus: '', catatan: '' },
+    ];
+
+    if (wptResult || discResult) {
+      const idx = defaultKomponen.findIndex(k => k.nama === 'Psikotes/DISC');
+      if (idx !== -1) {
+        const nilaiParts = [];
+        if (wptResult) nilaiParts.push(`WPT: ${wptResult.skor}/50 (${wptResult.kategori})`);
+        if (discResult) nilaiParts.push(`DISC: ${discResult.tipe_primer.split('—')[0].trim()}`);
+        defaultKomponen[idx].nilai = nilaiParts.join(' | ');
+
+        const catatanParts = [];
+        if (wptResult) catatanParts.push(`WPT ${Math.round(wptResult.persen_benar * 100)}% benar`);
+        if (discResult) catatanParts.push(`DISC: ${discResult.tipe_primer}`);
+        defaultKomponen[idx].catatan = catatanParts.join('. ');
+
+        defaultKomponen[idx].batas_lulus = '20'; // Standard benchmark threshold or leave empty
+      }
+    }
+
+    return defaultKomponen;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 

@@ -836,3 +836,89 @@ Tim HR EasyLegal`;
   }
 }
 
+// ==========================================
+// 8. KORAN TEST RESULTS (TES KORAN / PAULI / KRAEPELIN)
+// ==========================================
+
+export interface KoranTestResult {
+  id: string;
+  candidate_id: string;
+  nama_file: string;
+  foto_url: string;
+  analysis_result: {
+    kecepatan: string;
+    ketelitian: string;
+    konsistensi: string;
+    ketahanan: string;
+    reasoning: string;
+    rekomendasi: 'Lulus' | 'Dipertimbangkan' | 'Tidak Lulus';
+  };
+  created_at?: string;
+}
+
+export async function getKoranTestResultByCandidate(candidateId: string): Promise<KoranTestResult | undefined> {
+  const { data, error } = await supabaseAdmin
+    .from('koran_tests')
+    .select('*')
+    .eq('candidate_id', candidateId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('getKoranTestResultByCandidate error:', error);
+    return undefined;
+  }
+  return data as KoranTestResult;
+}
+
+export async function saveKoranTestResult(res: Omit<KoranTestResult, 'id'> & { id?: string }): Promise<KoranTestResult> {
+  const id = res.id || `koran-${Date.now()}`;
+  const payload = {
+    id,
+    candidate_id: res.candidate_id,
+    nama_file: res.nama_file,
+    foto_url: res.foto_url,
+    analysis_result: res.analysis_result,
+  };
+
+  let query;
+  if (res.id) {
+    query = supabaseAdmin.from('koran_tests').update(payload).eq('id', res.id);
+  } else {
+    query = supabaseAdmin.from('koran_tests').insert(payload);
+  }
+
+  const { data, error } = await query.select().single();
+
+  if (error) {
+    throw new Error(`Gagal simpan Tes Koran: ${error.message}`);
+  }
+
+  logActivity({
+    action: res.id ? 'UPDATE' : 'CREATE',
+    table_name: 'koran_tests',
+    record_id: id,
+    description: `Hasil Tes Koran ${res.id ? 'diperbarui' : 'baru'} untuk kandidat ${res.candidate_id}`,
+    details: { candidate_id: res.candidate_id }
+  });
+
+  return data as KoranTestResult;
+}
+
+export async function deleteKoranTestResult(id: string): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('koran_tests')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(`Gagal hapus Tes Koran: ${error.message}`);
+  }
+
+  logActivity({
+    action: 'DELETE',
+    table_name: 'koran_tests',
+    record_id: id,
+    description: `Hasil Tes Koran ${id} dihapus`
+  });
+}
+
