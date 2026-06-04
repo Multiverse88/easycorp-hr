@@ -48,6 +48,9 @@ next-env.d.ts
 # OpenClaude & Tooling caches
 /.openclaude/
 /.superpowers/
+/.agents/skills/
+/.codex/
+/.dsc_cache/
 
 # Local uploads (preserve folder structure via .gitkeep)
 /public/uploads/*
