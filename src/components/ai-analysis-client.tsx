@@ -66,6 +66,11 @@ interface AnalysisResponse {
   candidateName: string;
   generatedAt: string;
   analysis: AnalysisResult;
+  usage?: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+  };
 }
 
 interface Props {
@@ -317,10 +322,15 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
     <div className="space-y-4">
       {/* Top bar */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
             Powered by Claude Sonnet 4.6 (Anthropic)
           </Badge>
+          {result.usage && (
+            <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-250 bg-emerald-50 font-semibold">
+              Token: {result.usage.input_tokens.toLocaleString()} In / {result.usage.output_tokens.toLocaleString()} Out (Total: {result.usage.total_tokens.toLocaleString()})
+            </Badge>
+          )}
           <span className="text-[11px] text-slate-400">
             {new Date(result.generatedAt).toLocaleString('id-ID')}
           </span>

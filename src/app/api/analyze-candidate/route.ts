@@ -193,6 +193,7 @@ PENTING:
 - Jika data tertentu tidak tersedia (misalnya tes belum dikerjakan), tetap berikan analisis berdasarkan data yang ada dan tandai keterbatasan analisis tersebut.`;
 
     let content: string | undefined;
+    let tokenUsage: { input_tokens: number; output_tokens: number; total_tokens: number } | undefined = undefined;
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
 
     if (apiKey) {
@@ -218,6 +219,13 @@ PENTING:
         if (aiResponse.ok) {
           const aiResult = await aiResponse.json();
           content = aiResult.content?.[0]?.text as string | undefined;
+          if (aiResult.usage) {
+            tokenUsage = {
+              input_tokens: aiResult.usage.input_tokens || 0,
+              output_tokens: aiResult.usage.output_tokens || 0,
+              total_tokens: (aiResult.usage.input_tokens || 0) + (aiResult.usage.output_tokens || 0),
+            };
+          }
         } else {
           const errText = await aiResponse.text();
           console.warn('Anthropic API returned error, trying OpenAI fallback:', errText);
@@ -260,6 +268,13 @@ PENTING:
 
       const openAiResult = await openAiResponse.json();
       content = openAiResult.choices?.[0]?.message?.content as string | undefined;
+      if (openAiResult.usage) {
+        tokenUsage = {
+          input_tokens: openAiResult.usage.prompt_tokens || 0,
+          output_tokens: openAiResult.usage.completion_tokens || 0,
+          total_tokens: openAiResult.usage.total_tokens || 0,
+        };
+      }
     }
 
     if (!content) {
@@ -287,6 +302,7 @@ PENTING:
       candidateName: candidate.nama,
       generatedAt: new Date().toISOString(),
       analysis,
+      usage: tokenUsage,
     });
   } catch (error) {
     console.error('analyze-candidate error:', error);
