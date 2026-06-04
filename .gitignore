@@ -48,3 +48,17 @@ next-env.d.ts
 # OpenClaude & Tooling caches
 /.openclaude/
 /.superpowers/
+
+# Local uploads (preserve folder structure via .gitkeep)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Local scratch scripts
+/scratch/*
+!/scratch/check_db.js
+!/scratch/docx_texts.json
+!/scratch/parse_docx.js
+
+# Temporary root files
+/photo_*
+/*.html
