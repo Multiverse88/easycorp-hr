@@ -246,7 +246,7 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
         <h2 className="text-2xl font-bold text-slate-800 mb-3">Analisis AI Kandidat</h2>
         <p className="text-slate-500 max-w-md mb-2">
           Sistem akan menganalisis seluruh data kandidat — DISC, WPT, Tes Koran, dan Interview — menggunakan{' '}
-          <span className="font-semibold text-[#8B2252]">Claude 3.5 Sonnet (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
+          <span className="font-semibold text-[#8B2252]">Claude Sonnet 4.6 (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
         </p>
         <p className="text-xs text-slate-400 mb-8">Proses analisis memerlukan sekitar 10–30 detik.</p>
         <Button
@@ -273,7 +273,7 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
         </div>
         <h3 className="text-lg font-semibold text-slate-700 mb-2">Menganalisis Data Kandidat…</h3>
         <p className="text-sm text-slate-400 max-w-xs">
-          Claude 3.5 Sonnet sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
+          Claude Sonnet 4.6 sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
         </p>
         <div className="flex gap-1.5 mt-6">
           {[0, 1, 2].map(i => (
@@ -319,7 +319,7 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
-            Powered by Claude 3.5 Sonnet (Anthropic)
+            Powered by Claude Sonnet 4.6 (Anthropic)
           </Badge>
           <span className="text-[11px] text-slate-400">
             {new Date(result.generatedAt).toLocaleString('id-ID')}
@@ -473,7 +473,7 @@ export function AiAnalysisClient({ candidateId, candidateName }: Props) {
 
       {/* Footer note */}
       <p className="text-center text-[11px] text-slate-400 pb-4">
-        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude 3.5 Sonnet (Anthropic).
+        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude Sonnet 4.6 (Anthropic).
         Analisis ini bersifat pendukung keputusan, bukan pengganti penilaian profesional HR.
       </p>
     </div>
