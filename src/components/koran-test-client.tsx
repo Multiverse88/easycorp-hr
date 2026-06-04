@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
 import { 
   FileText, Upload, Brain, Sparkles, CheckCircle2, 
-  Trash2, AlertCircle, RefreshCw, BarChart2, Activity, Zap,
+  Trash2, AlertCircle, BarChart2, Activity, Zap,
   Shield, Target, ExternalLink, Calendar, User, Briefcase
 } from 'lucide-react';
 
@@ -117,7 +117,6 @@ export function KoranTestClient({ candidate, initialResult }: KoranTestClientPro
     setProcessingStep(0);
 
     // Simulate progress steps
-    const stepIntervals = [1500, 2500, 2500, 3000];
     let currentStep = 0;
     
     const stepTimer = setInterval(() => {

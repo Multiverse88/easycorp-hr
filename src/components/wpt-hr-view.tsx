@@ -1,8 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, CheckCircle2, AlertTriangle, TrendingUp, Clock } from 'lucide-react';
+import { Brain, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import type { WptTestResult } from '@/lib/db';
 
@@ -10,18 +9,6 @@ interface WptHrViewProps {
   result: WptTestResult;
   candidateName: string;
   posisiDilamar: string;
-}
-
-function kategoriColor(kategori: string): string {
-  const colors: Record<string, string> = {
-    'Superior': 'bg-purple-100 text-purple-700',
-    'Sangat Baik': 'bg-green-100 text-green-700',
-    'Baik': 'bg-blue-100 text-blue-700',
-    'Cukup': 'bg-yellow-100 text-yellow-700',
-    'Perlu Perhatian': 'bg-orange-100 text-orange-700',
-    'Tidak Memenuhi Syarat': 'bg-red-100 text-red-700',
-  };
-  return colors[kategori] || 'bg-gray-100 text-gray-700';
 }
 
 function statusColor(status: string): string {
@@ -32,13 +19,6 @@ function statusColor(status: string): string {
     'Tidak Sesuai': 'bg-red-100 text-red-700',
   };
   return colors[status] || 'bg-gray-100 text-gray-700';
-}
-
-function profilColor(persen: number): string {
-  if (persen >= 0.8) return 'bg-green-500';
-  if (persen >= 0.6) return 'bg-blue-500';
-  if (persen >= 0.4) return 'bg-yellow-500';
-  return 'bg-red-500';
 }
 
 function getPercentColorHex(percent: number): string {
