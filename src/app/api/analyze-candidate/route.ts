@@ -194,6 +194,8 @@ PENTING:
 
     let content: string | undefined;
     let tokenUsage: { input_tokens: number; output_tokens: number; total_tokens: number } | undefined = undefined;
+    let anthropicError: string | undefined = undefined;
+    let openAiError: string | undefined = undefined;
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
 
     if (apiKey) {
@@ -228,11 +230,15 @@ PENTING:
           }
         } else {
           const errText = await aiResponse.text();
+          anthropicError = `HTTP ${aiResponse.status}: ${errText}`;
           console.warn('Anthropic API returned error, trying OpenAI fallback:', errText);
         }
       } catch (err) {
+        anthropicError = `Network/System error: ${err instanceof Error ? err.message : String(err)}`;
         console.error('Anthropic API call failed, trying OpenAI fallback:', err);
       }
+    } else {
+      anthropicError = 'API key is not configured in process.env';
     }
 
     // Fallback to OpenAI if Anthropic didn't succeed
@@ -240,45 +246,51 @@ PENTING:
       console.log('Using OpenAI fallback for candidate analysis...');
       const openAiKey = process.env.OPENAI_API_KEY?.trim();
       if (!openAiKey) {
-        return NextResponse.json({ error: 'Tidak ada API Key yang valid (Anthropic & OpenAI tidak aktif)' }, { status: 500 });
-      }
+        openAiError = 'API key is not configured in process.env';
+      } else {
+        try {
+          const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt },
+              ],
+              max_tokens: 4096,
+              temperature: 0.3,
+              response_format: { type: 'json_object' },
+            }),
+          });
 
-      const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          max_tokens: 4096,
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
-        }),
-      });
-
-      if (!openAiResponse.ok) {
-        const errText = await openAiResponse.text();
-        throw new Error(`OpenAI API fallback error ${openAiResponse.status}: ${errText.substring(0, 300)}`);
-      }
-
-      const openAiResult = await openAiResponse.json();
-      content = openAiResult.choices?.[0]?.message?.content as string | undefined;
-      if (openAiResult.usage) {
-        tokenUsage = {
-          input_tokens: openAiResult.usage.prompt_tokens || 0,
-          output_tokens: openAiResult.usage.completion_tokens || 0,
-          total_tokens: openAiResult.usage.total_tokens || 0,
-        };
+          if (!openAiResponse.ok) {
+            const errText = await openAiResponse.text();
+            openAiError = `HTTP ${openAiResponse.status}: ${errText}`;
+            console.error(`OpenAI API error ${openAiResponse.status}: ${errText}`);
+          } else {
+            const openAiResult = await openAiResponse.json();
+            content = openAiResult.choices?.[0]?.message?.content as string | undefined;
+            if (openAiResult.usage) {
+              tokenUsage = {
+                input_tokens: openAiResult.usage.prompt_tokens || 0,
+                output_tokens: openAiResult.usage.completion_tokens || 0,
+                total_tokens: openAiResult.usage.total_tokens || 0,
+              };
+            }
+          }
+        } catch (err) {
+          openAiError = `Network/System error: ${err instanceof Error ? err.message : String(err)}`;
+          console.error('OpenAI API call failed:', err);
+        }
       }
     }
 
     if (!content) {
-      throw new Error('Respons AI kosong (gagal pada Anthropic dan OpenAI).');
+      throw new Error(`Gagal melakukan analisis. [Anthropic Error: ${anthropicError || 'None'}] [OpenAI Error: ${openAiError || 'None'}]`);
     }
 
     // Strip markdown fence if present
