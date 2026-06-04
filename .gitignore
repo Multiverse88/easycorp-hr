@@ -69,3 +69,6 @@ next-env.d.ts
 
 # Local database file
 /db_local.json
+
+# Project documentation
+/docs/
