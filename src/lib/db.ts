@@ -872,13 +872,14 @@ export async function getKoranTestResultByCandidate(candidateId: string): Promis
     .from('koran_tests')
     .select('*')
     .eq('candidate_id', candidateId)
-    .maybeSingle();
+    .order('created_at', { ascending: false })
+    .limit(1);
 
   if (error) {
     console.error('getKoranTestResultByCandidate error:', error);
     return undefined;
   }
-  return data as KoranTestResult;
+  return (data && data.length > 0) ? (data[0] as KoranTestResult) : undefined;
 }
 
 export async function saveKoranTestResult(res: Omit<KoranTestResult, 'id'> & { id?: string }): Promise<KoranTestResult> {

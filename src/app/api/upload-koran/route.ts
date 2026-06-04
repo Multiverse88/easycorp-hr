@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveKoranTestResult } from '@/lib/db';
+import { saveKoranTestResult, getKoranTestResultByCandidate } from '@/lib/db';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -258,8 +258,11 @@ Pastikan hanya mengembalikan JSON yang valid tanpa markdown code fences \`\`\`js
       ? analysisResult.ketahanan 
       : `${ketahananNilai} ${ketahananKategori}`;
 
+    const existingKoran = await getKoranTestResultByCandidate(candidateId);
+
     // Step 4: Save to database
     const savedResult = await saveKoranTestResult({
+      id: existingKoran?.id,
       candidate_id: candidateId,
       nama_file: namaFile,
       foto_url: fotoUrl,
