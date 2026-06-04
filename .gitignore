@@ -65,3 +65,7 @@ next-env.d.ts
 # Temporary root files
 /photo_*
 /*.html
+/Analisis_HR_RIZQI_Staff Legal.pdf
+
+# Local database file
+/db_local.json
