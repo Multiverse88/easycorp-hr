@@ -209,7 +209,7 @@ PENTING:
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'claude-3-5-sonnet-latest',
+            model: 'claude-3-opus-20240229',
             system: systemPrompt,
             messages: [
               { role: 'user', content: userPrompt },

@@ -22,6 +22,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+} from '@/components/ui/drawer';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -199,6 +208,8 @@ export function AiAnalysisClient({
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [showWarning, setShowWarning] = useState(!!hasNewerData);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [missingTests, setMissingTests] = useState<string[]>([]);
 
   useEffect(() => {
     setShowWarning(!!hasNewerData);
@@ -237,18 +248,21 @@ export function AiAnalysisClient({
 
   async function runAnalysis() {
     const missing: string[] = [];
-    if (!hasDisc) missing.push('- Asesmen Kepribadian (DISC)');
-    if (!hasWpt) missing.push('- Tes IQ (WPT)');
-    if (!hasKoran) missing.push('- Tes Koran (Pauli/Kraepelin)');
-    if (!hasInterview) missing.push('- Evaluasi Interview');
+    if (!hasDisc) missing.push('Asesmen Kepribadian (DISC)');
+    if (!hasWpt) missing.push('Tes IQ (WPT)');
+    if (!hasKoran) missing.push('Tes Koran (Pauli/Kraepelin)');
+    if (!hasInterview) missing.push('Evaluasi Interview');
 
     if (missing.length > 0) {
-      const confirmed = window.confirm(
-        `Perhatian: Beberapa data asesmen belum terisi:\n\n${missing.join('\n')}\n\nApakah Anda yakin ingin melanjutkan analisis AI dengan data yang terbatas?`
-      );
-      if (!confirmed) return;
+      setMissingTests(missing);
+      setIsConfirmOpen(true);
+      return;
     }
 
+    await executeAnalysis();
+  }
+
+  async function executeAnalysis() {
     setState('loading');
     setError('');
     setResult(null);
@@ -335,7 +349,7 @@ export function AiAnalysisClient({
         <h2 className="text-2xl font-bold text-slate-800 mb-3">Analisis AI Kandidat</h2>
         <p className="text-slate-500 max-w-md mb-2">
           Sistem akan menganalisis seluruh data kandidat — DISC, WPT, Tes Koran, dan Interview — menggunakan{' '}
-          <span className="font-semibold text-[#8B2252]">Claude Sonnet 4.6 (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
+          <span className="font-semibold text-[#8B2252]">Claude 3 Opus (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
         </p>
         <p className="text-xs text-slate-400 mb-8">Proses analisis memerlukan sekitar 10–30 detik.</p>
         <Button
@@ -362,7 +376,7 @@ export function AiAnalysisClient({
         </div>
         <h3 className="text-lg font-semibold text-slate-700 mb-2">Menganalisis Data Kandidat…</h3>
         <p className="text-sm text-slate-400 max-w-xs">
-          Claude Sonnet 4.6 sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
+          Claude 3 Opus sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
         </p>
         <div className="flex gap-1.5 mt-6">
           {[0, 1, 2].map(i => (
@@ -408,7 +422,7 @@ export function AiAnalysisClient({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
-            Powered by Claude Sonnet 4.6 (Anthropic)
+            Powered by Claude 3 Opus (Anthropic)
           </Badge>
           {result.usage && (
             <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-250 bg-emerald-50 font-semibold">
@@ -601,9 +615,57 @@ export function AiAnalysisClient({
 
       {/* Footer note */}
       <p className="text-center text-[11px] text-slate-400 pb-4">
-        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude Sonnet 4.6 (Anthropic).
+        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude 3 Opus (Anthropic).
         Analisis ini bersifat pendukung keputusan, bukan pengganti penilaian profesional HR.
       </p>
+
+      {/* Drawer Dialog untuk Konfirmasi Data Belum Lengkap */}
+      <Drawer open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DrawerContent className="max-w-md mx-auto">
+          <DrawerHeader className="text-left">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center border border-amber-200">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <DrawerTitle className="text-slate-900 font-bold text-base">Asesmen Belum Lengkap</DrawerTitle>
+                <DrawerDescription className="text-xs text-slate-500">
+                  Kandidat {candidateName} belum menyelesaikan beberapa tahap tes berikut.
+                </DrawerDescription>
+              </div>
+            </div>
+          </DrawerHeader>
+
+          <div className="px-5 py-3 bg-slate-50 border-y border-slate-100">
+            <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Data yang belum terisi:</p>
+            <ul className="space-y-1.5">
+              {missingTests.map((t, idx) => (
+                <li key={idx} className="text-xs text-slate-700 font-semibold flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <DrawerFooter className="flex flex-col gap-2 p-5">
+            <Button
+              onClick={async () => {
+                setIsConfirmOpen(false);
+                await executeAnalysis();
+              }}
+              className="w-full bg-[#8B2252] hover:bg-[#8B2252]/90 text-white font-semibold cursor-pointer py-5 h-11"
+            >
+              Lanjutkan Analisis Terbatas
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline" className="w-full font-semibold cursor-pointer h-11">
+                Batal & Lengkapi Data
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
