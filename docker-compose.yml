@@ -11,6 +11,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    volumes:
+      - ./public/uploads:/app/public/uploads
     logging:
       driver: "json-file"
       options:
