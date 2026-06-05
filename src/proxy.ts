@@ -7,7 +7,7 @@ function getWIBDate(): string {
   return wibDate.toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const url = request.nextUrl;
   const path = url.pathname;

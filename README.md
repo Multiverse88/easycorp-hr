@@ -64,7 +64,7 @@ Sistem rekrutmen internal untuk PT EasyLegal yang membantu proses rekrutmen dari
 │  disc.easyai.id  │       dashboard.easyai.id            │
 │  (Kandidat)      │       (HR Internal)                  │
 ├──────────────────┴──────────────────────────────────────┤
-│                    Middleware                           │
+│                       Proxy                             │
 │              (Subdomain Routing)                        │
 ├─────────────────────────────────────────────────────────┤
 │                   Next.js App                          │
@@ -109,7 +109,7 @@ recruit-EL/
 │   │   ├── db.ts          # Database queries
 │   │   ├── discParser.ts  # DISC calculation
 │   │   └── utils.ts       # Utility functions
-│   └── middleware.ts      # Subdomain routing
+│   └── proxy.ts           # Subdomain routing
 ├── scripts/
 │   └── migrate-and-seed.sql  # Database schema
 ├── public/
