@@ -72,14 +72,18 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
               <div className="font-medium">{candidate.posisi_dilamar}</div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Token</div>
-              <div className="flex items-center gap-2">
-                <code className="bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-mono font-bold">{candidate.token}</code>
+              <div className="text-sm text-muted-foreground mb-1.5">Token Akses Tes</div>
+              <div className="flex flex-col gap-2">
+                <Link href={`https://disc.easyai.id/disc/${candidate.token}`} target="_blank">
+                  <Button variant="outline" className="font-mono font-bold text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100 w-fit cursor-pointer flex items-center gap-2">
+                    {candidate.token}
+                    <span className="text-xs font-normal">→ Buka Web Ujian</span>
+                  </Button>
+                </Link>
+                <div className="mt-1">
+                  <ShareInvitation candidate={candidate} />
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Link untuk kandidat: /masuk atau /disc/{candidate.token}
-              </div>
-              <ShareInvitation candidate={candidate} />
             </div>
             {request && (
               <div>
