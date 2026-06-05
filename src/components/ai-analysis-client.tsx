@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Brain,
   Sparkles,
@@ -79,6 +79,10 @@ interface Props {
   initialAnalysis?: AnalysisResult;
   initialGeneratedAt?: string;
   hasNewerData?: boolean;
+  hasDisc: boolean;
+  hasWpt: boolean;
+  hasKoran: boolean;
+  hasInterview: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -173,7 +177,17 @@ function ListBadges({ items, variant = 'default' }: { items: string[]; variant?:
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, initialGeneratedAt, hasNewerData }: Props) {
+export function AiAnalysisClient({
+  candidateId,
+  candidateName,
+  initialAnalysis,
+  initialGeneratedAt,
+  hasNewerData,
+  hasDisc,
+  hasWpt,
+  hasKoran,
+  hasInterview
+}: Props) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>(initialAnalysis ? 'done' : 'idle');
   const [result, setResult] = useState<AnalysisResponse | null>(initialAnalysis ? {
     success: true,
@@ -184,6 +198,11 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
   } : null);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [showWarning, setShowWarning] = useState(!!hasNewerData);
+
+  useEffect(() => {
+    setShowWarning(!!hasNewerData);
+  }, [hasNewerData]);
 
   async function pollStatus(retryCount = 0) {
     if (retryCount >= 40) {
@@ -205,6 +224,7 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
             analysis: json.analysis
           });
           setState('done');
+          setShowWarning(false);
           return;
         }
       }
@@ -216,6 +236,19 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
   }
 
   async function runAnalysis() {
+    const missing: string[] = [];
+    if (!hasDisc) missing.push('- Asesmen Kepribadian (DISC)');
+    if (!hasWpt) missing.push('- Tes IQ (WPT)');
+    if (!hasKoran) missing.push('- Tes Koran (Pauli/Kraepelin)');
+    if (!hasInterview) missing.push('- Evaluasi Interview');
+
+    if (missing.length > 0) {
+      const confirmed = window.confirm(
+        `Perhatian: Beberapa data asesmen belum terisi:\n\n${missing.join('\n')}\n\nApakah Anda yakin ingin melanjutkan analisis AI dengan data yang terbatas?`
+      );
+      if (!confirmed) return;
+    }
+
     setState('loading');
     setError('');
     setResult(null);
@@ -244,6 +277,7 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
       }
       setResult(json as AnalysisResponse);
       setState('done');
+      setShowWarning(false);
     } catch (err) {
       console.warn('Analysis error. Fallback to status polling...', err);
       pollStatus();
@@ -410,7 +444,7 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
         </div>
       </div>
 
-      {hasNewerData && (
+      {showWarning && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 shadow-sm text-left">
           <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">

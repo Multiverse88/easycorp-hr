@@ -88,6 +88,10 @@ export default async function AnalisisAiPage({ params }: { params: Promise<{ id:
           initialAnalysis={existingAnalysis?.analysis}
           initialGeneratedAt={existingAnalysis?.created_at}
           hasNewerData={hasNewerData}
+          hasDisc={!!discResult}
+          hasWpt={!!wptResult}
+          hasKoran={!!koranResult}
+          hasInterview={!!interviewResult}
         />
       </div>
     </div>
