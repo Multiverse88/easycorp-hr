@@ -12,6 +12,9 @@ export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
   const path = url.pathname;
 
+  // Log incoming request
+  console.log(`[${new Date().toISOString()}] ${request.method} ${hostname}${path}`);
+
   // Detect environment
   const isLocalhost = hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1');
   const isDiscSubdomain = hostname.startsWith('disc.');
