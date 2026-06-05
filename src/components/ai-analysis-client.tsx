@@ -197,16 +197,23 @@ export function AiAnalysisClient({
   hasKoran,
   hasInterview
 }: Props) {
-  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>(initialAnalysis ? 'done' : 'idle');
-  const [result, setResult] = useState<AnalysisResponse | null>(initialAnalysis ? {
-    success: true,
-    candidateId,
-    candidateName,
-    generatedAt: initialGeneratedAt || new Date().toISOString(),
-    analysis: initialAnalysis,
-    usage: (initialAnalysis as any).usage,
-  } : null);
-  const [error, setError] = useState('');
+  const isPending = initialAnalysis && (initialAnalysis as any).status === 'in_progress';
+  const isErrStatus = initialAnalysis && (initialAnalysis as any).status === 'error';
+
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>(
+    isPending ? 'loading' : (isErrStatus ? 'error' : (initialAnalysis ? 'done' : 'idle'))
+  );
+  const [result, setResult] = useState<AnalysisResponse | null>(
+    (initialAnalysis && !isPending && !isErrStatus) ? {
+      success: true,
+      candidateId,
+      candidateName,
+      generatedAt: initialGeneratedAt || new Date().toISOString(),
+      analysis: initialAnalysis,
+      usage: (initialAnalysis as any).usage,
+    } : null
+  );
+  const [error, setError] = useState(isErrStatus ? ((initialAnalysis as any).error || 'Analisis gagal.') : '');
   const [downloading, setDownloading] = useState(false);
   const [showWarning, setShowWarning] = useState(!!hasNewerData);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -215,6 +222,12 @@ export function AiAnalysisClient({
   useEffect(() => {
     setShowWarning(!!hasNewerData);
   }, [hasNewerData]);
+
+  useEffect(() => {
+    if (isPending) {
+      pollStatus();
+    }
+  }, [isPending]);
 
   async function pollStatus(retryCount = 0) {
     if (retryCount >= 40) {
@@ -228,6 +241,17 @@ export function AiAnalysisClient({
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.exists) {
+          if (json.analysis?.status === 'in_progress') {
+            // Still in progress, retry
+            setTimeout(() => pollStatus(retryCount + 1), 3000);
+            return;
+          }
+          if (json.analysis?.status === 'error') {
+            setError(json.analysis.error || 'Terjadi kesalahan saat menganalisis.');
+            setState('error');
+            return;
+          }
+
           setResult({
             success: true,
             candidateId,
@@ -291,6 +315,12 @@ export function AiAnalysisClient({
       if (!json.success) {
         throw new Error(json.error || 'Analisis gagal.');
       }
+
+      if (json.queued) {
+        pollStatus();
+        return;
+      }
+
       setResult(json as AnalysisResponse);
       setState('done');
       setShowWarning(false);

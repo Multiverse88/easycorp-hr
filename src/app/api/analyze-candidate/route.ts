@@ -109,90 +109,15 @@ function buildPrompt(data: {
 
 // ─── route handler ────────────────────────────────────────────────────────────
 
-export async function POST(request: NextRequest) {
+const activeAnalyses = new Set<string>();
+
+async function runAnalysisInBackground(
+  candidateId: string,
+  candidateName: string,
+  systemPrompt: string,
+  userPrompt: string
+) {
   try {
-    const { candidateId } = await request.json();
-
-    if (!candidateId) {
-      return NextResponse.json({ error: 'candidateId wajib diisi' }, { status: 400 });
-    }
-
-    const candidate = await getCandidateById(candidateId);
-    if (!candidate) {
-      return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
-    }
-
-    const [disc, wpt, koran, interview] = await Promise.all([
-      getDiscTestResultByCandidate(candidateId),
-      getWptTestResultByCandidate(candidateId),
-      getKoranTestResultByCandidate(candidateId),
-      getInterviewEvaluationByCandidate(candidateId),
-    ]);
-
-    const candidateDataText = buildPrompt({ candidate, disc, wpt, koran, interview });
-
-    const systemPrompt = `Anda adalah HR Psikolog Senior dan Konsultan Rekrutmen berpengalaman lebih dari 15 tahun di industri hukum (law firm). 
-Tugas Anda adalah menganalisis data kandidat secara komprehensif dan menghasilkan laporan psikologi rekrutmen yang profesional, objektif, dan terstruktur.
-Gunakan bahasa Indonesia yang formal, lugas, dan profesional.
-Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Interview) menjadi satu narasi analisis yang kohesif.`;
-
-    const userPrompt = `Berikut adalah data lengkap kandidat yang perlu Anda analisis:
-
-${candidateDataText}
-
----
-
-Berdasarkan data di atas, buatlah LAPORAN ANALISIS PSIKOLOGI REKRUTMEN yang komprehensif dalam format JSON berikut:
-
-{
-  "fit_scores": {
-    "disc_fit": 85, // Angka 0-100 persen tingkat kecocokan kepribadian DISC dengan kriteria jabatan
-    "wpt_fit": 80, // Angka 0-100 persen tingkat kecocokan kognitif WPT dengan kriteria jabatan
-    "tes_koran_fit": 75, // Angka 0-100 persen tingkat kecocokan daya tahan/kecepatan Tes Koran dengan kriteria jabatan
-    "kesesuaian_overall": 80 // Angka 0-100 persen tingkat kesesuaian gabungan keseluruhan kandidat dengan posisi
-  },
-  "ringkasan_eksekutif": "Paragraf ringkas 3-4 kalimat yang merangkum profil kandidat secara keseluruhan untuk pengambil keputusan.",
-  
-  "profil_kepribadian": {
-    "narasi": "Analisis mendalam 2-3 paragraf mengenai kepribadian kandidat berdasarkan hasil DISC. Jelaskan karakteristik dominan, gaya kerja, pola komunikasi, dan implikasinya untuk posisi yang dilamar.",
-    "kekuatan": ["kekuatan 1", "kekuatan 2", "kekuatan 3"],
-    "area_pengembangan": ["area 1", "area 2"]
-  },
-  
-  "kemampuan_intelektual": {
-    "narasi": "Analisis 1-2 paragraf mengenai kapasitas intelektual berdasarkan WPT. Bandingkan skor dengan standar posisi, jelaskan kemampuan analitis, daya nalar, dan kecepatan berpikir.",
-    "kesesuaian_posisi": "Penjelasan singkat mengenai kesesuaian IQ dengan kebutuhan posisi."
-  },
-  
-  "daya_tahan_kerja": {
-    "narasi": "Analisis 1-2 paragraf mengenai aspek psikomotor dan ketahanan kerja berdasarkan Tes Koran. Korelasikan dengan tuntutan pekerjaan posisi yang dilamar.",
-    "kesimpulan": "Lulus | Dipertimbangkan | Tidak Lulus"
-  },
-  
-  "kompetensi_interview": {
-    "narasi": "Analisis 1-2 paragraf mengenai performa interview, kompetensi yang teridentifikasi, dan keselarasan ekspektasi kandidat dengan perusahaan.",
-    "highlight": ["kompetensi menonjol 1", "kompetensi menonjol 2"]
-  },
-  
-  "analisis_integrasi": "Analisis integratif 2-3 paragraf yang menghubungkan semua aspek (kepribadian, kecerdasan, daya tahan, performa interview) menjadi gambaran kandidat yang utuh. Identifikasi apakah ada konsistensi atau inkonsistensi antar data.",
-  
-  "potensi_risiko": ["risiko atau concern 1", "risiko atau concern 2"],
-  
-  "rekomendasi_onboarding": "Saran 1-2 paragraf mengenai pendekatan onboarding yang sesuai, kebutuhan coaching/mentoring, dan area yang perlu diperhatikan jika kandidat diterima.",
-  
-  "kesimpulan_akhir": {
-    "rekomendasi": "Sangat Direkomendasikan | Direkomendasikan | Dipertimbangkan | Tidak Direkomendasikan",
-    "catatan": "1-2 kalimat penjelasan singkat atas rekomendasi tersebut.",
-    "skor_keseluruhan": 85
-  }
-}
-
-PENTING:
-- Kembalikan HANYA raw JSON yang valid, tanpa markdown fence \`\`\`json, tanpa teks pembuka/penutup apapun.
-- Field "skor_keseluruhan" adalah angka 0-100 yang merepresentasikan keseluruhan penilaian kandidat.
-- Rekomendasi harus konsisten dengan data yang ada.
-- Jika data tertentu tidak tersedia (misalnya tes belum dikerjakan), tetap berikan analisis berdasarkan data yang ada dan tandai keterbatasan analisis tersebut.`;
-
     let content: string | undefined;
     let tokenUsage: { input_tokens: number; output_tokens: number; total_tokens: number } | undefined = undefined;
     let anthropicError: string | undefined = undefined;
@@ -303,9 +228,6 @@ PENTING:
 
     let analysis;
     try {
-      // Basic sanitization: replace raw/unescaped control characters/newlines with escaped equivalents
-      // or replace literal newlines within string values.
-      // A safe way is to parse normally first.
       analysis = JSON.parse(cleanJson);
     } catch (parseError) {
       console.error('JSON parse error details:', parseError);
@@ -319,14 +241,127 @@ PENTING:
 
     const { saveAiAnalysis } = await import('@/lib/db');
     await saveAiAnalysis(candidateId, analysis);
+    console.log(`Background AI analysis succeeded and saved for candidate ${candidateId}`);
+  } catch (err) {
+    console.error(`Error in runAnalysisInBackground for candidate ${candidateId}:`, err);
+    try {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const { saveAiAnalysis } = await import('@/lib/db');
+      await saveAiAnalysis(candidateId, { status: 'error', error: errMsg });
+    } catch (dbErr) {
+      console.error('Failed to write error status to DB:', dbErr);
+    }
+  } finally {
+    activeAnalyses.delete(candidateId);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { candidateId } = await request.json();
+
+    if (!candidateId) {
+      return NextResponse.json({ error: 'candidateId wajib diisi' }, { status: 400 });
+    }
+
+    if (activeAnalyses.has(candidateId)) {
+      return NextResponse.json({
+        success: true,
+        queued: true,
+        message: 'Analisis sedang berjalan di latar belakang.'
+      });
+    }
+
+    const candidate = await getCandidateById(candidateId);
+    if (!candidate) {
+      return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
+    }
+
+    const [disc, wpt, koran, interview] = await Promise.all([
+      getDiscTestResultByCandidate(candidateId),
+      getWptTestResultByCandidate(candidateId),
+      getKoranTestResultByCandidate(candidateId),
+      getInterviewEvaluationByCandidate(candidateId),
+    ]);
+
+    const candidateDataText = buildPrompt({ candidate, disc, wpt, koran, interview });
+
+    const systemPrompt = `Anda adalah HR Psikolog Senior dan Konsultan Rekrutmen berpengalaman lebih dari 15 tahun di industri hukum (law firm). 
+Tugas Anda adalah menganalisis data kandidat secara komprehensif dan menghasilkan laporan psikologi rekrutmen yang profesional, objektif, dan terstruktur.
+Gunakan bahasa Indonesia yang formal, lugas, dan profesional.
+Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Interview) menjadi satu narasi analisis yang kohesif.`;
+
+    const userPrompt = `Berikut adalah data lengkap kandidat yang perlu Anda analisis:
+
+${candidateDataText}
+
+---
+
+Berdasarkan data di atas, buatlah LAPORAN ANALISIS PSIKOLOGI REKRUTMEN yang komprehensif dalam format JSON berikut:
+
+{
+  "fit_scores": {
+    "disc_fit": 85,
+    "wpt_fit": 80,
+    "tes_koran_fit": 75,
+    "kesesuaian_overall": 80
+  },
+  "ringkasan_eksekutif": "Paragraf ringkas 3-4 kalimat yang merangkum profil kandidat secara keseluruhan untuk pengambil keputusan.",
+  
+  "profil_kepribadian": {
+    "narasi": "Analisis mendalam 2-3 paragraf mengenai kepribadian kandidat berdasarkan hasil DISC. Jelaskan karakteristik dominan, gaya kerja, pola komunikasi, dan implikasinya untuk posisi yang dilamar.",
+    "kekuatan": ["kekuatan 1", "kekuatan 2", "kekuatan 3"],
+    "area_pengembangan": ["area 1", "area 2"]
+  },
+  
+  "kemampuan_intelektual": {
+    "narasi": "Analisis 1-2 paragraf mengenai kapasitas intelektual berdasarkan WPT. Bandingkan skor dengan standar posisi, jelaskan kemampuan analitis, daya nalar, dan kecepatan berpikir.",
+    "kesesuaian_posisi": "Penjelasan singkat mengenai kesesuaian IQ dengan kebutuhan posisi."
+  },
+  
+  "daya_tahan_kerja": {
+    "narasi": "Analisis 1-2 paragraf mengenai aspek psikomotor dan ketahanan kerja berdasarkan Tes Koran. Korelasikan dengan tuntutan pekerjaan posisi yang dilamar.",
+    "kesimpulan": "Lulus | Dipertimbangkan | Tidak Lulus"
+  },
+  
+  "kompetensi_interview": {
+    "narasi": "Analisis 1-2 paragraf mengenai performa interview, kompetensi yang teridentifikasi, dan keselarasan ekspektasi kandidat dengan perusahaan.",
+    "highlight": ["kompetensi menonjol 1", "kompetensi menonjol 2"]
+  },
+  
+  "analisis_integrasi": "Analisis integratif 2-3 paragraf yang menghubungkan semua aspek (kepribadian, kecerdasan, daya tahan, performa interview) menjadi gambaran kandidat yang utuh. Identifikasi apakah ada konsistensi atau inkonsistensi antar data.",
+  
+  "potensi_risiko": ["risiko atau concern 1", "risiko atau concern 2"],
+  
+  "rekomendasi_onboarding": "Saran 1-2 paragraf mengenai pendekatan onboarding yang sesuai, kebutuhan coaching/mentoring, dan area yang perlu diperhatikan jika kandidat diterima.",
+  
+  "kesimpulan_akhir": {
+    "rekomendasi": "Sangat Direkomendasikan | Direkomendasikan | Dipertimbangkan | Tidak Direkomendasikan",
+    "catatan": "1-2 kalimat penjelasan singkat atas rekomendasi tersebut.",
+    "skor_keseluruhan": 85
+  }
+}
+
+PENTING:
+- Kembalikan HANYA raw JSON yang valid, tanpa markdown fence \`\`\`json, tanpa teks pembuka/penutup apapun.
+- Field "skor_keseluruhan" adalah angka 0-100 yang merepresentasikan keseluruhan penilaian kandidat.
+- Rekomendasi harus konsisten dengan data yang ada.
+- Jika data tertentu tidak tersedia (misalnya tes belum dikerjakan), tetap berikan analisis berdasarkan data yang ada dan tandai keterbatasan analisis tersebut.`;
+
+    activeAnalyses.add(candidateId);
+
+    // Save placeholder to Supabase to indicate "in_progress" status
+    const { saveAiAnalysis } = await import('@/lib/db');
+    await saveAiAnalysis(candidateId, { status: 'in_progress' });
+
+    // Trigger analysis task in the background without awaiting it
+    runAnalysisInBackground(candidateId, candidate.nama, systemPrompt, userPrompt)
+      .catch(err => console.error("Uncaught error in runAnalysisInBackground:", err));
 
     return NextResponse.json({
       success: true,
-      candidateId,
-      candidateName: candidate.nama,
-      generatedAt: new Date().toISOString(),
-      analysis,
-      usage: tokenUsage,
+      queued: true,
+      message: 'Analisis dimulai di latar belakang.'
     });
   } catch (error) {
     console.error('analyze-candidate error:', error);
