@@ -435,7 +435,7 @@ export function AiAnalysisClient({
         </div>
         <div className="flex items-center gap-2">
           {result.usage && (() => {
-            const costUsd = (result.usage.input_tokens / 1000000) * 3 + (result.usage.output_tokens / 1000000) * 15;
+            const costUsd = (result.usage.input_tokens / 1000000) * 15 + (result.usage.output_tokens / 1000000) * 75;
             const costIdr = Math.round(costUsd * 16000);
             return (
               <div 
