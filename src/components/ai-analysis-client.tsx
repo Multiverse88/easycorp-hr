@@ -204,6 +204,7 @@ export function AiAnalysisClient({
     candidateName,
     generatedAt: initialGeneratedAt || new Date().toISOString(),
     analysis: initialAnalysis,
+    usage: (initialAnalysis as any).usage,
   } : null);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
@@ -232,7 +233,8 @@ export function AiAnalysisClient({
             candidateId,
             candidateName,
             generatedAt: json.generatedAt,
-            analysis: json.analysis
+            analysis: json.analysis,
+            usage: json.analysis?.usage,
           });
           setState('done');
           setShowWarning(false);

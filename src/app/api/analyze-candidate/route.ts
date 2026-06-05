@@ -313,6 +313,10 @@ PENTING:
       throw new Error('AI tidak mengembalikan JSON yang valid.');
     }
 
+    if (tokenUsage) {
+      analysis.usage = tokenUsage;
+    }
+
     const { saveAiAnalysis } = await import('@/lib/db');
     await saveAiAnalysis(candidateId, analysis);
 
