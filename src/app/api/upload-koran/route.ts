@@ -6,6 +6,65 @@ import { existsSync } from 'fs';
 
 export const dynamic = 'force-dynamic';
 
+function parseAiJson(rawContent: string): any {
+  let cleanJson = rawContent.trim();
+  
+  // Find first '{' and last '}'
+  const start = cleanJson.indexOf('{');
+  const end = cleanJson.lastIndexOf('}');
+  
+  if (start !== -1 && end !== -1 && end > start) {
+    cleanJson = cleanJson.substring(start, end + 1);
+  }
+  
+  // Try to remove trailing commas before closing brackets/braces
+  cleanJson = cleanJson.replace(/,(\s*[\]}])/g, '$1');
+
+  try {
+    return JSON.parse(cleanJson);
+  } catch (firstError) {
+    console.warn('Initial JSON parse failed, trying to escape literal control characters inside string values...', firstError);
+    
+    try {
+      // Escape literal unescaped control characters inside double-quoted string values.
+      let inString = false;
+      let escaped = false;
+      let processed = '';
+      for (let i = 0; i < cleanJson.length; i++) {
+        const char = cleanJson[i];
+        if (char === '"' && !escaped) {
+          inString = !inString;
+          processed += char;
+        } else if (char === '\\' && !escaped) {
+          escaped = true;
+          processed += char;
+        } else {
+          if (inString) {
+            if (char === '\n') {
+              processed += '\\n';
+            } else if (char === '\r') {
+              processed += '\\r';
+            } else if (char === '\t') {
+              processed += '\\t';
+            } else {
+              processed += char;
+            }
+          } else {
+            processed += char;
+          }
+          escaped = false;
+        }
+      }
+      return JSON.parse(processed);
+    } catch (secondError) {
+      console.error('JSON parse error even after escaping control characters:', secondError);
+      console.error('Raw JSON string content attempting to parse:', cleanJson);
+      throw new Error(`AI tidak mengembalikan JSON yang valid: ${firstError instanceof Error ? firstError.message : String(firstError)}`);
+    }
+  }
+}
+
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -209,24 +268,11 @@ Pastikan hanya mengembalikan JSON yang valid tanpa markdown code fences \`\`\`js
       throw new Error('Respons AI kosong atau tidak valid (gagal pada Anthropic dan OpenAI).');
     }
 
-    // Clean any potential json formatting markdown around content
-    let cleanJson = content.trim();
-    if (cleanJson.startsWith('```json')) {
-      cleanJson = cleanJson.substring(7);
-    }
-    if (cleanJson.startsWith('```')) {
-      cleanJson = cleanJson.substring(3);
-    }
-    if (cleanJson.endsWith('```')) {
-      cleanJson = cleanJson.substring(0, cleanJson.length - 3);
-    }
-    cleanJson = cleanJson.trim();
-
     let analysisResult;
     try {
-      analysisResult = JSON.parse(cleanJson);
+      analysisResult = parseAiJson(content);
     } catch (e) {
-      console.error('Failed to parse AI JSON:', cleanJson, e);
+      console.error('Failed to parse AI JSON:', content, e);
       throw new Error('AI tidak mengembalikan JSON yang valid.');
     }
 

@@ -330,13 +330,13 @@ export function AnalysisPdfDocument({ data }: { data: AnalysisPdfData }) {
         <View style={s.sideGrid}>
           <View style={[s.sideBox, s.sideBoxGreen]}>
             <Text style={[s.sideBoxTitle, s.sideBoxTitleGreen]}>Kekuatan Kepribadian</Text>
-            {analysis.profil_kepribadian.kekuatan.map((k, i) => (
+            {(analysis.profil_kepribadian?.kekuatan || []).map((k, i) => (
               <Text key={i} style={s.sideBoxItem}>&bull; {k}</Text>
             ))}
           </View>
           <View style={[s.sideBox, s.sideBoxRed]}>
             <Text style={[s.sideBoxTitle, s.sideBoxTitleRed]}>Area Pengembangan</Text>
-            {analysis.profil_kepribadian.area_pengembangan.map((k, i) => (
+            {(analysis.profil_kepribadian?.area_pengembangan || []).map((k, i) => (
               <Text key={i} style={s.sideBoxItem}>&bull; {k}</Text>
             ))}
           </View>
@@ -441,11 +441,11 @@ export function AnalysisPdfDocument({ data }: { data: AnalysisPdfData }) {
         <Text style={s.narrativeText}>{analysis.kompetensi_interview.narasi}</Text>
 
         {/* Highlight list */}
-        {analysis.kompetensi_interview.highlight?.length > 0 && (
+        {(analysis.kompetensi_interview?.highlight || []).length > 0 && (
           <View style={{ marginBottom: 10 }}>
             <Text style={{ fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: colors.accent, marginBottom: 4 }}>Kompetensi Menonjol Kandidat:</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-              {analysis.kompetensi_interview.highlight.map((h, i) => (
+              {(analysis.kompetensi_interview?.highlight || []).map((h, i) => (
                 <Text key={i} style={{ fontSize: 7, backgroundColor: colors.bgAlt, borderColor: colors.border, borderWidth: 0.5, borderRadius: 3, paddingVertical: 2, paddingHorizontal: 5, color: colors.text }}>
                   &bull; {h}
                 </Text>
@@ -560,7 +560,7 @@ export function AnalysisPdfDocument({ data }: { data: AnalysisPdfData }) {
         {/* Highlights and Warnings lists */}
         <View style={{ marginTop: 6 }}>
           <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 8, color: '#15803D', marginBottom: 4 }}>Kekuatan Utama Kandidat:</Text>
-          {analysis.profil_kepribadian.kekuatan.slice(0, 3).map((item, idx) => (
+          {(analysis.profil_kepribadian?.kekuatan || []).slice(0, 3).map((item, idx) => (
             <View key={idx} style={{ flexDirection: 'row', marginBottom: 3, alignItems: 'flex-start' }}>
               <Text style={s.checkListIcon}>✓</Text>
               <Text style={{ fontSize: 7.5, color: colors.text }}>{item}</Text>
@@ -571,7 +571,7 @@ export function AnalysisPdfDocument({ data }: { data: AnalysisPdfData }) {
         {/* Area perhatian / warning box */}
         <View style={[s.warningBox, { marginTop: 8 }]}>
           <Text style={s.warningTitle}>Area Perhatian (Risiko & Concern):</Text>
-          {analysis.potensi_risiko.map((item, idx) => (
+          {(analysis.potensi_risiko || []).map((item, idx) => (
             <View key={idx} style={{ flexDirection: 'row', marginBottom: 2, alignItems: 'flex-start' }}>
               <Text style={s.bulletListIcon}>■</Text>
               <Text style={s.warningItem}>{item}</Text>

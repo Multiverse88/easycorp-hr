@@ -10,10 +10,68 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-// ─── helper ─────────────────────────────────────────────────────────────────
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function pct(v: number) {
   return `${Math.round(v * 100)}%`;
+}
+
+function parseAiJson(rawContent: string): any {
+  let cleanJson = rawContent.trim();
+  
+  // Find first '{' and last '}'
+  const start = cleanJson.indexOf('{');
+  const end = cleanJson.lastIndexOf('}');
+  
+  if (start !== -1 && end !== -1 && end > start) {
+    cleanJson = cleanJson.substring(start, end + 1);
+  }
+  
+  // Try to remove trailing commas before closing brackets/braces
+  cleanJson = cleanJson.replace(/,(\s*[\]}])/g, '$1');
+
+  try {
+    return JSON.parse(cleanJson);
+  } catch (firstError) {
+    console.warn('Initial JSON parse failed, trying to escape literal control characters inside string values...', firstError);
+    
+    try {
+      // Escape literal unescaped control characters inside double-quoted string values.
+      let inString = false;
+      let escaped = false;
+      let processed = '';
+      for (let i = 0; i < cleanJson.length; i++) {
+        const char = cleanJson[i];
+        if (char === '"' && !escaped) {
+          inString = !inString;
+          processed += char;
+        } else if (char === '\\' && !escaped) {
+          escaped = true;
+          processed += char;
+        } else {
+          if (inString) {
+            if (char === '\n') {
+              processed += '\\n';
+            } else if (char === '\r') {
+              processed += '\\r';
+            } else if (char === '\t') {
+              processed += '\\t';
+            } else {
+              processed += char;
+            }
+          } else {
+            processed += char;
+          }
+          escaped = false;
+        }
+      }
+      return JSON.parse(processed);
+    } catch (secondError) {
+      console.error('JSON parse error even after escaping control characters:', secondError);
+      console.error('Raw JSON string content attempting to parse:', cleanJson);
+      throw new Error(`AI tidak mengembalikan JSON yang valid: ${firstError instanceof Error ? firstError.message : String(firstError)}`);
+    }
+  }
 }
 
 function buildPrompt(data: {
@@ -219,20 +277,12 @@ async function runAnalysisInBackground(
       throw new Error(`Gagal melakukan analisis. [Anthropic Error: ${anthropicError || 'None'}] [OpenAI Error: ${openAiError || 'None'}]`);
     }
 
-    // Strip markdown fence if present
-    let cleanJson = content.trim();
-    if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
-    if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
-    if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
-    cleanJson = cleanJson.trim();
-
     let analysis;
     try {
-      analysis = JSON.parse(cleanJson);
+      analysis = parseAiJson(content);
     } catch (parseError) {
-      console.error('JSON parse error details:', parseError);
-      console.error('JSON parse error — full raw content:', cleanJson);
-      throw new Error('AI tidak mengembalikan JSON yang valid.');
+      console.error('Failed to parse candidate analysis JSON:', parseError);
+      throw parseError;
     }
 
     if (tokenUsage) {
