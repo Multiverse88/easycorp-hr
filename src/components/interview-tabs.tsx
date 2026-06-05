@@ -3,12 +3,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ChevronDownIcon } from 'lucide-react';
 import { LoadingOverlay } from '@/components/loading-overlay';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface InterviewEvaluationFormProps {
   candidateId: string;
@@ -32,6 +37,9 @@ function InterviewEvaluationForm({ candidateId, candidateName, position }: Inter
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [openDatePicker, setOpenDatePicker] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [time, setTime] = useState<string>('10:30:00');
 
   function updatePenilaian(index: number, field: string, value: string | number) {
     const updated = [...penilaian];
@@ -43,11 +51,19 @@ function InterviewEvaluationForm({ candidateId, candidateName, position }: Inter
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!date) {
+      alert('Tanggal interview wajib diisi.');
+      return;
+    }
+
     setIsSubmitting(true);
+
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${time}`;
 
     const formData = {
       candidate_id: candidateId,
-      tanggal: (document.getElementById('interview_tanggal') as HTMLInputElement)?.value,
+      tanggal: formattedDate,
       tahap: (document.getElementById('interview_tahap') as HTMLSelectElement)?.value as 'HRGA' | 'User' | 'Final',
       interviewer: (document.getElementById('interviewer') as HTMLInputElement)?.value,
       metode: (document.getElementById('metode') as HTMLSelectElement)?.value as 'Online' | 'Offline',
@@ -106,8 +122,47 @@ function InterviewEvaluationForm({ candidateId, candidateName, position }: Inter
             {/* Tanggal & Tahap */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="interview_tanggal">Tanggal Interview</Label>
-                <Input id="interview_tanggal" type="date" required />
+                <FieldGroup className="flex-row gap-2">
+                  <Field className="flex-1">
+                    <FieldLabel htmlFor="date-picker-optional">Tanggal Interview</FieldLabel>
+                    <Popover open={openDatePicker} onOpenChange={setOpenDatePicker}>
+                      <PopoverTrigger
+                        id="date-picker-optional"
+                        type="button"
+                        className={cn(
+                          buttonVariants({ variant: "outline" }),
+                          "w-full justify-between font-normal h-10 border-input text-left flex items-center"
+                        )}
+                      >
+                        {date ? format(date, "PPP") : "Pilih tanggal"}
+                        <ChevronDownIcon className="w-4 h-4 opacity-50 ml-2" />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          captionLayout="dropdown"
+                          defaultMonth={date}
+                          onSelect={(date) => {
+                            setDate(date)
+                            setOpenDatePicker(false)
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </Field>
+                  <Field className="w-32">
+                    <FieldLabel htmlFor="time-picker-optional">Jam</FieldLabel>
+                    <Input
+                      type="time"
+                      id="time-picker-optional"
+                      step="1"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none h-10"
+                    />
+                  </Field>
+                </FieldGroup>
               </div>
               <div>
                 <Label htmlFor="interview_tahap">Tahap Interview</Label>
