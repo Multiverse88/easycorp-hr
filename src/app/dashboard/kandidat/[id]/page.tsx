@@ -17,16 +17,17 @@ import { ShareInvitation } from '@/components/share-invitation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function KandidatDetailPage({ params }: { params: { id: string } }) {
-  const candidate = await getCandidateById(params.id);
+export default async function KandidatDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const resolvedParams = await params;
+  const candidate = await getCandidateById(resolvedParams.id);
   if (!candidate) {
     return <div className="p-8">Kandidat tidak ditemukan</div>;
   }
 
   const [discResult, wptResult, koranResult, requests] = await Promise.all([
-    getDiscTestResultByCandidate(params.id),
-    getWptTestResultByCandidate(params.id),
-    getKoranTestResultByCandidate(params.id),
+    getDiscTestResultByCandidate(resolvedParams.id),
+    getWptTestResultByCandidate(resolvedParams.id),
+    getKoranTestResultByCandidate(resolvedParams.id),
     getManpowerRequests(),
   ]);
   const request = requests.find(r => r.id === candidate.manpower_request_id);
@@ -41,12 +42,12 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
           <h1 className="text-2xl font-bold mt-2">Detail Kandidat</h1>
         </div>
         <div className="flex items-center gap-2">
-          <DownloadCandidatePdf candidateId={params.id} />
-          <StatusSelector candidateId={params.id} currentStatus={candidate.status} />
+          <DownloadCandidatePdf candidateId={resolvedParams.id} />
+          <StatusSelector candidateId={resolvedParams.id} currentStatus={candidate.status} />
         </div>
       </div>
 
-      <CandidateQuickActions candidateId={params.id} />
+      <CandidateQuickActions candidateId={resolvedParams.id} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -116,7 +117,7 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Hasil DISC Test</CardTitle>
-                <Link href={`/dashboard/kandidat/${params.id}/disc`}>
+                <Link href={`/dashboard/kandidat/${resolvedParams.id}/disc`}>
                   <Button variant="outline" size="sm">Lihat Detail</Button>
                 </Link>
               </div>
@@ -162,7 +163,7 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
                   <Brain className="h-5 w-5" />
                   Hasil Tes IQ (WPT)
                 </CardTitle>
-                <Link href={`/dashboard/kandidat/${params.id}/wpt`}>
+                <Link href={`/dashboard/kandidat/${resolvedParams.id}/wpt`}>
                   <Button variant="outline" size="sm">Lihat Detail</Button>
                 </Link>
               </div>
@@ -202,7 +203,7 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
                   <FileText className="h-5 w-5 text-emerald-600" />
                   Hasil Tes Koran (Pauli/Kraepelin)
                 </CardTitle>
-                <Link href={`/dashboard/kandidat/${params.id}/tes-koran`}>
+                <Link href={`/dashboard/kandidat/${resolvedParams.id}/tes-koran`}>
                   <Button variant="outline" size="sm">Lihat Detail</Button>
                 </Link>
               </div>
@@ -253,7 +254,7 @@ export default async function KandidatDetailPage({ params }: { params: { id: str
                   </p>
                 </div>
               </div>
-              <Link href={`/dashboard/kandidat/${params.id}/analisis-ai`} className="ml-4 flex-shrink-0">
+              <Link href={`/dashboard/kandidat/${resolvedParams.id}/analisis-ai`} className="ml-4 flex-shrink-0">
                 <Button className="bg-gradient-to-r from-[#8B2252] to-[#c0507a] text-white hover:opacity-90 flex items-center gap-2 shadow-sm">
                   <Sparkles className="w-4 h-4" />
                   Jalankan Analisis

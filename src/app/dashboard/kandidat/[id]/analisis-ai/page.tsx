@@ -6,8 +6,9 @@ import { Brain, Sparkles } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AnalisisAiPage({ params }: { params: { id: string } }) {
-  const candidate = await getCandidateById(params.id);
+export default async function AnalisisAiPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const resolvedParams = await params;
+  const candidate = await getCandidateById(resolvedParams.id);
 
   if (!candidate) {
     return <div className="p-8 text-slate-500">Kandidat tidak ditemukan.</div>;
@@ -19,7 +20,7 @@ export default async function AnalisisAiPage({ params }: { params: { id: string 
       <div className="flex items-center justify-between mb-6">
         <div>
           <Link
-            href={`/dashboard/kandidat/${params.id}`}
+            href={`/dashboard/kandidat/${resolvedParams.id}`}
             className="text-sm text-muted-foreground hover:underline"
           >
             ← Kembali ke Detail Kandidat
@@ -41,11 +42,11 @@ export default async function AnalisisAiPage({ params }: { params: { id: string 
         </div>
       </div>
 
-      <CandidateQuickActions candidateId={params.id} />
+      <CandidateQuickActions candidateId={resolvedParams.id} />
 
       <div className="mt-6">
         <AiAnalysisClient
-          candidateId={params.id}
+          candidateId={resolvedParams.id}
           candidateName={candidate.nama}
         />
       </div>

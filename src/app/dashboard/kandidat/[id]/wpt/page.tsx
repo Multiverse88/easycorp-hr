@@ -7,22 +7,23 @@ import { Brain } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function WptHrPage({ params }: { params: { id: string } }) {
-  const candidate = await getCandidateById(params.id);
+export default async function WptHrPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const resolvedParams = await params;
+  const candidate = await getCandidateById(resolvedParams.id);
   if (!candidate) {
     return <div>Kandidat tidak ditemukan</div>;
   }
 
-  const wptResult = await getWptTestResultByCandidate(params.id);
+  const wptResult = await getWptTestResultByCandidate(resolvedParams.id);
 
   return (
     <div>
-      <Link href={`/dashboard/kandidat/${params.id}`} className="text-sm text-muted-foreground hover:underline">
+      <Link href={`/dashboard/kandidat/${resolvedParams.id}`} className="text-sm text-muted-foreground hover:underline">
         &larr; Kembali ke detail kandidat
       </Link>
       <h1 className="text-2xl font-bold mt-2 mb-4">Tes IQ (WPT)</h1>
 
-      <CandidateQuickActions candidateId={params.id} />
+      <CandidateQuickActions candidateId={resolvedParams.id} />
 
       <div className="mt-6">
         {wptResult ? (

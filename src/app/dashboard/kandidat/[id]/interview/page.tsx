@@ -9,29 +9,30 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function InterviewPage({ params }: { params: { id: string } }) {
-  const candidate = await getCandidateById(params.id);
+export default async function InterviewPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const resolvedParams = await params;
+  const candidate = await getCandidateById(resolvedParams.id);
   if (!candidate) {
     return <div className="p-8">Kandidat tidak ditemukan</div>;
   }
 
-  const evaluation = await getInterviewEvaluationByCandidate(params.id);
+  const evaluation = await getInterviewEvaluationByCandidate(resolvedParams.id);
 
   return (
     <div>
-      <Link href={`/dashboard/kandidat/${params.id}`} className="text-sm text-muted-foreground hover:underline">
+      <Link href={`/dashboard/kandidat/${resolvedParams.id}`} className="text-sm text-muted-foreground hover:underline">
         &larr; Kembali ke detail kandidat
       </Link>
       <h1 className="text-2xl font-bold mt-2 mb-4"> Evaluasi Interview</h1>
 
-      <CandidateQuickActions candidateId={params.id} />
+      <CandidateQuickActions candidateId={resolvedParams.id} />
 
       <div className="mt-6">
         {evaluation ? (
-          <InterviewEvaluationResult evaluation={evaluation} candidateName={candidate.nama} position={candidate.posisi_dilamar} candidateId={params.id} />
+          <InterviewEvaluationResult evaluation={evaluation} candidateName={candidate.nama} position={candidate.posisi_dilamar} candidateId={resolvedParams.id} />
         ) : (
           <InterviewTabs
-            candidateId={params.id}
+            candidateId={resolvedParams.id}
             candidateName={candidate.nama}
             position={candidate.posisi_dilamar}
           />

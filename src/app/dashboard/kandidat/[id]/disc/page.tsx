@@ -7,22 +7,23 @@ import { Award } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function DiscHrPage({ params }: { params: { id: string } }) {
-  const candidate = await getCandidateById(params.id);
+export default async function DiscHrPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  const resolvedParams = await params;
+  const candidate = await getCandidateById(resolvedParams.id);
   if (!candidate) {
     return <div>Kandidat tidak ditemukan</div>;
   }
 
-  const discResult = await getDiscTestResultByCandidate(params.id);
+  const discResult = await getDiscTestResultByCandidate(resolvedParams.id);
 
   return (
     <div>
-      <Link href={`/dashboard/kandidat/${params.id}`} className="text-sm text-muted-foreground hover:underline">
+      <Link href={`/dashboard/kandidat/${resolvedParams.id}`} className="text-sm text-muted-foreground hover:underline">
         &larr; Kembali ke detail kandidat
       </Link>
       <h1 className="text-2xl font-bold mt-2 mb-4">DISC Test</h1>
 
-      <CandidateQuickActions candidateId={params.id} />
+      <CandidateQuickActions candidateId={resolvedParams.id} />
 
       <div className="mt-6">
         {discResult ? (
