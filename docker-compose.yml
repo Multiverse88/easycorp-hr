@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  recruit-el-app:
+  easylegal-app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: recruit-el-app
+    container_name: easylegal-app
     restart: always
     ports:
       - "3000:3000"
