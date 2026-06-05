@@ -26,12 +26,73 @@ function parseAiJson(rawContent: string): any {
   if (start !== -1 && end !== -1 && end > start) {
     cleanJson = cleanJson.substring(start, end + 1);
   }
+
+  // Helper to repair truncated JSON
+  const autoRepairJson = (jsonStr: string): string => {
+    let cleaned = jsonStr.trim();
+    if (!cleaned) return '{}';
+
+    let inString = false;
+    let escaped = false;
+    const stack: ('{' | '[')[] = [];
+    
+    for (let i = 0; i < cleaned.length; i++) {
+      const char = cleaned[i];
+      
+      if (char === '"' && !escaped) {
+        inString = !inString;
+      } else if (char === '\\' && !escaped) {
+        escaped = true;
+        continue;
+      } else if (!inString) {
+        if (char === '{') {
+          stack.push('{');
+        } else if (char === '[') {
+          stack.push('[');
+        } else if (char === '}') {
+          if (stack[stack.length - 1] === '{') {
+            stack.pop();
+          }
+        } else if (char === ']') {
+          if (stack[stack.length - 1] === '[') {
+            stack.pop();
+          }
+        }
+      }
+      escaped = false;
+    }
+
+    let repaired = cleaned;
+    if (inString) {
+      repaired += '"';
+    }
+    
+    // Remove trailing key definitions like `,"key":` or `,"key" :`
+    repaired = repaired.replace(/,?\s*["a-zA-Z0-9_]*\s*:\s*$/, '');
+    // Remove trailing commas
+    repaired = repaired.replace(/,\s*$/, '');
+    
+    // Close the open structures
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const openChar = stack[i];
+      if (openChar === '{') {
+        repaired += '}';
+      } else if (openChar === '[') {
+        repaired += ']';
+      }
+    }
+
+    return repaired;
+  };
+
+  // Run auto-repair in case the output was truncated
+  let repairedJson = autoRepairJson(cleanJson);
   
-  // Try to remove trailing commas before closing brackets/braces
-  cleanJson = cleanJson.replace(/,(\s*[\]}])/g, '$1');
+  // Remove trailing commas before closing brackets/braces
+  repairedJson = repairedJson.replace(/,(\s*[\]}])/g, '$1');
 
   try {
-    return JSON.parse(cleanJson);
+    return JSON.parse(repairedJson);
   } catch (firstError) {
     console.warn('Initial JSON parse failed, trying to escape literal control characters inside string values...', firstError);
     
@@ -40,8 +101,8 @@ function parseAiJson(rawContent: string): any {
       let inString = false;
       let escaped = false;
       let processed = '';
-      for (let i = 0; i < cleanJson.length; i++) {
-        const char = cleanJson[i];
+      for (let i = 0; i < repairedJson.length; i++) {
+        const char = repairedJson[i];
         if (char === '"' && !escaped) {
           inString = !inString;
           processed += char;
@@ -68,7 +129,7 @@ function parseAiJson(rawContent: string): any {
       return JSON.parse(processed);
     } catch (secondError) {
       console.error('JSON parse error even after escaping control characters:', secondError);
-      console.error('Raw JSON string content attempting to parse:', cleanJson);
+      console.error('Raw JSON string content attempting to parse:', repairedJson);
       throw new Error(`AI tidak mengembalikan JSON yang valid: ${firstError instanceof Error ? firstError.message : String(firstError)}`);
     }
   }
@@ -339,7 +400,8 @@ export async function POST(request: NextRequest) {
     const systemPrompt = `Anda adalah HR Psikolog Senior dan Konsultan Rekrutmen berpengalaman lebih dari 15 tahun di industri hukum (law firm). 
 Tugas Anda adalah menganalisis data kandidat secara komprehensif dan menghasilkan laporan psikologi rekrutmen yang profesional, objektif, dan terstruktur.
 Gunakan bahasa Indonesia yang formal, lugas, dan profesional.
-Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Interview) menjadi satu narasi analisis yang kohesif.`;
+Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Interview) menjadi satu narasi analisis yang kohesif.
+PENTING: Tulis seluruh narasi secara padat, ringkas, dan langsung pada poinnya (maksimal 3-4 kalimat per bagian narasi). Jangan bertele-tele atau membuat narasi terlalu panjang agar tidak melebihi batas token output.`;
 
     const userPrompt = `Berikut adalah data lengkap kandidat yang perlu Anda analisis:
 
@@ -356,34 +418,34 @@ Berdasarkan data di atas, buatlah LAPORAN ANALISIS PSIKOLOGI REKRUTMEN yang komp
     "tes_koran_fit": 75,
     "kesesuaian_overall": 80
   },
-  "ringkasan_eksekutif": "Paragraf ringkas 3-4 kalimat yang merangkum profil kandidat secara keseluruhan untuk pengambil keputusan.",
+  "ringkasan_eksekutif": "Ringkasan padat 2-3 kalimat yang merangkum profil kandidat secara keseluruhan.",
   
   "profil_kepribadian": {
-    "narasi": "Analisis mendalam 2-3 paragraf mengenai kepribadian kandidat berdasarkan hasil DISC. Jelaskan karakteristik dominan, gaya kerja, pola komunikasi, dan implikasinya untuk posisi yang dilamar.",
+    "narasi": "Analisis singkat 3-4 kalimat mengenai kepribadian kandidat berdasarkan hasil DISC. Jelaskan gaya kerja dan implikasinya untuk posisi.",
     "kekuatan": ["kekuatan 1", "kekuatan 2", "kekuatan 3"],
     "area_pengembangan": ["area 1", "area 2"]
   },
   
   "kemampuan_intelektual": {
-    "narasi": "Analisis 1-2 paragraf mengenai kapasitas intelektual berdasarkan WPT. Bandingkan skor dengan standar posisi, jelaskan kemampuan analitis, daya nalar, dan kecepatan berpikir.",
+    "narasi": "Analisis singkat 2-3 kalimat mengenai kapasitas intelektual berdasarkan WPT dibanding standar posisi.",
     "kesesuaian_posisi": "Penjelasan singkat mengenai kesesuaian IQ dengan kebutuhan posisi."
   },
   
   "daya_tahan_kerja": {
-    "narasi": "Analisis 1-2 paragraf mengenai aspek psikomotor dan ketahanan kerja berdasarkan Tes Koran. Korelasikan dengan tuntutan pekerjaan posisi yang dilamar.",
+    "narasi": "Analisis singkat 2-3 kalimat mengenai aspek psikomotor dan ketahanan kerja berdasarkan Tes Koran.",
     "kesimpulan": "Lulus | Dipertimbangkan | Tidak Lulus"
   },
   
   "kompetensi_interview": {
-    "narasi": "Analisis 1-2 paragraf mengenai performa interview, kompetensi yang teridentifikasi, dan keselarasan ekspektasi kandidat dengan perusahaan.",
+    "narasi": "Analisis singkat 2-3 kalimat mengenai performa interview, kompetensi teridentifikasi, dan keselarasan ekspektasi.",
     "highlight": ["kompetensi menonjol 1", "kompetensi menonjol 2"]
   },
   
-  "analisis_integrasi": "Analisis integratif 2-3 paragraf yang menghubungkan semua aspek (kepribadian, kecerdasan, daya tahan, performa interview) menjadi gambaran kandidat yang utuh. Identifikasi apakah ada konsistensi atau inkonsistensi antar data.",
+  "analisis_integrasi": "Analisis integratif singkat 3-4 kalimat yang menghubungkan semua aspek (kepribadian, kecerdasan, daya tahan, performa interview) menjadi gambaran kandidat yang utuh.",
   
   "potensi_risiko": ["risiko atau concern 1", "risiko atau concern 2"],
   
-  "rekomendasi_onboarding": "Saran 1-2 paragraf mengenai pendekatan onboarding yang sesuai, kebutuhan coaching/mentoring, dan area yang perlu diperhatikan jika kandidat diterima.",
+  "rekomendasi_onboarding": "Saran singkat 2-3 kalimat mengenai pendekatan onboarding yang sesuai.",
   
   "kesimpulan_akhir": {
     "rekomendasi": "Sangat Direkomendasikan | Direkomendasikan | Dipertimbangkan | Tidak Direkomendasikan",
@@ -394,9 +456,10 @@ Berdasarkan data di atas, buatlah LAPORAN ANALISIS PSIKOLOGI REKRUTMEN yang komp
 
 PENTING:
 - Kembalikan HANYA raw JSON yang valid, tanpa markdown fence \`\`\`json, tanpa teks pembuka/penutup apapun.
-- Field "skor_keseluruhan" adalah angka 0-100 yang merepresentasikan keseluruhan penilaian kandidat.
-- Rekomendasi harus konsisten dengan data yang ada.
-- Jika data tertentu tidak tersedia (misalnya tes belum dikerjakan), tetap berikan analisis berdasarkan data yang ada dan tandai keterbatasan analisis tersebut.`;
+- Tulis seluruh nilai string JSON di satu baris (atau gunakan escape character \\n jika butuh baris baru). Jangan menyertakan baris baru literal di dalam string JSON.
+- Pastikan seluruh narasi ditulis secara ringkas dan padat.
+- Field "skor_keseluruhan" adalah angka 0-100.
+- Jika data tertentu tidak tersedia, berikan analisis singkat berdasarkan data yang ada dan sebutkan keterbatasannya.`;
 
     activeAnalyses.add(candidateId);
 

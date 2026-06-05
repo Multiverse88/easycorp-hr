@@ -16,12 +16,73 @@ function parseAiJson(rawContent: string): any {
   if (start !== -1 && end !== -1 && end > start) {
     cleanJson = cleanJson.substring(start, end + 1);
   }
+
+  // Helper to repair truncated JSON
+  const autoRepairJson = (jsonStr: string): string => {
+    let cleaned = jsonStr.trim();
+    if (!cleaned) return '{}';
+
+    let inString = false;
+    let escaped = false;
+    const stack: ('{' | '[')[] = [];
+    
+    for (let i = 0; i < cleaned.length; i++) {
+      const char = cleaned[i];
+      
+      if (char === '"' && !escaped) {
+        inString = !inString;
+      } else if (char === '\\' && !escaped) {
+        escaped = true;
+        continue;
+      } else if (!inString) {
+        if (char === '{') {
+          stack.push('{');
+        } else if (char === '[') {
+          stack.push('[');
+        } else if (char === '}') {
+          if (stack[stack.length - 1] === '{') {
+            stack.pop();
+          }
+        } else if (char === ']') {
+          if (stack[stack.length - 1] === '[') {
+            stack.pop();
+          }
+        }
+      }
+      escaped = false;
+    }
+
+    let repaired = cleaned;
+    if (inString) {
+      repaired += '"';
+    }
+    
+    // Remove trailing key definitions like `,"key":` or `,"key" :`
+    repaired = repaired.replace(/,?\s*["a-zA-Z0-9_]*\s*:\s*$/, '');
+    // Remove trailing commas
+    repaired = repaired.replace(/,\s*$/, '');
+    
+    // Close the open structures
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const openChar = stack[i];
+      if (openChar === '{') {
+        repaired += '}';
+      } else if (openChar === '[') {
+        repaired += ']';
+      }
+    }
+
+    return repaired;
+  };
+
+  // Run auto-repair in case the output was truncated
+  let repairedJson = autoRepairJson(cleanJson);
   
-  // Try to remove trailing commas before closing brackets/braces
-  cleanJson = cleanJson.replace(/,(\s*[\]}])/g, '$1');
+  // Remove trailing commas before closing brackets/braces
+  repairedJson = repairedJson.replace(/,(\s*[\]}])/g, '$1');
 
   try {
-    return JSON.parse(cleanJson);
+    return JSON.parse(repairedJson);
   } catch (firstError) {
     console.warn('Initial JSON parse failed, trying to escape literal control characters inside string values...', firstError);
     
@@ -30,8 +91,8 @@ function parseAiJson(rawContent: string): any {
       let inString = false;
       let escaped = false;
       let processed = '';
-      for (let i = 0; i < cleanJson.length; i++) {
-        const char = cleanJson[i];
+      for (let i = 0; i < repairedJson.length; i++) {
+        const char = repairedJson[i];
         if (char === '"' && !escaped) {
           inString = !inString;
           processed += char;
@@ -58,7 +119,7 @@ function parseAiJson(rawContent: string): any {
       return JSON.parse(processed);
     } catch (secondError) {
       console.error('JSON parse error even after escaping control characters:', secondError);
-      console.error('Raw JSON string content attempting to parse:', cleanJson);
+      console.error('Raw JSON string content attempting to parse:', repairedJson);
       throw new Error(`AI tidak mengembalikan JSON yang valid: ${firstError instanceof Error ? firstError.message : String(firstError)}`);
     }
   }
