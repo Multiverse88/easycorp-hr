@@ -67,9 +67,9 @@ export default async function AnalisisAiPage({ params }: { params: Promise<{ id:
               <Brain className="w-4 h-4 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-slate-800">Analisis AI</h1>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-purple-100 text-purple-700 border border-purple-250">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
               <Sparkles className="w-3 h-3" />
-              Claude Opus
+              Claude Sonnet
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">

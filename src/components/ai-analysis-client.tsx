@@ -349,7 +349,7 @@ export function AiAnalysisClient({
         <h2 className="text-2xl font-bold text-slate-800 mb-3">Analisis AI Kandidat</h2>
         <p className="text-slate-500 max-w-md mb-2">
           Sistem akan menganalisis seluruh data kandidat — DISC, WPT, Tes Koran, dan Interview — menggunakan{' '}
-          <span className="font-semibold text-[#8B2252]">Claude 3 Opus (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
+          <span className="font-semibold text-[#8B2252]">Claude Sonnet 4.6 (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
         </p>
         <p className="text-xs text-slate-400 mb-8">Proses analisis memerlukan sekitar 10–30 detik.</p>
         <Button
@@ -376,7 +376,7 @@ export function AiAnalysisClient({
         </div>
         <h3 className="text-lg font-semibold text-slate-700 mb-2">Menganalisis Data Kandidat…</h3>
         <p className="text-sm text-slate-400 max-w-xs">
-          Claude 3 Opus sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
+          Claude Sonnet 4.6 sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
         </p>
         <div className="flex gap-1.5 mt-6">
           {[0, 1, 2].map(i => (
@@ -422,7 +422,7 @@ export function AiAnalysisClient({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
-            Powered by Claude 3 Opus (Anthropic)
+            Powered by Claude Sonnet 4.6 (Anthropic)
           </Badge>
           {result.usage && (
             <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-250 bg-emerald-50 font-semibold">
@@ -435,7 +435,7 @@ export function AiAnalysisClient({
         </div>
         <div className="flex items-center gap-2">
           {result.usage && (() => {
-            const costUsd = (result.usage.input_tokens / 1000000) * 15 + (result.usage.output_tokens / 1000000) * 75;
+            const costUsd = (result.usage.input_tokens / 1000000) * 3 + (result.usage.output_tokens / 1000000) * 15;
             const costIdr = Math.round(costUsd * 16000);
             return (
               <div 
@@ -615,7 +615,7 @@ export function AiAnalysisClient({
 
       {/* Footer note */}
       <p className="text-center text-[11px] text-slate-400 pb-4">
-        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude 3 Opus (Anthropic).
+        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude Sonnet 4.6 (Anthropic).
         Analisis ini bersifat pendukung keputusan, bukan pengganti penilaian profesional HR.
       </p>
 
