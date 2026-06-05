@@ -38,7 +38,8 @@ export async function GET() {
         'Content-Disposition': `attachment; filename=candidates-${new Date().toISOString().split('T')[0]}.xlsx`,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error('Export candidates error:', error);
     return NextResponse.json({ error: 'Gagal export' }, { status: 500 });
   }
 }

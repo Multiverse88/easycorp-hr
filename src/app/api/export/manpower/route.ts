@@ -33,7 +33,8 @@ export async function GET() {
         'Content-Disposition': `attachment; filename=manpower-${new Date().toISOString().split('T')[0]}.xlsx`,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error('Export manpower error:', error);
     return NextResponse.json({ error: 'Gagal export' }, { status: 500 });
   }
 }

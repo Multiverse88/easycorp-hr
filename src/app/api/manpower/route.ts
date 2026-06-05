@@ -6,7 +6,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const result = await saveManpowerRequest(body);
     return NextResponse.json(result);
-  } catch {
+  } catch (error) {
+    console.error('Manpower error:', error);
     return NextResponse.json({ error: 'Gagal menyimpan' }, { status: 500 });
   }
 }

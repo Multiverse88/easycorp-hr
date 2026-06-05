@@ -47,6 +47,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(discResult);
   } catch (err) {
+    console.error('DISC submit error:', err);
     if (err instanceof Error && err.message === 'DISC_TEST_ALREADY_COMPLETED') {
       return NextResponse.json(
         { error: 'DISC_TEST_ALREADY_COMPLETED', message: 'Tes DISC sudah pernah diselesaikan. Token hanya bisa digunakan sekali.' },
