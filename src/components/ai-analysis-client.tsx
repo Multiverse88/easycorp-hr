@@ -184,6 +184,36 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
 
+  async function pollStatus(retryCount = 0) {
+    if (retryCount >= 25) {
+      setError('Proses analisis sedang berjalan di server. Silakan muat ulang halaman ini dalam 1-2 menit.');
+      setState('error');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/analyze-candidate?candidateId=${candidateId}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.exists) {
+          setResult({
+            success: true,
+            candidateId,
+            candidateName,
+            generatedAt: json.generatedAt,
+            analysis: json.analysis
+          });
+          setState('done');
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Polling error:', e);
+    }
+
+    setTimeout(() => pollStatus(retryCount + 1), 3000);
+  }
+
   async function runAnalysis() {
     setState('loading');
     setError('');
@@ -196,6 +226,17 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
         body: JSON.stringify({ candidateId }),
       });
 
+      if (res.status === 504 || res.status === 502 || res.status === 503) {
+        console.log(`Server returned ${res.status}. Starting status polling fallback...`);
+        pollStatus();
+        return;
+      }
+
+      if (res.status === 400 || res.status === 404) {
+        const json = await res.json();
+        throw new Error(json.error || 'Request gagal.');
+      }
+
       const json = await res.json();
       if (!res.ok || !json.success) {
         throw new Error(json.error || 'Analisis gagal.');
@@ -203,8 +244,13 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
       setResult(json as AnalysisResponse);
       setState('done');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan.');
-      setState('error');
+      if (err instanceof TypeError || (err instanceof Error && (err.message.includes('failed') || err.message.includes('fetch') || err.message.includes('timeout')))) {
+        console.warn('Network issue or timeout. Starting status polling fallback...', err);
+        pollStatus();
+      } else {
+        setError(err instanceof Error ? err.message : 'Terjadi kesalahan.');
+        setState('error');
+      }
     }
   }
 
@@ -339,7 +385,7 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
               Token: {result.usage.input_tokens.toLocaleString()} In / {result.usage.output_tokens.toLocaleString()} Out (Total: {result.usage.total_tokens.toLocaleString()})
             </Badge>
           )}
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-slate-400" suppressHydrationWarning>
             {new Date(result.generatedAt).toLocaleString('id-ID')}
           </span>
         </div>

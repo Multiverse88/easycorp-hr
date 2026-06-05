@@ -5,6 +5,7 @@ import {
   getWptTestResultByCandidate,
   getKoranTestResultByCandidate,
   getInterviewEvaluationByCandidate,
+  getAiAnalysisByCandidate,
 } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -325,5 +326,32 @@ PENTING:
       { error: error instanceof Error ? error.message : 'Terjadi kesalahan sistem' },
       { status: 500 }
     );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const candidateId = searchParams.get('candidateId');
+
+    if (!candidateId) {
+      return NextResponse.json({ error: 'candidateId wajib diisi' }, { status: 400 });
+    }
+
+    const existingAnalysis = await getAiAnalysisByCandidate(candidateId);
+    if (!existingAnalysis) {
+      return NextResponse.json({ success: true, exists: false });
+    }
+
+    return NextResponse.json({
+      success: true,
+      exists: true,
+      candidateId,
+      analysis: existingAnalysis.analysis,
+      generatedAt: existingAnalysis.created_at || new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Check analysis status error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
