@@ -1,5 +1,12 @@
 import Link from 'next/link';
-import { getCandidateById, getAiAnalysisByCandidate } from '@/lib/db';
+import {
+  getCandidateById,
+  getAiAnalysisByCandidate,
+  getDiscTestResultByCandidate,
+  getWptTestResultByCandidate,
+  getKoranTestResultByCandidate,
+  getInterviewEvaluationByCandidate,
+} from '@/lib/db';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
 import { AiAnalysisClient } from '@/components/ai-analysis-client';
 import { Brain, Sparkles } from 'lucide-react';
@@ -14,7 +21,35 @@ export default async function AnalisisAiPage({ params }: { params: Promise<{ id:
     return <div className="p-8 text-slate-500">Kandidat tidak ditemukan.</div>;
   }
 
-  const existingAnalysis = await getAiAnalysisByCandidate(resolvedParams.id);
+  const [existingAnalysis, discResult, wptResult, koranResult, interviewResult] = await Promise.all([
+    getAiAnalysisByCandidate(resolvedParams.id),
+    getDiscTestResultByCandidate(resolvedParams.id),
+    getWptTestResultByCandidate(resolvedParams.id),
+    getKoranTestResultByCandidate(resolvedParams.id),
+    getInterviewEvaluationByCandidate(resolvedParams.id),
+  ]);
+
+  let hasNewerData = false;
+  if (existingAnalysis) {
+    const analysisTime = new Date(existingAnalysis.created_at || '').getTime();
+
+    const discTime = discResult?.completed_at ? new Date(discResult.completed_at).getTime() : 0;
+    const wptTime = wptResult?.completed_at ? new Date(wptResult.completed_at).getTime() : 0;
+    const koranTime = koranResult?.created_at ? new Date(koranResult.created_at).getTime() : 0;
+    
+    let interviewTime = 0;
+    if (interviewResult?.id && interviewResult.id.startsWith('ie-')) {
+      const ts = Number(interviewResult.id.substring(3));
+      if (!isNaN(ts)) {
+        interviewTime = ts;
+      }
+    }
+
+    const maxTestTime = Math.max(discTime, wptTime, koranTime, interviewTime);
+    if (maxTestTime > analysisTime + 5000) { // 5-second buffer
+      hasNewerData = true;
+    }
+  }
 
   return (
     <div>
@@ -52,6 +87,7 @@ export default async function AnalisisAiPage({ params }: { params: Promise<{ id:
           candidateName={candidate.nama}
           initialAnalysis={existingAnalysis?.analysis}
           initialGeneratedAt={existingAnalysis?.created_at}
+          hasNewerData={hasNewerData}
         />
       </div>
     </div>

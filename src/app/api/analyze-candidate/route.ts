@@ -209,7 +209,7 @@ PENTING:
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-6',
+            model: 'claude-3-5-sonnet-latest',
             system: systemPrompt,
             messages: [
               { role: 'user', content: userPrompt },
@@ -303,9 +303,13 @@ PENTING:
 
     let analysis;
     try {
+      // Basic sanitization: replace raw/unescaped control characters/newlines with escaped equivalents
+      // or replace literal newlines within string values.
+      // A safe way is to parse normally first.
       analysis = JSON.parse(cleanJson);
-    } catch {
-      console.error('JSON parse error — raw content:', cleanJson.substring(0, 500));
+    } catch (parseError) {
+      console.error('JSON parse error details:', parseError);
+      console.error('JSON parse error — full raw content:', cleanJson);
       throw new Error('AI tidak mengembalikan JSON yang valid.');
     }
 

@@ -78,6 +78,7 @@ interface Props {
   candidateName: string;
   initialAnalysis?: AnalysisResult;
   initialGeneratedAt?: string;
+  hasNewerData?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -172,7 +173,7 @@ function ListBadges({ items, variant = 'default' }: { items: string[]; variant?:
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, initialGeneratedAt }: Props) {
+export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, initialGeneratedAt, hasNewerData }: Props) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>(initialAnalysis ? 'done' : 'idle');
   const [result, setResult] = useState<AnalysisResponse | null>(initialAnalysis ? {
     success: true,
@@ -185,7 +186,7 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
   const [downloading, setDownloading] = useState(false);
 
   async function pollStatus(retryCount = 0) {
-    if (retryCount >= 25) {
+    if (retryCount >= 40) {
       setError('Proses analisis sedang berjalan di server. Silakan muat ulang halaman ini dalam 1-2 menit.');
       setState('error');
       return;
@@ -226,31 +227,26 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
         body: JSON.stringify({ candidateId }),
       });
 
-      if (res.status === 504 || res.status === 502 || res.status === 503) {
-        console.log(`Server returned ${res.status}. Starting status polling fallback...`);
-        pollStatus();
-        return;
-      }
-
       if (res.status === 400 || res.status === 404) {
         const json = await res.json();
         throw new Error(json.error || 'Request gagal.');
       }
 
+      if (!res.ok) {
+        console.log(`Server returned status ${res.status}. Starting status polling fallback...`);
+        pollStatus();
+        return;
+      }
+
       const json = await res.json();
-      if (!res.ok || !json.success) {
+      if (!json.success) {
         throw new Error(json.error || 'Analisis gagal.');
       }
       setResult(json as AnalysisResponse);
       setState('done');
     } catch (err) {
-      if (err instanceof TypeError || (err instanceof Error && (err.message.includes('failed') || err.message.includes('fetch') || err.message.includes('timeout')))) {
-        console.warn('Network issue or timeout. Starting status polling fallback...', err);
-        pollStatus();
-      } else {
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan.');
-        setState('error');
-      }
+      console.warn('Analysis error. Fallback to status polling...', err);
+      pollStatus();
     }
   }
 
@@ -413,6 +409,27 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
           </Button>
         </div>
       </div>
+
+      {hasNewerData && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 shadow-sm text-left">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-bold text-amber-800 text-sm">Data Tes Baru Terdeteksi</h4>
+            <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+              Kandidat telah menyelesaikan atau memperbarui data tes (WPT/DISC/Koran/Interview) setelah laporan analisis AI ini dibuat. 
+              Disarankan untuk melakukan <strong>Analisis Ulang</strong> untuk memperbarui laporan psikologi.
+            </p>
+          </div>
+          <Button 
+            onClick={runAnalysis} 
+            size="sm" 
+            className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 self-center cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Analisis Ulang
+          </Button>
+        </div>
+      )}
 
       {/* Hero card — score + verdict */}
       <Card className={`border-2 ${cfg.ring} ring-4 shadow-md overflow-hidden`}>

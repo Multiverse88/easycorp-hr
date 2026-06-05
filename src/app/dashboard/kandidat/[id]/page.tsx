@@ -14,6 +14,7 @@ import { CandidateQuickActions } from '@/components/candidate-quick-actions';
 import { StatusSelector } from '@/components/status-selector';
 import { DownloadCandidatePdf } from '@/components/download-candidate-pdf';
 import { ShareInvitation } from '@/components/share-invitation';
+import { CandidateTestPoller } from '@/components/candidate-test-poller';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,12 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
 
   return (
     <div>
+      <CandidateTestPoller
+        candidateId={resolvedParams.id}
+        initialHasDisc={!!discResult}
+        initialHasWpt={!!wptResult}
+        initialHasKoran={!!koranResult}
+      />
       <div className="flex items-center justify-between mb-6">
         <div>
           <Link href="/dashboard/kandidat" className="text-sm text-muted-foreground hover:underline">
