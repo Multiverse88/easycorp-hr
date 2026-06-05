@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { getCandidateByToken, saveDiscTestResult, getDiscTestResultByCandidate, Candidate } from '@/lib/db';
+import { getCandidateByToken, saveDiscTestResult, getDiscTestResultByCandidate, getWptTestResultByCandidate, Candidate } from '@/lib/db';
 import { discQuestions } from '@/lib/discData';
 import { calculateDiscResult } from '@/lib/discParser';
 import { CheckCircle2, AlertTriangle, Loader2, CheckCircle } from 'lucide-react';
@@ -48,6 +48,12 @@ export default function DiscTestPage() {
         // Check if DISC test already completed
         const existingTest = await getDiscTestResultByCandidate(data.id);
         if (existingTest) {
+          // If DISC is done, check WPT
+          const existingWpt = await getWptTestResultByCandidate(data.id);
+          if (!existingWpt) {
+            router.push(`/wpt/${token}`);
+            return;
+          }
           setError('ALREADY_COMPLETED');
           return;
         }

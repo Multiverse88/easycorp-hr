@@ -46,7 +46,7 @@ export default function WptTestPage() {
         // Check if DISC test completed first
         const discResult = await getDiscTestResultByCandidate(data.id);
         if (!discResult) {
-          setError('DISC_NOT_COMPLETED');
+          router.push(`/disc/${token}`);
           return;
         }
 
