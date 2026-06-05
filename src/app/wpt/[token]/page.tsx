@@ -299,33 +299,22 @@ export default function WptTestPage() {
                 <p className="text-xs text-slate-500 font-medium font-semibold">EasyLegal Recruitment &bull; {WPT_TOTAL_QUESTIONS} Soal &bull; {WPT_DURATION_MINUTES} Menit</p>
               </div>
             </div>
-             <div 
-              className="flex flex-col items-center sm:items-end gap-1 cursor-pointer select-none group"
-              onClick={() => setIsPaused(prev => !prev)}
-              title="Klik untuk Pause/Resume Timer (Development)"
-            >
+             <div className="flex flex-col items-center sm:items-end gap-1 select-none">
               <div className="flex items-center gap-2">
-                <Clock className={`w-4 h-4 ${isPaused ? 'text-amber-500 animate-bounce' : 'text-red-500'}`} />
-                <span className={`text-lg font-extrabold tabular-nums transition-colors group-hover:text-[#9A0000]
-                  ${isPaused 
-                    ? 'text-amber-600' 
-                    : timeLeft <= 60 
-                      ? 'text-red-600 animate-pulse' 
-                      : timeLeft <= 180 
-                        ? 'text-amber-600' 
-                        : 'text-slate-700'
+                <Clock className="w-4 h-4 text-red-500" />
+                <span className={`text-lg font-extrabold tabular-nums transition-colors
+                  ${timeLeft <= 60 
+                    ? 'text-red-600 animate-pulse' 
+                    : timeLeft <= 180 
+                      ? 'text-amber-600' 
+                      : 'text-slate-700'
                   }`}
                 >
                   {formatTime(timeLeft)}
-                  {isPaused && (
-                    <span className="text-[10px] font-extrabold text-amber-500 ml-1.5 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 animate-pulse uppercase tracking-wider">
-                      Paused
-                    </span>
-                  )}
                 </span>
               </div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider group-hover:underline group-hover:text-[#9A0000]">
-                {isPaused ? 'Klik untuk Melanjutkan' : 'Klik untuk Pause'}
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                Sisa Waktu
               </span>
             </div>
           </div>

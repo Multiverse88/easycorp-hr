@@ -395,7 +395,7 @@ export const wptQuestions: WptQuestion[] = [
   },
 ];
 
-export const WPT_DURATION_MINUTES = 12;
+export const WPT_DURATION_MINUTES = 20;
 export const WPT_TOTAL_QUESTIONS = 50;
 
 export const WPT_BENCHMARKS: Record<string, { min: number; ideal: string; max: number }> = {
