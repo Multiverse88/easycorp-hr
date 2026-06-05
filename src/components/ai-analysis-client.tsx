@@ -343,7 +343,20 @@ export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, 
             {new Date(result.generatedAt).toLocaleString('id-ID')}
           </span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {result.usage && (() => {
+            const costUsd = (result.usage.input_tokens / 1000000) * 3 + (result.usage.output_tokens / 1000000) * 15;
+            const costIdr = Math.round(costUsd * 16000);
+            return (
+              <div 
+                className="flex items-center gap-1.5 px-2.5 h-8 bg-slate-50 rounded-md border border-slate-200 hidden sm:flex" 
+                title={`~$${costUsd.toFixed(4)} USD`}
+              >
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Biaya AI:</span>
+                <span className="text-xs font-bold text-slate-700">Rp {costIdr.toLocaleString('id-ID')}</span>
+              </div>
+            );
+          })()}
           <Button onClick={handleDownload} disabled={downloading} size="sm" variant="outline" className="flex items-center gap-1.5 h-8 text-xs">
             <Download className="w-3.5 h-3.5" />
             {downloading ? 'Mengunduh...' : 'Unduh Laporan PDF'}
