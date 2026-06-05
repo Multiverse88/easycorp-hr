@@ -308,6 +308,9 @@ PENTING:
       throw new Error('AI tidak mengembalikan JSON yang valid.');
     }
 
+    const { saveAiAnalysis } = await import('@/lib/db');
+    await saveAiAnalysis(candidateId, analysis);
+
     return NextResponse.json({
       success: true,
       candidateId,

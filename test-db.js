@@ -6,11 +6,20 @@ const supabase = createClient(
 );
 
 async function run() {
-  const { data, error } = await supabase.from('candidates').select('id, nama');
+  // Test if ai_analysis column exists in candidates
+  const { data, error } = await supabase.from('candidates').select('ai_analysis').limit(1);
   if (error) {
-    console.error('Error fetching candidates:', error);
+    console.error('ai_analysis column check error:', error.message);
   } else {
-    console.log(data.map(c => `${c.id} - ${c.nama}`).join('\n'));
+    console.log('ai_analysis column exists!');
+  }
+  
+  // Test if ai_analysis_results table exists
+  const { data: tData, error: tError } = await supabase.from('ai_analysis_results').select('id').limit(1);
+  if (tError) {
+    console.error('ai_analysis_results table check error:', tError.message);
+  } else {
+    console.log('ai_analysis_results table exists!');
   }
 }
 

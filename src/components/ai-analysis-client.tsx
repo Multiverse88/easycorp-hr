@@ -76,6 +76,8 @@ interface AnalysisResponse {
 interface Props {
   candidateId: string;
   candidateName: string;
+  initialAnalysis?: AnalysisResult;
+  initialGeneratedAt?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -170,9 +172,15 @@ function ListBadges({ items, variant = 'default' }: { items: string[]; variant?:
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function AiAnalysisClient({ candidateId, candidateName }: Props) {
-  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
-  const [result, setResult] = useState<AnalysisResponse | null>(null);
+export function AiAnalysisClient({ candidateId, candidateName, initialAnalysis, initialGeneratedAt }: Props) {
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>(initialAnalysis ? 'done' : 'idle');
+  const [result, setResult] = useState<AnalysisResponse | null>(initialAnalysis ? {
+    success: true,
+    candidateId,
+    candidateName,
+    generatedAt: initialGeneratedAt || new Date().toISOString(),
+    analysis: initialAnalysis,
+  } : null);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
 

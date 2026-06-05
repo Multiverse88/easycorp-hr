@@ -934,3 +934,58 @@ export async function deleteKoranTestResult(id: string): Promise<void> {
   });
 }
 
+// ==========================================
+// 9. AI ANALYSIS RESULTS
+// ==========================================
+
+export interface CandidateAiAnalysis {
+  id: string;
+  candidate_id: string;
+  analysis: any;
+  created_at?: string;
+}
+
+export async function getAiAnalysisByCandidate(candidateId: string): Promise<CandidateAiAnalysis | undefined> {
+  const { data, error } = await supabaseAdmin
+    .from('candidate_ai_analysis')
+    .select('*')
+    .eq('candidate_id', candidateId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error('getAiAnalysisByCandidate error:', error);
+    return undefined;
+  }
+  return (data && data.length > 0) ? (data[0] as CandidateAiAnalysis) : undefined;
+}
+
+export async function saveAiAnalysis(candidateId: string, analysis: any): Promise<CandidateAiAnalysis> {
+  const id = `ai-${Date.now()}`;
+  const payload = {
+    id,
+    candidate_id: candidateId,
+    analysis,
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from('candidate_ai_analysis')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Gagal simpan Analisis AI: ${error.message}`);
+  }
+
+  logActivity({
+    action: 'CREATE',
+    table_name: 'candidate_ai_analysis',
+    record_id: id,
+    description: `Hasil Analisis AI baru untuk kandidat ${candidateId}`,
+    details: { candidate_id: candidateId }
+  });
+
+  return data as CandidateAiAnalysis;
+}
+

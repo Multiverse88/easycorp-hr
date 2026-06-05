@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getCandidateById } from '@/lib/db';
+import { getCandidateById, getAiAnalysisByCandidate } from '@/lib/db';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
 import { AiAnalysisClient } from '@/components/ai-analysis-client';
 import { Brain, Sparkles } from 'lucide-react';
@@ -13,6 +13,8 @@ export default async function AnalisisAiPage({ params }: { params: Promise<{ id:
   if (!candidate) {
     return <div className="p-8 text-slate-500">Kandidat tidak ditemukan.</div>;
   }
+
+  const existingAnalysis = await getAiAnalysisByCandidate(resolvedParams.id);
 
   return (
     <div>
@@ -48,6 +50,8 @@ export default async function AnalisisAiPage({ params }: { params: Promise<{ id:
         <AiAnalysisClient
           candidateId={resolvedParams.id}
           candidateName={candidate.nama}
+          initialAnalysis={existingAnalysis?.analysis}
+          initialGeneratedAt={existingAnalysis?.created_at}
         />
       </div>
     </div>
