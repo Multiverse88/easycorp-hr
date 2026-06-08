@@ -254,7 +254,7 @@ export function CandidatePdfDocument({ data }: { data: CandidatePdfData }) {
       <Page size="A4" style={s.page}>
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.headerTitle}>EASYLEGAL RECRUITMENT REPORT</Text>
+          <Text style={s.headerTitle}>EASYCORP RECRUITMENT REPORT</Text>
           <Text style={s.headerSub}>Data Lengkap Kandidat &bull; {now}</Text>
         </View>
 
@@ -299,7 +299,7 @@ export function CandidatePdfDocument({ data }: { data: CandidatePdfData }) {
         )}
 
         {/* Footer */}
-        <Text style={s.footer}>EasyLegal &copy; 2026 &bull; Recruitment System &bull; Dokumen ini digenerate secara otomatis</Text>
+        <Text style={s.footer}>EasyCorp &copy; 2026 &bull; Recruitment System &bull; Dokumen ini digenerate secara otomatis</Text>
       </Page>
     </Document>
   );

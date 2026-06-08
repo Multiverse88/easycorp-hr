@@ -35,7 +35,7 @@ export default function DiscTestPage() {
         setLoading(true);
         const data = await getCandidateByToken(token);
         if (!data) {
-          setError('Tautan tidak valid atau telah kedaluwarsa. Silakan hubungi HR EasyLegal.');
+          setError('Tautan tidak valid atau telah kedaluwarsa. Silakan hubungi HR EasyCorp.');
           return;
         }
 
@@ -183,10 +183,10 @@ export default function DiscTestPage() {
             Token ini sudah digunakan untuk menyelesaikan tes DISC. Setiap token hanya bisa digunakan satu kali.
           </p>
           <p className="text-slate-500 text-sm mb-6">
-            Jika Anda memerlukan bantuan, silakan hubungi tim HR EasyLegal.
+            Jika Anda memerlukan bantuan, silakan hubungi tim HR EasyCorp.
           </p>
           <div className="border-t border-slate-100 pt-4 text-xs text-slate-400">
-            EasyLegal Recruitment System
+            EasyCorp Recruitment System
           </div>
         </div>
       </div>
@@ -203,7 +203,7 @@ export default function DiscTestPage() {
           <h2 className="text-xl font-bold text-slate-900 mb-2">Tautan Tidak Valid</h2>
           <p className="text-slate-600 mb-6">{error}</p>
           <div className="border-t border-slate-100 pt-4 text-xs text-slate-400">
-            EasyLegal Recruitment System
+            EasyCorp Recruitment System
           </div>
         </div>
       </div>
@@ -214,10 +214,10 @@ export default function DiscTestPage() {
     <div className="min-h-screen bg-[hsl(15_60%_97%)] flex flex-col page-enter">
       <LoadingOverlay visible={submitting} message="Mengirim jawaban DISC..." />
 
-      {/* Bespoke Top Navbar for EasyLegal Assessment Portal - White SaaS Header */}
+      {/* Bespoke Top Navbar for EasyCorp Assessment Portal - White SaaS Header */}
       <nav className="bg-white border-b border-slate-200 py-3 px-4 sm:px-6 shadow-sm flex items-center justify-between text-sm font-semibold select-none z-10 sticky top-0">
         <div className="flex items-center gap-3">
-          <img src="/logo-easylegal.png" alt="EasyLegal Logo" className="h-9 w-auto object-contain" />
+          <img src="/logo-ec.png" alt="EasyCorp Logo" className="h-9 w-auto object-contain" />
           <span className="hidden sm:inline-block text-slate-400 text-xs font-semibold pl-3 border-l border-slate-200">
             Assessment Portal
           </span>
@@ -245,7 +245,7 @@ export default function DiscTestPage() {
               Asesmen Kepribadian DISC
             </h1>
             <p className="text-sm text-slate-600 leading-relaxed font-medium">
-              Tes DISC (<em>Dominance, Influence, Steadiness, Conscientiousness</em>) adalah alat asesmen kepribadian profesional yang dirancang khusus untuk menganalisis profil perilaku, gaya komunikasi, dan potensi kecocokan posisi kerja Anda di <strong>EasyLegal</strong>. Silakan pilih jawaban dengan jujur, objektif, dan spontan untuk membantu kami mengenal potensi terbaik Anda.
+              Tes DISC (<em>Dominance, Influence, Steadiness, Conscientiousness</em>) adalah alat asesmen kepribadian profesional yang dirancang khusus untuk menganalisis profil perilaku, gaya komunikasi, dan potensi kecocokan posisi kerja Anda di <strong>EasyCorp</strong>. Silakan pilih jawaban dengan jujur, objektif, dan spontan untuk membantu kami mengenal potensi terbaik Anda.
             </p>
           </div>
 
@@ -468,7 +468,7 @@ export default function DiscTestPage() {
           </div>
 
           <div className="text-center mt-6 text-xs text-slate-400">
-            EasyLegal &copy; 2026. All rights reserved.
+            EasyCorp &copy; 2026. All rights reserved.
           </div>
         </div>
       </div>

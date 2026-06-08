@@ -14,16 +14,16 @@ export function ShareInvitation({ candidate }: { candidate: Candidate }) {
     const link = `${origin}/disc/${candidate.token}`;
     return `Halo ${candidate.nama},
 
-Anda diundang untuk mengikuti tahapan asesmen di EasyLegal untuk posisi ${candidate.posisi_dilamar || 'Kandidat'}.
+Anda diundang untuk mengikuti tahapan asesmen di EasyCorp untuk posisi ${candidate.posisi_dilamar || 'Kandidat'}.
 
 Silakan akses tautan berikut untuk memulai:
 ${link}
 
-Atau Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
+Orang Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
 Token: ${candidate.token}
 
 Terima kasih,
-Tim HR EasyLegal`;
+Tim HR EasyCorp`;
   };
 
   const handleShareWhatsApp = () => {
@@ -57,7 +57,7 @@ Tim HR EasyLegal`;
         if (res.error === 'SMTP_NOT_CONFIGURED') {
           // Fallback to mailto
           setStatus({ type: 'error', message: 'SMTP belum diatur. Membuka email client...' });
-          const subject = encodeURIComponent('Undangan Asesmen - EasyLegal');
+          const subject = encodeURIComponent('Undangan Asesmen - EasyCorp');
           const body = encodeURIComponent(getShareMessage());
           const mailto = `mailto:${candidate.email || ''}?subject=${subject}&body=${body}`;
           window.location.href = mailto;

@@ -46,10 +46,10 @@ export default function MasukPage() {
       <header className="relative z-10 bg-gradient-to-r from-[hsl(350_25%_14%)] to-[hsl(350_30%_18%)] text-white p-5">
         <div className="max-w-md mx-auto flex items-center gap-3">
           <div className="bg-gradient-to-br from-[hsl(350_60%_60%)] to-[hsl(350_65%_50%)] rounded-xl p-2.5 shadow-lg">
-            <span className="text-white font-extrabold text-sm">EL</span>
+            <span className="text-white font-extrabold text-sm">EC</span>
           </div>
           <div>
-            <div className="font-bold tracking-tight">Easy Legal</div>
+            <div className="font-bold tracking-tight">Easy Corp</div>
             <div className="text-xs text-[hsl(15_30%_65%)]">Recruitment System</div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function MasukPage() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-[hsl(350_15%_55%)]">
-          EasyLegal &copy; 2026
+          EasyCorp &copy; 2026
         </div>
       </div>
     </div>

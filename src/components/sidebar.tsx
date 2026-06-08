@@ -50,13 +50,13 @@ export function Sidebar() {
           <div className="flex items-center gap-3">
             <div className="bg-white rounded-xl p-1.5 shadow-md shadow-black/40 flex items-center justify-center shrink-0 w-11 h-11">
               <img 
-                src="/logo-easylegal.png" 
-                alt="EasyLegal Logo" 
+                src="/logo-ec.png" 
+                alt="EasyCord Logo" 
                 className="w-auto h-8 object-contain"
               />
             </div>
             <div>
-              <div className="font-extrabold text-base tracking-tight text-white leading-none">EasyLegal</div>
+              <div className="font-extrabold text-base tracking-tight text-white leading-none">EasyCorp</div>
               <div className="text-[10px] text-red-200/60 font-bold tracking-widest uppercase mt-1">HR Portal</div>
             </div>
           </div>

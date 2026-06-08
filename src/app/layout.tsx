@@ -10,8 +10,8 @@ const geist = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "EasyLegal Recruitment",
-  description: "Sistem Rekrutmen Internal EasyLegal - Assessment & DISC Test Portal",
+  title: "EasyCorp Recruitment",
+  description: "Sistem Rekrutmen Internal EasyCorp - Assessment & DISC Test Portal",
 };
 
 export default function RootLayout({

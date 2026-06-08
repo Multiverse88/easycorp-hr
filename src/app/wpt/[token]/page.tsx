@@ -34,7 +34,7 @@ export default function WptTestPage() {
         setLoading(true);
         const data = await getCandidateByToken(token);
         if (!data) {
-          setError('Tautan tidak valid atau telah kedaluwarsa. Silakan hubungi HR EasyLegal.');
+          setError('Tautan tidak valid atau telah kedaluwarsa. Silakan hubungi HR EasyCorp.');
           return;
         }
 
@@ -214,7 +214,7 @@ export default function WptTestPage() {
             Token ini sudah digunakan untuk menyelesaikan tes WPT. Setiap token hanya bisa digunakan satu kali.
           </p>
           <div className="border-t border-slate-100 pt-4 text-xs text-slate-400">
-            EasyLegal Recruitment System
+            EasyCorp Recruitment System
           </div>
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function WptTestPage() {
           <h2 className="text-xl font-bold text-slate-900 mb-2">Tautan Tidak Valid</h2>
           <p className="text-slate-600 mb-6">{error}</p>
           <div className="border-t border-slate-100 pt-4 text-xs text-slate-400">
-            EasyLegal Recruitment System
+            EasyCorp Recruitment System
           </div>
         </div>
       </div>
@@ -264,10 +264,10 @@ export default function WptTestPage() {
     <div className="min-h-screen bg-[hsl(15_60%_97%)] flex flex-col page-enter">
       <LoadingOverlay visible={submitting} message="Mengirim jawaban WPT..." />
 
-      {/* Bespoke Top Navbar for EasyLegal Assessment Portal - White SaaS Header */}
+      {/* Bespoke Top Navbar for EasyCorp Assessment Portal - White SaaS Header */}
       <nav className="bg-white border-b border-slate-200 py-3 px-4 sm:px-6 shadow-sm flex items-center justify-between text-sm font-semibold select-none z-10 sticky top-0">
         <div className="flex items-center gap-3">
-          <img src="/logo-easylegal.png" alt="EasyLegal Logo" className="h-9 w-auto object-contain" />
+          <img src="/logo-ec.png" alt="EasyCorp Logo" className="h-9 w-auto object-contain" />
           <span className="hidden sm:inline-block text-slate-400 text-xs font-semibold pl-3 border-l border-slate-200">
             Assessment Portal
           </span>
@@ -296,7 +296,7 @@ export default function WptTestPage() {
               </div>
               <div>
                 <h1 className="text-lg font-extrabold text-slate-950">Tes IQ — WPT (Wonderlic Personnel Test)</h1>
-                <p className="text-xs text-slate-500 font-medium font-semibold">EasyLegal Recruitment &bull; {WPT_TOTAL_QUESTIONS} Soal &bull; {WPT_DURATION_MINUTES} Menit</p>
+                <p className="text-xs text-slate-500 font-medium font-semibold">EasyCorp Recruitment &bull; {WPT_TOTAL_QUESTIONS} Soal &bull; {WPT_DURATION_MINUTES} Menit</p>
               </div>
             </div>
              <div className="flex flex-col items-center sm:items-end gap-1 select-none">
@@ -599,7 +599,7 @@ export default function WptTestPage() {
           </div>
 
           <div className="text-center mt-6 text-xs text-slate-400">
-            EasyLegal &copy; 2026. All rights reserved.
+            EasyCorp &copy; 2026. All rights reserved.
           </div>
         </div>
       </div>

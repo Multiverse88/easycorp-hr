@@ -21,7 +21,7 @@ export async function sendAssessmentInvitation(params: InvitationEmailParams): P
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASSWORD;
   const secure = process.env.SMTP_SECURE === 'true';
-  const fromName = process.env.SMTP_FROM_NAME || 'EasyLegal Recruitment';
+  const fromName = process.env.SMTP_FROM_NAME || 'EasyCorp Recruitment';
   const fromEmail = process.env.SMTP_FROM_EMAIL || user;
 
   // Validate presence of required env variables
@@ -54,29 +54,29 @@ export async function sendAssessmentInvitation(params: InvitationEmailParams): P
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
       to: params.candidateEmail,
-      subject: 'Undangan Asesmen - EasyLegal',
+      subject: 'Undangan Asesmen - EasyCorp',
       text: `Halo ${params.candidateName},
 
-Anda diundang untuk mengikuti tahapan asesmen di EasyLegal untuk posisi ${params.position || 'Kandidat'}.
+Anda diundang untuk mengikuti tahapan asesmen di EasyCorp untuk posisi ${params.position || 'Kandidat'}.
 
 Silakan akses tautan berikut untuk memulai:
 ${params.link}
 
-Atau Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
+Orang Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
 Token: ${params.token}
 Tautan Asesmen: ${params.link}
 
 Token asesmen ini akan aktif hingga: ${formattedDate}.
 
 Terima kasih,
-Tim HR EasyLegal`,
+Tim HR EasyCorp`,
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Undangan Asesmen EasyLegal</title>
+          <title>Undangan Asesmen EasyCorp</title>
           <style>
             body {
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -182,11 +182,11 @@ Tim HR EasyLegal`,
           <div class="wrapper">
             <div class="container">
               <div class="header">
-                <img src="cid:logo-easylegal" alt="EasyLegal Logo" style="height: 56px; width: auto; max-width: 100%; display: block; margin: 0 auto;" />
+                <img src="cid:logo-ec" alt="EasyCorp Logo" style="height: 56px; width: auto; max-width: 100%; display: block; margin: 0 auto;" />
               </div>
               <div class="content">
                 <h2>Halo ${params.candidateName},</h2>
-                <p>Anda telah terdaftar sebagai kandidat dan diundang untuk mengikuti tahapan asesmen online di EasyLegal untuk posisi:</p>
+                <p>Anda telah terdaftar sebagai kandidat dan diundang untuk mengikuti tahapan asesmen online di EasyCorp untuk posisi:</p>
                 <div class="position-badge">${params.position || 'Kandidat'}</div>
                 
                 <p>Silakan klik tombol di bawah ini untuk memulai pengisian tes (DISC & WPT):</p>
@@ -207,8 +207,8 @@ Tim HR EasyLegal`,
                 </p>
               </div>
               <div class="footer">
-                <p>Email ini dikirim secara otomatis oleh Sistem Rekrutmen EasyLegal.</p>
-                <p>&copy; ${new Date().getFullYear()} EasyLegal. All rights reserved.</p>
+                <p>Email ini dikirim secara otomatis oleh Sistem Rekrutmen EasyCorp.</p>
+                <p>&copy; ${new Date().getFullYear()} EasyCorp. All rights reserved.</p>
               </div>
             </div>
           </div>
@@ -217,9 +217,9 @@ Tim HR EasyLegal`,
       `,
       attachments: [
         {
-          filename: 'logo-easylegal.png',
-          path: path.join(process.cwd(), 'public', 'logo-easylegal.png'),
-          cid: 'logo-easylegal',
+          filename: 'logo-ec.png',
+          path: path.join(process.cwd(), 'public', 'logo-ec.png'),
+          cid: 'logo-ec',
         },
       ],
     };

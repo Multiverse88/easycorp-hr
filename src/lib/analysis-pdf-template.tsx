@@ -136,7 +136,7 @@ function Header({ candidateName, date }: { candidateName: string; date: string }
   return (
     <View style={s.headerLine}>
       <Text style={s.headerText}>LAPORAN PSIKOLOGI | KANDIDAT: {candidateName.toUpperCase()} | RAHASIA</Text>
-      <Text style={s.headerText}>EasyLegal Recruitment &bull; {date}</Text>
+      <Text style={s.headerText}>EasyCorp Recruitment &bull; {date}</Text>
     </View>
   );
 }
@@ -144,7 +144,7 @@ function Header({ candidateName, date }: { candidateName: string; date: string }
 function Footer({ pageNum }: { pageNum: number }) {
   return (
     <View style={s.footer}>
-      <Text>Asesmen EasyLegal &bull; Laporan Psikologi Kandidat &bull; Rahasia</Text>
+      <Text>Asesmen EasyCorp &bull; Laporan Psikologi Kandidat &bull; Rahasia</Text>
       <Text>Hal. {pageNum}</Text>
     </View>
   );
@@ -620,7 +620,7 @@ export function AnalysisPdfDocument({ data }: { data: AnalysisPdfData }) {
         {/* Disclaimer Text */}
         <View style={{ marginTop: 25, borderTopWidth: 0.5, borderTopColor: colors.border, paddingTop: 8 }}>
           <Text style={{ fontSize: 7, color: colors.textMuted, textAlign: 'center', fontStyle: 'italic', lineHeight: 1.25 }}>
-            Dokumen Laporan Psikologi ini bersifat RAHASIA dan hanya diperuntukkan bagi pihak internal HR EasyLegal. Dilarang menyebarluaskan dokumen ini dalam bentuk apa pun tanpa izin tertulis dari assessor yang bersangkutan.
+            Dokumen Laporan Psikologi ini bersifat RAHASIA dan hanya diperuntukkan bagi pihak internal HR EasyCorp. Dilarang menyebarluaskan dokumen ini dalam bentuk apa pun tanpa izin tertulis dari assessor yang bersangkutan.
           </Text>
         </View>
 
