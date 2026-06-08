@@ -272,6 +272,8 @@ export function AiAnalysisClient({
     setTimeout(() => pollStatus(retryCount + 1), 3000);
   }
 
+  const completedCount = [hasDisc, hasWpt, hasKoran, hasInterview].filter(Boolean).length;
+
   async function runAnalysis() {
     const missing: string[] = [];
     if (!hasDisc) missing.push('Asesmen Kepribadian (DISC)');
@@ -279,7 +281,15 @@ export function AiAnalysisClient({
     if (!hasKoran) missing.push('Tes Koran (Pauli/Kraepelin)');
     if (!hasInterview) missing.push('Evaluasi Interview');
 
-    if (missing.length > 0) {
+    // Hard block: 0 or only 1-2 assessments done — not enough data
+    if (completedCount <= 2) {
+      setMissingTests(missing);
+      setIsConfirmOpen(true); // re-use drawer, but in block mode
+      return;
+    }
+
+    // Soft warning: exactly 1 missing (3 done)
+    if (missing.length === 1) {
       setMissingTests(missing);
       setIsConfirmOpen(true);
       return;
@@ -368,29 +378,103 @@ export function AiAnalysisClient({
   // ── IDLE ──────────────────────────────────────────────────────────────────
 
   if (state === 'idle') {
+    const isBlocked = completedCount <= 2;
+    const assessmentItems = [
+      { label: 'Asesmen Kepribadian (DISC)', done: hasDisc },
+      { label: 'Tes IQ (WPT)', done: hasWpt },
+      { label: 'Tes Koran (Pauli/Kraepelin)', done: hasKoran },
+      { label: 'Evaluasi Interview', done: hasInterview },
+    ];
+
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
         <div className="relative mb-6">
-          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#8B2252] to-[#c0507a] flex items-center justify-center shadow-lg shadow-[#8B2252]/20">
+          <div className={`w-24 h-24 rounded-3xl flex items-center justify-center shadow-lg ${
+            isBlocked
+              ? 'bg-gradient-to-br from-slate-400 to-slate-500 shadow-slate-200'
+              : 'bg-gradient-to-br from-[#8B2252] to-[#c0507a] shadow-[#8B2252]/20'
+          }`}>
             <Brain className="w-12 h-12 text-white" />
           </div>
           <div className="absolute -top-1 -right-1 w-7 h-7 bg-amber-400 rounded-full flex items-center justify-center shadow">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-3">Analisis AI Kandidat</h2>
-        <p className="text-slate-500 max-w-md mb-2">
-          Sistem akan menganalisis seluruh data kandidat — DISC, WPT, Tes Koran, dan Interview — menggunakan{' '}
-          <span className="font-semibold text-[#8B2252]">Claude Sonnet 4.6 (Anthropic)</span> untuk menghasilkan laporan psikologi rekrutmen komprehensif.
+
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Analisis AI Kandidat</h2>
+        <p className="text-slate-500 max-w-md mb-1">
+          Sistem menganalisis data DISC, WPT, Tes Koran, dan Interview menggunakan{' '}
+          <span className="font-semibold text-[#8B2252]">Claude Sonnet 4.6 (Anthropic)</span>.
         </p>
-        <p className="text-xs text-slate-400 mb-8">Proses analisis memerlukan sekitar 10–30 detik.</p>
+        <p className="text-xs text-slate-400 mb-6">Proses analisis memerlukan sekitar 10–30 detik.</p>
+
+        {/* Assessment readiness status */}
+        <div className="w-full max-w-sm bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-left">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Status Kelengkapan Data</p>
+          <div className="space-y-2">
+            {assessmentItems.map((item) => (
+              <div key={item.label} className="flex items-center gap-2.5">
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  item.done ? 'bg-emerald-500' : 'bg-slate-200'
+                }`}>
+                  {item.done
+                    ? <CheckCircle2 className="w-3 h-3 text-white" />
+                    : <XCircle className="w-3 h-3 text-slate-400" />}
+                </div>
+                <span className={`text-xs font-medium ${
+                  item.done ? 'text-slate-700' : 'text-slate-400'
+                }`}>{item.label}</span>
+                {item.done
+                  ? <span className="ml-auto text-[10px] font-bold text-emerald-600">Selesai</span>
+                  : <span className="ml-auto text-[10px] font-bold text-slate-400">Belum</span>}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between">
+            <span className="text-xs text-slate-500">Kelengkapan data</span>
+            <span className={`text-xs font-bold ${
+              completedCount >= 4 ? 'text-emerald-600'
+              : completedCount === 3 ? 'text-amber-600'
+              : 'text-rose-600'
+            }`}>{completedCount} / 4 Asesmen</span>
+          </div>
+        </div>
+
+        {isBlocked ? (
+          <div className="w-full max-w-sm bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-6 text-left">
+            <div className="flex items-start gap-2.5">
+              <XCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-rose-700">Analisis Tidak Dapat Dijalankan</p>
+                <p className="text-xs text-rose-600 mt-1 leading-relaxed">
+                  Dibutuhkan minimal <strong>3 dari 4 asesmen</strong> untuk menghasilkan laporan yang bermakna.
+                  Dengan hanya <strong>{completedCount} asesmen</strong>, hasil analisis tidak akan optimal
+                  dan berpotensi memberikan penilaian yang tidak akurat karena kurangnya data.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <Button
           onClick={runAnalysis}
-          className="h-12 px-8 bg-gradient-to-r from-[#8B2252] to-[#c0507a] hover:opacity-90 text-white font-semibold rounded-xl shadow-md shadow-[#8B2252]/20 flex items-center gap-2"
+          disabled={isBlocked}
+          title={isBlocked ? `Minimal 3 asesmen diperlukan (saat ini: ${completedCount})` : undefined}
+          className={`h-12 px-8 text-white font-semibold rounded-xl shadow-md flex items-center gap-2 ${
+            isBlocked
+              ? 'bg-slate-300 cursor-not-allowed shadow-slate-200 opacity-60'
+              : 'bg-gradient-to-r from-[#8B2252] to-[#c0507a] hover:opacity-90 shadow-[#8B2252]/20 cursor-pointer'
+          }`}
         >
           <Sparkles className="w-4 h-4" />
           Jalankan Analisis AI
         </Button>
+
+        {isBlocked && (
+          <p className="text-xs text-slate-400 mt-3">
+            Lengkapi minimal 3 asesmen untuk mengaktifkan analisis AI.
+          </p>
+        )}
       </div>
     );
   }
@@ -651,50 +735,89 @@ export function AiAnalysisClient({
         Analisis ini bersifat pendukung keputusan, bukan pengganti penilaian profesional HR.
       </p>
 
-      {/* Drawer Dialog untuk Konfirmasi Data Belum Lengkap */}
+      {/* Drawer Dialog untuk Konfirmasi / Blokir Data Tidak Lengkap */}
       <Drawer open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <DrawerContent className="max-w-md mx-auto">
           <DrawerHeader className="text-left">
             <div className="flex items-center gap-2.5 mb-2">
-              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center border border-amber-200">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${
+                completedCount <= 2
+                  ? 'bg-rose-50 border-rose-200'
+                  : 'bg-amber-50 border-amber-200'
+              }`}>
+                {completedCount <= 2
+                  ? <XCircle className="w-5 h-5 text-rose-500" />
+                  : <AlertTriangle className="w-5 h-5 text-amber-600" />}
               </div>
               <div>
-                <DrawerTitle className="text-slate-900 font-bold text-base">Asesmen Belum Lengkap</DrawerTitle>
+                <DrawerTitle className="text-slate-900 font-bold text-base">
+                  {completedCount <= 2 ? 'Data Tidak Mencukupi' : 'Asesmen Belum Lengkap'}
+                </DrawerTitle>
                 <DrawerDescription className="text-xs text-slate-500">
-                  Kandidat {candidateName} belum menyelesaikan beberapa tahap tes berikut.
+                  {completedCount <= 2
+                    ? `Hanya ${completedCount} dari 4 asesmen yang selesai — terlalu sedikit untuk analisis yang akurat.`
+                    : `Kandidat ${candidateName} belum menyelesaikan ${missingTests.length} tahap tes berikut.`}
                 </DrawerDescription>
               </div>
             </div>
           </DrawerHeader>
 
-          <div className="px-5 py-3 bg-slate-50 border-y border-slate-100">
+          <div className={`px-5 py-3 border-y ${
+            completedCount <= 2 ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-100'
+          }`}>
             <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Data yang belum terisi:</p>
             <ul className="space-y-1.5">
               {missingTests.map((t, idx) => (
                 <li key={idx} className="text-xs text-slate-700 font-semibold flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    completedCount <= 2 ? 'bg-rose-500' : 'bg-amber-500'
+                  }`} />
                   {t}
                 </li>
               ))}
             </ul>
+            {completedCount <= 2 && (
+              <p className="text-xs text-rose-600 mt-3 leading-relaxed">
+                Analisis AI membutuhkan minimal <strong>3 dari 4 asesmen</strong> untuk menghasilkan
+                laporan yang bermakna dan akurat. Dengan data yang sangat terbatas, hasil analisis
+                berpotensi <strong>menyesatkan</strong> dan tidak dapat diandalkan sebagai dasar keputusan rekrutmen.
+              </p>
+            )}
+            {completedCount === 3 && (
+              <p className="text-xs text-amber-700 mt-3 leading-relaxed">
+                Analisis tetap dapat dijalankan namun hasilnya mungkin <strong>kurang komprehensif</strong>.
+                Disarankan untuk melengkapi semua asesmen terlebih dahulu.
+              </p>
+            )}
           </div>
 
           <DrawerFooter className="flex flex-col gap-2 p-5">
-            <Button
-              onClick={async () => {
-                setIsConfirmOpen(false);
-                await executeAnalysis();
-              }}
-              className="w-full bg-[#8B2252] hover:bg-[#8B2252]/90 text-white font-semibold cursor-pointer py-5 h-11"
-            >
-              Lanjutkan Analisis Terbatas
-            </Button>
-            <DrawerClose asChild>
-              <Button variant="outline" className="w-full font-semibold cursor-pointer h-11">
-                Batal & Lengkapi Data
-              </Button>
-            </DrawerClose>
+            {completedCount <= 2 ? (
+              // Hard block — only close
+              <DrawerClose asChild>
+                <Button className="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold cursor-pointer h-11">
+                  Mengerti, Lengkapi Data Dulu
+                </Button>
+              </DrawerClose>
+            ) : (
+              // Soft warning — can proceed
+              <>
+                <Button
+                  onClick={async () => {
+                    setIsConfirmOpen(false);
+                    await executeAnalysis();
+                  }}
+                  className="w-full bg-[#8B2252] hover:bg-[#8B2252]/90 text-white font-semibold cursor-pointer py-5 h-11"
+                >
+                  Lanjutkan Analisis Terbatas
+                </Button>
+                <DrawerClose asChild>
+                  <Button variant="outline" className="w-full font-semibold cursor-pointer h-11">
+                    Batal &amp; Lengkapi Data
+                  </Button>
+                </DrawerClose>
+              </>
+            )}
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { discQuestions } from '@/lib/discData';
@@ -47,11 +48,27 @@ function getFitNote(position: string, dLvl: string, sLvl: string, cLvl: string, 
 
 export function DiscHrView({ candidateName, position, discResult }: DiscHrViewProps) {
   const scores = [
-    { label: 'D', name: 'Dominance', value: Number(discResult.persen_d) || 0, color: 'bg-red-500' },
-    { label: 'I', name: 'Influence', value: Number(discResult.persen_i) || 0, color: 'bg-yellow-500' },
-    { label: 'S', name: 'Steadiness', value: Number(discResult.persen_s) || 0, color: 'bg-green-500' },
-    { label: 'C', name: 'Conscientiousness', value: Number(discResult.persen_c) || 0, color: 'bg-blue-500' },
+    { label: 'D', name: 'Dominance', value: Number(discResult.persen_d) || 0, color: 'bg-red-500', stroke: '#ef4444' },
+    { label: 'I', name: 'Influence', value: Number(discResult.persen_i) || 0, color: 'bg-yellow-500', stroke: '#eab308' },
+    { label: 'S', name: 'Steadiness', value: Number(discResult.persen_s) || 0, color: 'bg-green-500', stroke: '#22c55e' },
+    { label: 'C', name: 'Conscientiousness', value: Number(discResult.persen_c) || 0, color: 'bg-blue-500', stroke: '#3b82f6' },
   ];
+
+  // Keyframes injected once via a style tag
+  const animStyles = `
+    @keyframes disc-fadein {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes disc-bar {
+      from { width: 0%; }
+    }
+    .disc-card { animation: disc-fadein 0.5s ease both; }
+    .disc-bar-fill { animation: disc-bar 0.8s cubic-bezier(.4,0,.2,1) both; }
+    .disc-ring-circle { transition: stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1); }
+  `;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const dLvl = getLevel(discResult.skor_d);
   const iLvl = getLevel(discResult.skor_i);
@@ -70,7 +87,8 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
 
   return (
     <div className="space-y-6">
-      <Card>
+      <style dangerouslySetInnerHTML={{ __html: animStyles }} />
+      <Card className="disc-card" style={{ animationDelay: '0ms' }}>
         <CardHeader>
           <CardTitle>Hasil DISC Test</CardTitle>
           <div className="text-sm text-muted-foreground">
@@ -80,7 +98,7 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
       </Card>
 
       {/* Skor Mentah */}
-      <Card>
+      <Card className="disc-card" style={{ animationDelay: '80ms' }}>
         <CardHeader>
           <CardTitle>A. Skor Mentah (Raw Score)</CardTitle>
         </CardHeader>
@@ -137,24 +155,27 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
       </Card>
 
       {/* Grafik Profil DISC */}
-      <Card>
+      <Card className="disc-card" style={{ animationDelay: '160ms' }}>
         <CardHeader>
           <CardTitle>Grafik Profil DISC</CardTitle>
         </CardHeader>
         <CardContent>
           {/* Large percentage display */}
           <div className="grid grid-cols-4 gap-4 mb-8">
-            {scores.map((score) => (
+            {scores.map((score, idx) => (
               <div key={score.label} className="text-center">
                 <div className="relative w-28 h-28 mx-auto mb-3">
                   <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                     <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" strokeWidth="8" />
                     <circle
                       cx="50" cy="50" r="42" fill="none"
-                      stroke={score.label === 'D' ? '#ef4444' : score.label === 'I' ? '#eab308' : score.label === 'S' ? '#22c55e' : '#3b82f6'}
+                      stroke={score.stroke}
                       strokeWidth="8"
-                      strokeDasharray={`${(score.value / 100) * 264} 264`}
+                      strokeDasharray="264 264"
+                      strokeDashoffset={mounted ? 264 - (score.value / 100) * 264 : 264}
                       strokeLinecap="round"
+                      className="disc-ring-circle"
+                      style={{ transitionDelay: `${200 + idx * 100}ms` }}
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -176,7 +197,7 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
               { label: 'I', name: 'Influence', value: Number(discResult.persen_i), skor: discResult.skor_i, level: iLvl, color: 'bg-yellow-500', description: 'Cara mempengaruhi & berhubungan dengan orang lain' },
               { label: 'S', name: 'Steadiness', value: Number(discResult.persen_s), skor: discResult.skor_s, level: sLvl, color: 'bg-green-500', description: 'Cara merespons ritme & lingkungan kerja' },
               { label: 'C', name: 'Conscientiousness', value: Number(discResult.persen_c), skor: discResult.skor_c, level: cLvl, color: 'bg-blue-500', description: 'Cara merespons aturan & standar' },
-            ].map((dim) => (
+            ].map((dim, idx) => (
               <div key={dim.label} className="bg-slate-50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div>
@@ -205,10 +226,14 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
                     <div className="w-[10%] bg-green-50 border-r border-slate-300" title="Tinggi: 14-17" />
                     <div className="flex-1 bg-blue-50" title="Sangat Tinggi: ≥18" />
                   </div>
-                  {/* Score indicator */}
+                  {/* Score indicator — animated bar */}
                   <div
-                    className={`absolute top-0 h-full ${dim.color} rounded-full flex items-center justify-end pr-2 transition-all duration-500`}
-                    style={{ width: `${Math.max(0, Math.min(100, dim.value))}%` }}
+                    className={`absolute top-0 h-full ${dim.color} rounded-full flex items-center justify-end pr-2 disc-bar-fill`}
+                    style={{
+                      width: `${Math.max(0, Math.min(100, dim.value))}%`,
+                      animationDelay: `${300 + idx * 120}ms`,
+                      animationDuration: '0.9s',
+                    }}
                   >
                     <span className="text-xs text-white font-bold">{dim.value}%</span>
                   </div>
@@ -254,7 +279,7 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
       </Card>
 
       {/* Profil Dominan */}
-      <Card>
+      <Card className="disc-card" style={{ animationDelay: '240ms' }}>
         <CardHeader>
           <CardTitle>B. Profil Dominan</CardTitle>
         </CardHeader>
@@ -273,7 +298,7 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
       </Card>
 
       {/* Analisa Kesesuaian Posisi */}
-      <Card>
+      <Card className="disc-card" style={{ animationDelay: '320ms' }}>
         <CardHeader>
           <CardTitle>C. Analisa Kesesuaian Posisi</CardTitle>
         </CardHeader>
@@ -323,7 +348,7 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
       </Card>
 
       {/* Rekomendasi Final */}
-      <Card>
+      <Card className="disc-card" style={{ animationDelay: '400ms' }}>
         <CardHeader>
           <CardTitle>D. Rekomendasi Final HR</CardTitle>
         </CardHeader>
@@ -370,7 +395,7 @@ export function DiscHrView({ candidateName, position, discResult }: DiscHrViewPr
       </Card>
 
       {/* Detail Jawaban */}
-      <Card>
+      <Card className="disc-card" style={{ animationDelay: '480ms' }}>
         <CardHeader>
           <CardTitle>Detail Jawaban</CardTitle>
         </CardHeader>

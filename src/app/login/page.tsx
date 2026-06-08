@@ -2,10 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import gsap from 'gsap';
 
@@ -130,34 +126,84 @@ export default function LoginPage() {
   return (
     <div 
       ref={containerRef} 
-      className="min-h-screen bg-[#F1F5F9] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none"
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden font-sans select-none"
+      style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fff8f8 45%, #fff5f5 75%, #fffcfc 100%)' }}
     >
       <LoadingOverlay visible={loading} message="Memproses login..." />
 
-      {/* Decorative Premium Bright Mesh Gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(139,34,82,0.1)_0%,transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(56,189,248,0.15)_0%,transparent_50%)]" />
+      {/* Subtle mesh overlay */}
 
-      {/* Floating Animated Circles */}
+
+      {/* Orb 1 — subtle crimson hint, top-left corner */}
       <div 
         ref={bgCircle1Ref}
-        className="absolute top-10 left-10 w-96 h-96 rounded-full bg-sky-400/20 filter blur-3xl pointer-events-none" 
+        className="absolute pointer-events-none rounded-full"
+        style={{
+          top: '-20px', left: '-30px',
+          width: '240px', height: '240px',
+          background: 'radial-gradient(circle, rgba(139,0,0,0.07) 0%, transparent 70%)',
+          filter: 'blur(36px)',
+        }}
       />
+      {/* Orb 2 — subtle red hint, bottom-right corner */}
       <div 
         ref={bgCircle2Ref}
-        className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-[#8B2252]/8 filter blur-3xl pointer-events-none" 
+        className="absolute pointer-events-none rounded-full"
+        style={{
+          bottom: '-20px', right: '-30px',
+          width: '260px', height: '260px',
+          background: 'radial-gradient(circle, rgba(139,0,0,0.06) 0%, transparent 70%)',
+          filter: 'blur(38px)',
+        }}
       />
+      {/* Orb 3 — very faint, upper-right */}
       <div 
         ref={bgCircle3Ref}
-        className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full bg-indigo-300/15 filter blur-2xl pointer-events-none" 
+        className="absolute pointer-events-none rounded-full"
+        style={{
+          top: '20%', right: '8%',
+          width: '180px', height: '180px',
+          background: 'radial-gradient(circle, rgba(180,30,30,0.05) 0%, transparent 68%)',
+          filter: 'blur(30px)',
+        }}
       />
 
-      {/* Login Box */}
+      {/* Login Card */}
       <div ref={cardRef} className="w-full max-w-md relative z-10 opacity-0">
-        <Card className="border border-white/60 bg-white/35 backdrop-blur-xl shadow-2xl shadow-slate-200/85 rounded-3xl overflow-hidden">
-          <CardHeader className="text-center pb-2 pt-8">
-            <div ref={logoRef} className="flex items-center justify-center gap-3 mb-4">
-              <div className="bg-white/80 rounded-3xl p-3 shadow-md flex items-center justify-center w-24 h-24 border border-white/90 hover:border-slate-350 transition-colors duration-300">
+        <div
+          className="rounded-3xl overflow-hidden"
+          style={{
+            background: 'rgba(255, 255, 255, 0.52)',
+            backdropFilter: 'blur(30px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+            border: '1.5px solid rgba(255, 255, 255, 0.88)',
+            boxShadow: [
+              '0 8px 40px rgba(139,0,0,0.09)',
+              '0 2px 12px rgba(139,0,0,0.05)',
+              'inset 0 1px 0 rgba(255,255,255,0.95)',
+              'inset 0 -1px 0 rgba(139,0,0,0.04)',
+            ].join(', '),
+          }}
+        >
+          {/* Top accent stripe */}
+          <div style={{
+            height: '4px',
+            background: 'linear-gradient(90deg, #6B0000 0%, #B22222 40%, #DC3030 60%, #B22222 80%, #6B0000 100%)',
+          }} />
+
+          {/* Header */}
+          <div className="text-center pb-2 pt-8 px-8">
+            <div ref={logoRef} className="flex items-center justify-center mb-5">
+              <div
+                className="flex items-center justify-center w-24 h-24"
+                style={{
+                  background: 'rgba(255,255,255,0.78)',
+                  backdropFilter: 'blur(12px)',
+                  borderRadius: '22px',
+                  border: '1.5px solid rgba(139,0,0,0.10)',
+                  boxShadow: '0 4px 20px rgba(139,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.98)',
+                }}
+              >
                 <img 
                   src="/logo-ec.png" 
                   alt="EasyCorp Logo" 
@@ -165,60 +211,123 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <h1 ref={titleRef} className="text-3xl font-black text-slate-900 tracking-tight">
+            <h1 ref={titleRef} className="text-3xl font-black tracking-tight" style={{ color: '#111111' }}>
               EasyCorp
             </h1>
-            <p ref={subtitleRef} className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">
+            <p ref={subtitleRef} className="text-[10px] font-bold uppercase tracking-widest mt-1.5" style={{ color: '#8B0000' }}>
               Sistem Rekrutmen Internal
             </p>
-          </CardHeader>
-          <CardContent className="p-8 pt-4">
+          </div>
+
+          {/* Form */}
+          <div className="px-8 pb-8 pt-4">
             <form ref={formRef} onSubmit={handleLogin} className="space-y-5">
               {error && (
-                <div className="bg-red-50 text-red-650 text-xs font-semibold p-3.5 rounded-xl border border-red-100 text-center animate-in fade-in zoom-in-95 duration-200">
+                <div
+                  className="text-xs font-semibold p-3.5 rounded-xl text-center animate-in fade-in zoom-in-95 duration-200"
+                  style={{
+                    background: 'rgba(139,0,0,0.06)',
+                    border: '1px solid rgba(139,0,0,0.15)',
+                    color: '#8B0000',
+                  }}
+                >
                   {error}
                 </div>
               )}
+
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Email</Label>
-                <Input
+                <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider pl-1" style={{ color: '#3a0a0a' }}>
+                  Email
+                </label>
+                <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@easycorp.id"
-                  className="h-12 bg-white/60 border-slate-200 focus:border-[#8B2252] focus:ring-[#8B2252] focus:ring-1 rounded-xl text-slate-800 font-medium placeholder:text-slate-400 focus:bg-white/80 transition-all duration-300"
                   required
+                  className="w-full h-12 px-4 rounded-xl text-sm font-medium outline-none transition-all duration-300"
+                  style={{
+                    background: 'rgba(255,255,255,0.62)',
+                    border: '1.5px solid rgba(180,180,180,0.55)',
+                    color: '#111111',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                  onFocus={e => {
+                    e.currentTarget.style.border = '1.5px solid rgba(139,0,0,0.45)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.88)';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,0,0,0.07)';
+                  }}
+                  onBlur={e => {
+                    e.currentTarget.style.border = '1.5px solid rgba(180,180,180,0.55)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.62)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 />
               </div>
+
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Password</Label>
-                <Input
+                <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider pl-1" style={{ color: '#3a0a0a' }}>
+                  Password
+                </label>
+                <input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
-                  className="h-12 bg-white/60 border-slate-200 focus:border-[#8B2252] focus:ring-[#8B2252] focus:ring-1 rounded-xl text-slate-800 font-medium placeholder:text-slate-400 focus:bg-white/80 transition-all duration-300"
                   required
+                  className="w-full h-12 px-4 rounded-xl text-sm font-medium outline-none transition-all duration-300"
+                  style={{
+                    background: 'rgba(255,255,255,0.62)',
+                    border: '1.5px solid rgba(180,180,180,0.55)',
+                    color: '#111111',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                  onFocus={e => {
+                    e.currentTarget.style.border = '1.5px solid rgba(139,0,0,0.45)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.88)';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,0,0,0.07)';
+                  }}
+                  onBlur={e => {
+                    e.currentTarget.style.border = '1.5px solid rgba(180,180,180,0.55)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.62)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 />
               </div>
-              <Button
+
+              <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 mt-2 bg-gradient-to-r from-[#8B2252] to-[#A82B61] hover:from-[#731C43] hover:to-[#912453] text-white text-sm font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-[#8B2252]/20 active:scale-[0.98] transition-all duration-300"
+                className="w-full h-12 mt-2 text-white text-sm font-bold uppercase tracking-widest rounded-xl transition-all duration-300 active:scale-[0.98] cursor-pointer"
+                style={{
+                  background: 'linear-gradient(135deg, #8B0000 0%, #C41E1E 55%, #8B0000 100%)',
+                  boxShadow: '0 4px 22px rgba(139,0,0,0.32), 0 2px 6px rgba(139,0,0,0.16)',
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'linear-gradient(135deg, #6B0000 0%, #A01010 55%, #6B0000 100%)';
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 28px rgba(139,0,0,0.42), 0 2px 8px rgba(139,0,0,0.22)';
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = 'linear-gradient(135deg, #8B0000 0%, #C41E1E 55%, #8B0000 100%)';
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 22px rgba(139,0,0,0.32), 0 2px 6px rgba(139,0,0,0.16)';
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+                }}
               >
                 Masuk
-              </Button>
+              </button>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
       <div 
         ref={footerRef} 
-        className="absolute bottom-4 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest opacity-0"
+        className="absolute bottom-4 text-center text-[10px] font-bold uppercase tracking-widest"
+        style={{ color: '#8B0000', opacity: 0 }}
       >
         EasyCorp &copy; 2026. All rights reserved.
       </div>

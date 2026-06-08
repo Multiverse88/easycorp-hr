@@ -6,6 +6,7 @@ import {
   getDiscTestResultByCandidate,
   getWptTestResultByCandidate,
   getKoranTestResultByCandidate,
+  getInterviewEvaluationByCandidate,
   getManpowerRequests,
 } from '@/lib/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,10 +26,11 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
     return <div className="p-8">Kandidat tidak ditemukan</div>;
   }
 
-  const [discResult, wptResult, koranResult, requests] = await Promise.all([
+  const [discResult, wptResult, koranResult, interviewResult, requests] = await Promise.all([
     getDiscTestResultByCandidate(resolvedParams.id),
     getWptTestResultByCandidate(resolvedParams.id),
     getKoranTestResultByCandidate(resolvedParams.id),
+    getInterviewEvaluationByCandidate(resolvedParams.id),
     getManpowerRequests(),
   ]);
   const request = requests.find(r => r.id === candidate.manpower_request_id);
@@ -49,7 +51,14 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
           <h1 className="text-2xl font-bold mt-2">Detail Kandidat</h1>
         </div>
         <div className="flex items-center gap-2">
-          <DownloadCandidatePdf candidateId={resolvedParams.id} />
+          <DownloadCandidatePdf
+            candidateId={resolvedParams.id}
+            candidateName={candidate.nama}
+            hasDisc={!!discResult}
+            hasWpt={!!wptResult}
+            hasKoran={!!koranResult}
+            hasInterview={!!interviewResult}
+          />
           <StatusSelector candidateId={resolvedParams.id} currentStatus={candidate.status} />
         </div>
       </div>
