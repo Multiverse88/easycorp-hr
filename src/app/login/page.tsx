@@ -130,26 +130,26 @@ export default function LoginPage() {
   return (
     <div 
       ref={containerRef} 
-      className="min-h-screen bg-[#070101] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none"
+      className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none"
     >
       <LoadingOverlay visible={loading} message="Memproses login..." />
 
       {/* Decorative Premium Mesh Gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,#300202_0%,transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,#4A0008_0%,transparent_60%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(139,34,82,0.12)_0%,transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(51,65,85,0.15)_0%,transparent_50%)]" />
 
       {/* Floating Animated Circles */}
       <div 
         ref={bgCircle1Ref}
-        className="absolute top-10 left-10 w-96 h-96 rounded-full bg-[#9A0000]/15 opacity-50 filter blur-3xl pointer-events-none" 
+        className="absolute top-10 left-10 w-96 h-96 rounded-full bg-slate-800/20 filter blur-3xl pointer-events-none" 
       />
       <div 
         ref={bgCircle2Ref}
-        className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-[#E30000]/10 opacity-30 filter blur-3xl pointer-events-none" 
+        className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-[#8B2252]/10 filter blur-3xl pointer-events-none" 
       />
       <div 
         ref={bgCircle3Ref}
-        className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full bg-[#660000]/20 opacity-40 filter blur-2xl pointer-events-none" 
+        className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full bg-indigo-950/25 filter blur-2xl pointer-events-none" 
       />
 
       {/* Login Box */}
