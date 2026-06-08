@@ -564,25 +564,6 @@ export async function saveInterviewEvaluation(evalData: Omit<InterviewEvaluation
   const evalAction = evalData.id ? 'UPDATE' : 'CREATE';
   logActivity({ action: evalAction, table_name: 'interview_evaluations', record_id: data.id, description: `${evalAction === 'CREATE' ? 'Evaluasi interview baru' : 'Evaluasi interview diperbarui'} - tahap ${evalData.tahap} untuk kandidat ${evalData.candidate_id}`, details: { candidate_id: evalData.candidate_id, tahap: evalData.tahap, rekomendasi: evalData.rekomendasi, total_skor: evalData.total_skor } });
 
-  // Trigger n8n webhook asynchronously in the background
-  getCandidateById(evalData.candidate_id).then(candidate => {
-    if (candidate) {
-      triggerN8nWebhook('interview.saved', {
-        candidate,
-        interview: {
-          tanggal: evalData.tanggal,
-          tahap: evalData.tahap,
-          interviewer: evalData.interviewer,
-          metode: evalData.metode,
-          ekspektasi_gaji: evalData.ekspektasi_gaji,
-          ketersediaan_bergabung: evalData.ketersediaan_bergabung,
-          total_skor: evalData.total_skor,
-          rekomendasi: evalData.rekomendasi
-        }
-      }).catch(err => console.error('Error triggering n8n webhook for Interview:', err));
-    }
-  });
-
   return data as InterviewEvaluation;
 }
 
@@ -692,20 +673,6 @@ export async function saveDiscTestResult(res: Omit<DiscTestResult, 'id'>): Promi
 
   logActivity({ action: 'CREATE', table_name: 'disc_tests', record_id: id, description: `Hasil tes DISC baru untuk kandidat ${res.candidate_id} - tipe primer: ${res.tipe_primer}`, details: { candidate_id: res.candidate_id, tipe_primer: res.tipe_primer, tipe_sekunder: res.tipe_sekunder } });
 
-  // Trigger n8n webhook asynchronously in the background
-  getCandidateById(res.candidate_id).then(candidate => {
-    if (candidate) {
-      triggerN8nWebhook('disc.completed', {
-        candidate,
-        result: {
-          tipe_primer: res.tipe_primer,
-          tipe_sekunder: res.tipe_sekunder,
-          completed_at: res.completed_at
-        }
-      }).catch(err => console.error('Error triggering n8n webhook for DISC:', err));
-    }
-  });
-
   return data as DiscTestResult;
 }
 
@@ -762,21 +729,6 @@ export async function saveWptTestResult(res: Omit<WptTestResult, 'id'>): Promise
 
   logActivity({ action: 'CREATE', table_name: 'wpt_tests', record_id: id, description: `Hasil tes WPT baru untuk kandidat ${res.candidate_id} - skor: ${res.skor}/50 (${res.kategori})`, details: { candidate_id: res.candidate_id, skor: res.skor, kategori: res.kategori } });
 
-  // Trigger n8n webhook asynchronously in the background
-  getCandidateById(res.candidate_id).then(candidate => {
-    if (candidate) {
-      triggerN8nWebhook('wpt.completed', {
-        candidate,
-        result: {
-          skor: res.skor,
-          total_soal: res.total_soal,
-          kategori: res.kategori,
-          completed_at: res.completed_at
-        }
-      }).catch(err => console.error('Error triggering n8n webhook for WPT:', err));
-    }
-  });
-
   return data as WptTestResult;
 }
 
@@ -801,173 +753,6 @@ function signJWT(payload: object, secret: string): string {
     .digest();
   const encodedSignature = base64UrlEncode(signature);
   return `${tokenInput}.${encodedSignature}`;
-}
-
-export async function triggerN8nWebhook(
-  event: 'disc.completed' | 'wpt.completed' | 'koran.completed' | 'interview.saved',
-  payloadData: {
-    candidate: Candidate;
-    result?: Record<string, unknown>;
-    interview?: Record<string, unknown>;
-  }
-): Promise<void> {
-  const webhookUrl = process.env.N8N_WHATSAPP_WEBHOOK_URL;
-  if (!webhookUrl || webhookUrl.trim() === '') {
-    console.warn(`n8n webhook skipped: N8N_WHATSAPP_WEBHOOK_URL is not configured.`);
-    return;
-  }
-
-  const { candidate, result, interview } = payloadData;
-
-  // Generate messages in Indonesian
-  let message = '';
-  let adminMessage = '';
-
-  if (event === 'disc.completed') {
-    message = `Halo ${candidate.nama},\n\nTerima kasih telah menyelesaikan Asesmen Kepribadian (DISC) EasyLegal. Jawaban Anda telah kami terima dengan baik.\n\nSalam,\nTim HR EasyLegal`;
-    adminMessage = `Notifikasi HR: Kandidat "${candidate.nama}" untuk posisi "${candidate.posisi_dilamar || '-'}" baru saja menyelesaikan Tes DISC.\n\nTipe Primer: ${result?.tipe_primer || '-'}\nTipe Sekunder: ${result?.tipe_sekunder || '-'}`;
-  } else if (event === 'wpt.completed') {
-    message = `Halo ${candidate.nama},\n\nTerima kasih telah menyelesaikan Tes Kemampuan Intelektual (WPT) EasyLegal. Jawaban Anda telah kami terima dengan baik.\n\nSalam,\nTim HR EasyLegal`;
-    adminMessage = `Notifikasi HR: Kandidat "${candidate.nama}" untuk posisi "${candidate.posisi_dilamar || '-'}" baru saja menyelesaikan Tes WPT.\n\nSkor: ${result?.skor || '-'}/${result?.total_soal || '-'}\nKategori: ${result?.kategori || '-'}`;
-  } else if (event === 'koran.completed') {
-    message = `Halo ${candidate.nama},\n\nTerima kasih telah menyelesaikan Tes Koran EasyLegal. Hasil tes Anda telah kami terima.\n\nSalam,\nTim HR EasyLegal`;
-    adminMessage = `Notifikasi HR: Hasil Tes Koran/Pauli kandidat "${candidate.nama}" untuk posisi "${candidate.posisi_dilamar || '-'}" telah diunggah dan dianalisis.\n\nRekomendasi: ${result?.rekomendasi || '-'}`;
-  } else if (event === 'interview.saved') {
-    message = `Halo ${candidate.nama},\n\nJadwal/evaluasi wawancara Anda di EasyLegal telah diperbarui.\nTahap: ${interview?.tahap || '-'}\nMetode: ${interview?.metode || '-'}\nTanggal: ${interview?.tanggal || '-'}\n\nSalam,\nTim HR EasyLegal`;
-    adminMessage = `Notifikasi HR: Evaluasi/Jadwal Interview kandidat "${candidate.nama}" diperbarui.\n\nTahap: ${interview?.tahap || '-'}\nInterviewer: ${interview?.interviewer || '-'}\nRekomendasi: ${interview?.rekomendasi || '-'}`;
-  }
-
-  // Set up request headers
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  // Sign JWT if JWT Secret is configured
-  const jwtSecret = process.env.N8N_JWT_SECRET;
-  if (jwtSecret && jwtSecret.trim() !== '') {
-    const now = Math.floor(Date.now() / 1000);
-    const token = signJWT(
-      {
-        iss: 'easylegal-recruitment',
-        event,
-        iat: now,
-        exp: now + 300, // Valid for 5 minutes
-      },
-      jwtSecret
-    );
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        event,
-        candidateId: candidate.id,
-        candidateName: candidate.nama,
-        candidatePhone: candidate.telepon || '',
-        candidateEmail: candidate.email || '',
-        position: candidate.posisi_dilamar || '',
-        message,
-        adminMessage,
-        details: result || interview || {},
-        timestamp: new Date().toISOString(),
-      }),
-    });
-
-    if (!res.ok) {
-      console.error(`n8n webhook returned status ${res.status}`);
-    } else {
-      console.log(`n8n webhook triggered successfully for event ${event}`);
-    }
-  } catch (err) {
-    console.error(`Error in triggerN8nWebhook for event ${event}:`, err);
-  }
-}
-
-export async function sendWhatsAppInvitation(
-  candidateId: string,
-  origin: string
-): Promise<{ success: boolean; error?: string }> {
-  const candidate = await getCandidateById(candidateId);
-  if (!candidate) {
-    return { success: false, error: 'KANDIDAT_TIDAK_DITEMUKAN' };
-  }
-
-  const webhookUrl = process.env.N8N_WHATSAPP_WEBHOOK_URL;
-  if (!webhookUrl || webhookUrl.trim() === '') {
-    return { success: false, error: 'WHATSAPP_WEBHOOK_NOT_CONFIGURED' };
-  }
-
-  const link = `${origin}/disc/${candidate.token}`;
-  
-  const message = `Halo ${candidate.nama},
-
-Anda diundang untuk mengikuti tahapan asesmen di EasyLegal untuk posisi ${candidate.posisi_dilamar || 'Kandidat'}.
-
-Silakan akses tautan berikut untuk memulai:
-${link}
-
-Atau Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
-Token: ${candidate.token}
-
-Terima kasih,
-Tim HR EasyLegal`;
-
-  // Set up request headers
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-
-  // Sign JWT if JWT Secret is configured
-  const jwtSecret = process.env.N8N_JWT_SECRET;
-  if (jwtSecret && jwtSecret.trim() !== '') {
-    const now = Math.floor(Date.now() / 1000);
-    const token = signJWT(
-      {
-        iss: 'easylegal-recruitment',
-        iat: now,
-        exp: now + 300, // Valid for 5 minutes
-      },
-      jwtSecret
-    );
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        candidateId: candidate.id,
-        candidateName: candidate.nama,
-        candidatePhone: candidate.telepon || '',
-        candidateEmail: candidate.email || '',
-        position: candidate.posisi_dilamar || '',
-        token: candidate.token,
-        link,
-        message,
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error(`n8n Webhook returned status ${res.status}`);
-    }
-
-    logActivity({
-      action: 'UPDATE',
-      table_name: 'candidates',
-      record_id: candidateId,
-      description: `Undangan WhatsApp dikirim via n8n ke "${candidate.nama}" (${candidate.telepon || 'tidak ada telepon'})`,
-      details: { telepon: candidate.telepon || '' },
-    });
-
-    return { success: true };
-  } catch (err) {
-    console.error('Error in sendWhatsAppInvitation:', err);
-    return { success: false, error: err instanceof Error ? err.message : 'WEBHOOK_FAILED' };
-  }
 }
 
 // ==========================================
@@ -1045,16 +830,6 @@ export async function saveKoranTestResult(res: Omit<KoranTestResult, 'id'> & { i
     record_id: id,
     description: `Hasil Tes Koran ${res.id ? 'diperbarui' : 'baru'} untuk kandidat ${res.candidate_id}`,
     details: { candidate_id: res.candidate_id }
-  });
-
-  // Trigger n8n webhook asynchronously in the background
-  getCandidateById(res.candidate_id).then(candidate => {
-    if (candidate) {
-      triggerN8nWebhook('koran.completed', {
-        candidate,
-        result: res.analysis_result
-      }).catch(err => console.error('Error triggering n8n webhook for Koran:', err));
-    }
   });
 
   return data as KoranTestResult;

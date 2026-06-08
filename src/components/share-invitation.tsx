@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Mail, Loader2, Check, AlertCircle } from 'lucide-react';
-import { Candidate, resendInvitationEmail, sendWhatsAppInvitation } from '@/lib/db';
+import { Candidate, resendInvitationEmail } from '@/lib/db';
 
 export function ShareInvitation({ candidate }: { candidate: Candidate }) {
   const [sending, setSending] = useState(false);
@@ -26,38 +26,17 @@ Terima kasih,
 Tim HR EasyLegal`;
   };
 
-  const handleShareWhatsApp = async () => {
-    setSending(true);
-    setStatus(null);
-    try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const res = await sendWhatsAppInvitation(candidate.id, origin);
-      if (res.success) {
-        setStatus({ type: 'success', message: 'WhatsApp undangan berhasil dikirim otomatis!' });
-      } else {
-        if (res.error === 'WHATSAPP_WEBHOOK_NOT_CONFIGURED') {
-          // Fallback to manual wa.me
-          setStatus({ type: 'error', message: 'Webhook n8n belum diatur. Membuka link manual WhatsApp...' });
-          const text = encodeURIComponent(getShareMessage());
-          let url = `https://wa.me/?text=${text}`;
-          if (candidate.telepon) {
-            let phoneStr = candidate.telepon.replace(/\D/g, '');
-            if (phoneStr.startsWith('0')) {
-              phoneStr = '62' + phoneStr.substring(1);
-            }
-            url = `https://wa.me/${phoneStr}?text=${text}`;
-          }
-          window.open(url, '_blank');
-        } else {
-          setStatus({ type: 'error', message: `Gagal mengirim WhatsApp otomatis: ${res.error}` });
-        }
+  const handleShareWhatsApp = () => {
+    const text = encodeURIComponent(getShareMessage());
+    let url = `https://wa.me/?text=${text}`;
+    if (candidate.telepon) {
+      let phoneStr = candidate.telepon.replace(/\D/g, '');
+      if (phoneStr.startsWith('0')) {
+        phoneStr = '62' + phoneStr.substring(1);
       }
-    } catch (err) {
-      console.error('Error sending WhatsApp share:', err);
-      setStatus({ type: 'error', message: 'Terjadi kesalahan sistem saat mengirim WhatsApp.' });
-    } finally {
-      setSending(false);
+      url = `https://wa.me/${phoneStr}?text=${text}`;
     }
+    window.open(url, '_blank');
   };
 
   const handleShareEmail = async () => {
