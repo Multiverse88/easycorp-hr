@@ -76,7 +76,7 @@ export default function LoginPage() {
     tl.fromTo(
       footerRef.current,
       { opacity: 0, y: 10 },
-      { opacity: 0.6, y: 0, duration: 1, ease: 'power2.out' },
+      { opacity: 0.5, y: 0, duration: 1, ease: 'power2.out' },
       '-=0.4'
     );
 
@@ -130,34 +130,34 @@ export default function LoginPage() {
   return (
     <div 
       ref={containerRef} 
-      className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none"
+      className="min-h-screen bg-[#F1F5F9] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none"
     >
       <LoadingOverlay visible={loading} message="Memproses login..." />
 
-      {/* Decorative Premium Mesh Gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(139,34,82,0.12)_0%,transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(51,65,85,0.15)_0%,transparent_50%)]" />
+      {/* Decorative Premium Bright Mesh Gradients */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(139,34,82,0.1)_0%,transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(56,189,248,0.15)_0%,transparent_50%)]" />
 
       {/* Floating Animated Circles */}
       <div 
         ref={bgCircle1Ref}
-        className="absolute top-10 left-10 w-96 h-96 rounded-full bg-slate-800/20 filter blur-3xl pointer-events-none" 
+        className="absolute top-10 left-10 w-96 h-96 rounded-full bg-sky-400/20 filter blur-3xl pointer-events-none" 
       />
       <div 
         ref={bgCircle2Ref}
-        className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-[#8B2252]/10 filter blur-3xl pointer-events-none" 
+        className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-[#8B2252]/8 filter blur-3xl pointer-events-none" 
       />
       <div 
         ref={bgCircle3Ref}
-        className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full bg-indigo-950/25 filter blur-2xl pointer-events-none" 
+        className="absolute top-1/2 left-1/3 w-72 h-72 rounded-full bg-indigo-300/15 filter blur-2xl pointer-events-none" 
       />
 
       {/* Login Box */}
       <div ref={cardRef} className="w-full max-w-md relative z-10 opacity-0">
-        <Card className="border-white/5 bg-black/40 backdrop-blur-md shadow-2xl shadow-black/80 rounded-3xl overflow-hidden">
+        <Card className="border border-white/60 bg-white/35 backdrop-blur-xl shadow-2xl shadow-slate-200/85 rounded-3xl overflow-hidden">
           <CardHeader className="text-center pb-2 pt-8">
             <div ref={logoRef} className="flex items-center justify-center gap-3 mb-4">
-              <div className="bg-white/5 rounded-3xl p-3 shadow-2xl flex items-center justify-center w-24 h-24 border border-white/10 hover:border-red-500/30 transition-colors duration-300">
+              <div className="bg-white/80 rounded-3xl p-3 shadow-md flex items-center justify-center w-24 h-24 border border-white/90 hover:border-slate-350 transition-colors duration-300">
                 <img 
                   src="/logo-ec.png" 
                   alt="EasyCorp Logo" 
@@ -165,48 +165,48 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <h1 ref={titleRef} className="text-3xl font-black text-white tracking-tight">
+            <h1 ref={titleRef} className="text-3xl font-black text-slate-900 tracking-tight">
               EasyCorp
             </h1>
-            <p ref={subtitleRef} className="text-xs text-red-200/50 font-bold uppercase tracking-widest mt-1.5">
+            <p ref={subtitleRef} className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">
               Sistem Rekrutmen Internal
             </p>
           </CardHeader>
           <CardContent className="p-8 pt-4">
             <form ref={formRef} onSubmit={handleLogin} className="space-y-5">
               {error && (
-                <div className="bg-red-950/40 text-red-400 text-xs font-bold p-3.5 rounded-xl border border-red-500/20 text-center animate-in fade-in zoom-in-95 duration-200">
+                <div className="bg-red-50 text-red-650 text-xs font-semibold p-3.5 rounded-xl border border-red-100 text-center animate-in fade-in zoom-in-95 duration-200">
                   {error}
                 </div>
               )}
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-white/70 text-xs font-bold uppercase tracking-wider pl-1">Email</Label>
+                <Label htmlFor="email" className="text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@easycorp.id"
-                  className="h-12 bg-white/5 border-white/10 focus:border-red-500 focus:ring-red-500 focus:ring-1 rounded-xl text-white font-medium placeholder:text-white/20 transition-all duration-300"
+                  className="h-12 bg-white/60 border-slate-200 focus:border-[#8B2252] focus:ring-[#8B2252] focus:ring-1 rounded-xl text-slate-800 font-medium placeholder:text-slate-400 focus:bg-white/80 transition-all duration-300"
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-white/70 text-xs font-bold uppercase tracking-wider pl-1">Password</Label>
+                <Label htmlFor="password" className="text-slate-700 text-xs font-bold uppercase tracking-wider pl-1">Password</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
-                  className="h-12 bg-white/5 border-white/10 focus:border-red-500 focus:ring-red-500 focus:ring-1 rounded-xl text-white font-medium placeholder:text-white/20 transition-all duration-300"
+                  className="h-12 bg-white/60 border-slate-200 focus:border-[#8B2252] focus:ring-[#8B2252] focus:ring-1 rounded-xl text-slate-800 font-medium placeholder:text-slate-400 focus:bg-white/80 transition-all duration-300"
                   required
                 />
               </div>
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 mt-2 bg-gradient-to-r from-[#9A0000] to-[#E30000] hover:from-[#B50000] hover:to-[#FF1A24] text-white text-sm font-bold uppercase tracking-widest rounded-xl shadow-xl shadow-red-950/20 active:scale-[0.98] transition-all duration-300"
+                className="w-full h-12 mt-2 bg-gradient-to-r from-[#8B2252] to-[#A82B61] hover:from-[#731C43] hover:to-[#912453] text-white text-sm font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-[#8B2252]/20 active:scale-[0.98] transition-all duration-300"
               >
                 Masuk
               </Button>
@@ -218,7 +218,7 @@ export default function LoginPage() {
       {/* Footer */}
       <div 
         ref={footerRef} 
-        className="absolute bottom-4 text-center text-[10px] text-white/30 font-bold uppercase tracking-widest opacity-0"
+        className="absolute bottom-4 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest opacity-0"
       >
         EasyCorp &copy; 2026. All rights reserved.
       </div>
