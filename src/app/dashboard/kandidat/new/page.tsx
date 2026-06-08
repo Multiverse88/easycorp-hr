@@ -39,6 +39,7 @@ export default function TambahKandidatPage() {
   const [telepon, setTelepon] = useState('');
   
   const [sendEmail, setSendEmail] = useState(true);
+  const [sendWhatsApp, setSendWhatsApp] = useState(true);
   const [emailStatus, setEmailStatus] = useState<{ sent: boolean; error?: string } | null>(null);
   const [sendingEmailShare, setSendingEmailShare] = useState(false);
   const [whatsappStatus, setWhatsappStatus] = useState<{ sent: boolean; error?: string } | null>(null);
@@ -103,6 +104,21 @@ export default function TambahKandidatPage() {
         });
       } else {
         setEmailStatus(null);
+      }
+
+      if (sendWhatsApp && telepon.trim()) {
+        try {
+          const waRes = await sendWhatsAppInvitation(candidate.id, window.location.origin);
+          setWhatsappStatus({
+            sent: waRes.success,
+            error: waRes.error,
+          });
+        } catch (waErr) {
+          console.error('Error sending WhatsApp during candidate creation:', waErr);
+          setWhatsappStatus({ sent: false, error: 'SYSTEM_ERROR' });
+        }
+      } else {
+        setWhatsappStatus(null);
       }
     } catch {
       setError('Gagal membuat kandidat');
@@ -458,6 +474,26 @@ Tim HR EasyLegal`;
                         </Label>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           Kandidat akan otomatis menerima email berisi token dan tautan asesmen.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {telepon.trim() && (
+                    <div className="flex items-start space-x-3 rounded-xl border border-border bg-muted/20 p-4 transition-all hover:bg-muted/30 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <input
+                        id="sendWhatsApp"
+                        type="checkbox"
+                        checked={sendWhatsApp}
+                        onChange={(e) => setSendWhatsApp(e.target.checked)}
+                        className="mt-1 h-4.5 w-4.5 rounded border-border text-primary focus:ring-2 focus:ring-primary/30 cursor-pointer"
+                      />
+                      <div className="flex-1 cursor-pointer select-none" onClick={() => setSendWhatsApp(!sendWhatsApp)}>
+                        <Label htmlFor="sendWhatsApp" className="text-sm font-bold text-foreground cursor-pointer block">
+                          Kirim WhatsApp Undangan Otomatis
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Kandidat akan otomatis menerima pesan WhatsApp berisi token dan tautan asesmen.
                         </p>
                       </div>
                     </div>
