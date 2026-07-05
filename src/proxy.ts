@@ -15,6 +15,11 @@ export async function proxy(request: NextRequest) {
   // Log incoming request
   console.log(`[${new Date().toISOString()}] ${request.method} ${hostname}${path}`);
 
+  // Jangan intercept API routes
+  if (path.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   // Detect environment
   const isLocalhost = hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1');
   const isDiscSubdomain = hostname.startsWith('disc.');

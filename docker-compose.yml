@@ -13,8 +13,14 @@ services:
       - .env
     volumes:
       - ./public/uploads:/app/public/uploads
+    networks:
+      - supabase_network_supabase_BKyh
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  supabase_network_supabase_BKyh:
+    external: true
