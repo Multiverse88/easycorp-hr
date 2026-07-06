@@ -1,4 +1,6 @@
 import { getCandidateById, getDiscTestResultByCandidate } from '@/lib/db';
+import { getUserRole } from '@/lib/supabase/server';
+import { MOCK_DISC_RESULT } from '@/lib/mock-data';
 import { DiscHrView } from '@/components/disc-hr-view';
 import { Card, CardContent } from '@/components/ui/card';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
@@ -15,6 +17,8 @@ export default async function DiscHrPage({ params }: { params: Promise<{ id: str
   }
 
   const discResult = await getDiscTestResultByCandidate(resolvedParams.id);
+  const userRole = await getUserRole();
+  const effectiveResult = discResult || (userRole === 'superadmin' ? MOCK_DISC_RESULT : null);
 
   return (
     <div>
@@ -25,13 +29,23 @@ export default async function DiscHrPage({ params }: { params: Promise<{ id: str
 
       <CandidateQuickActions candidateId={resolvedParams.id} />
 
-      <div className="mt-6">
-        {discResult ? (
-          <DiscHrView
-            candidateName={candidate.nama}
-            position={candidate.posisi_dilamar}
-            discResult={discResult}
-          />
+      <div className="mt-6 relative">
+        {!discResult && userRole === 'superadmin' && (
+          <div className="absolute inset-0 z-10 bg-amber-50/20 backdrop-grayscale-[30%] pointer-events-none rounded-xl" />
+        )}
+        {effectiveResult ? (
+          <div>
+            {!discResult && userRole === 'superadmin' && (
+              <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-md text-sm font-semibold inline-block">
+                Developer Preview (Mock Data)
+              </div>
+            )}
+            <DiscHrView
+              candidateName={candidate.nama}
+              position={candidate.posisi_dilamar}
+              discResult={effectiveResult}
+            />
+          </div>
         ) : (
           <Card>
             <CardContent className="p-8 text-center">

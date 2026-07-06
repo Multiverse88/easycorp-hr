@@ -15,6 +15,7 @@ export function CandidateQuickActions({ candidateId }: CandidateQuickActionsProp
   const actions = [
     { href: `/dashboard/kandidat/${candidateId}/interview`, label: 'Interview', icon: MessageSquare, ai: false },
     { href: `/dashboard/kandidat/${candidateId}/disc`, label: 'DISC Test', icon: Award, ai: false },
+    { href: `/dashboard/kandidat/${candidateId}/papikostik`, label: 'Papikostik', icon: Award, ai: false },
     { href: `/dashboard/kandidat/${candidateId}/wpt`, label: 'Tes IQ (WPT)', icon: Brain, ai: false },
     { href: `/dashboard/kandidat/${candidateId}/tes-koran`, label: 'Tes Koran', icon: FileText, ai: false },
     { href: `/dashboard/kandidat/${candidateId}/analisis-ai`, label: 'Analisis AI', icon: Sparkles, ai: true },

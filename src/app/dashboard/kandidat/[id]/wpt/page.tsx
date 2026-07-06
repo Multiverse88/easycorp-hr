@@ -1,4 +1,6 @@
 import { getCandidateById, getWptTestResultByCandidate } from '@/lib/db';
+import { getUserRole } from '@/lib/supabase/server';
+import { MOCK_WPT_RESULT } from '@/lib/mock-data';
 import { WptHrView } from '@/components/wpt-hr-view';
 import { Card, CardContent } from '@/components/ui/card';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
@@ -15,6 +17,8 @@ export default async function WptHrPage({ params }: { params: Promise<{ id: stri
   }
 
   const wptResult = await getWptTestResultByCandidate(resolvedParams.id);
+  const userRole = await getUserRole();
+  const effectiveResult = wptResult || (userRole === 'superadmin' ? MOCK_WPT_RESULT : null);
 
   return (
     <div>
@@ -25,13 +29,23 @@ export default async function WptHrPage({ params }: { params: Promise<{ id: stri
 
       <CandidateQuickActions candidateId={resolvedParams.id} />
 
-      <div className="mt-6">
-        {wptResult ? (
-          <WptHrView
-            result={wptResult}
-            candidateName={candidate.nama}
-            posisiDilamar={candidate.posisi_dilamar}
-          />
+      <div className="mt-6 relative">
+        {!wptResult && userRole === 'superadmin' && (
+          <div className="absolute inset-0 z-10 bg-amber-50/20 backdrop-grayscale-[30%] pointer-events-none rounded-xl" />
+        )}
+        {effectiveResult ? (
+          <div>
+            {!wptResult && userRole === 'superadmin' && (
+              <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-md text-sm font-semibold inline-block">
+                Developer Preview (Mock Data)
+              </div>
+            )}
+            <WptHrView
+              result={effectiveResult}
+              candidateName={candidate.nama}
+              posisiDilamar={candidate.posisi_dilamar}
+            />
+          </div>
         ) : (
           <Card>
             <CardContent className="p-8 text-center">

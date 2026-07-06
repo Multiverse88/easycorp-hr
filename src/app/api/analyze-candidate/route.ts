@@ -5,6 +5,7 @@ import {
   getWptTestResultByCandidate,
   getKoranTestResultByCandidate,
   getInterviewEvaluationByCandidate,
+  getPapikostikTestResultByCandidate,
   getAiAnalysisByCandidate,
 } from '@/lib/db';
 
@@ -141,8 +142,9 @@ function buildPrompt(data: {
   wpt: Awaited<ReturnType<typeof getWptTestResultByCandidate>>;
   koran: Awaited<ReturnType<typeof getKoranTestResultByCandidate>>;
   interview: Awaited<ReturnType<typeof getInterviewEvaluationByCandidate>>;
+  papikostik: Awaited<ReturnType<typeof getPapikostikTestResultByCandidate>>;
 }): string {
-  const { candidate, disc, wpt, koran, interview } = data;
+  const { candidate, disc, wpt, koran, interview, papikostik } = data;
   if (!candidate) return '';
 
   const lines: string[] = [];
@@ -164,6 +166,17 @@ function buildPrompt(data: {
     lines.push(`Tipe Sekunder       : ${disc.tipe_sekunder}`);
   } else {
     lines.push(`(Tes DISC belum dikerjakan)`);
+  }
+
+  lines.push(`\n=== E. PROFIL PAPI KOSTICK ===`);
+  if (papikostik) {
+    lines.push(`Nama File: ${papikostik.nama_file}`);
+    lines.push(`Hasil Penilaian per Aspek:`);
+    papikostik.results.forEach(r => {
+      lines.push(`  - [${r.kode}] ${r.aspek}: Skor ${r.skor} (${r.analisis})`);
+    });
+  } else {
+    lines.push(`(Tes Papikostik belum dikerjakan)`);
   }
 
   lines.push(`\n=== B. KEMAMPUAN INTELEKTUAL (WPT / IQ TEST) ===`);
@@ -383,24 +396,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const candidate = await getCandidateById(candidateId);
-    if (!candidate) {
-      return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
-    }
-
-    const [disc, wpt, koran, interview] = await Promise.all([
+    const [candidate, disc, wpt, koran, interview, papikostik] = await Promise.all([
+      getCandidateById(candidateId),
       getDiscTestResultByCandidate(candidateId),
       getWptTestResultByCandidate(candidateId),
       getKoranTestResultByCandidate(candidateId),
       getInterviewEvaluationByCandidate(candidateId),
+      getPapikostikTestResultByCandidate(candidateId),
     ]);
+    
+    if (!candidate) {
+      return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
+    }
 
-    const candidateDataText = buildPrompt({ candidate, disc, wpt, koran, interview });
+    const candidateDataText = buildPrompt({ candidate, disc, wpt, koran, interview, papikostik });
 
     const systemPrompt = `Anda adalah HR Psikolog Senior dan Konsultan Rekrutmen berpengalaman lebih dari 15 tahun di industri hukum (law firm). 
 Tugas Anda adalah menganalisis data kandidat secara komprehensif dan menghasilkan laporan psikologi rekrutmen yang profesional, objektif, dan terstruktur.
 Gunakan bahasa Indonesia yang formal, lugas, dan profesional.
-Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Interview) menjadi satu narasi analisis yang kohesif.
+Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Interview, PAPI Kostik) menjadi satu narasi analisis yang kohesif.
 PENTING: Tulis seluruh narasi secara padat, ringkas, dan langsung pada poinnya (maksimal 3-4 kalimat per bagian narasi). Jangan bertele-tele atau membuat narasi terlalu panjang agar tidak melebihi batas token output.`;
 
     const userPrompt = `Berikut adalah data lengkap kandidat yang perlu Anda analisis:

@@ -12,6 +12,11 @@ import {
   UserPlus,
   BarChart3,
   ScrollText,
+  MonitorPlay,
+  FileCheck2,
+  BrainCircuit,
+  FileSpreadsheet,
+  Settings
 } from 'lucide-react';
 
 const menuItems = [
@@ -21,10 +26,10 @@ const menuItems = [
   { href: '/dashboard/kandidat/new', label: 'Tambah Kandidat', icon: UserPlus },
   { href: '/dashboard/kandidat/analisa', label: 'Analisa Batch', icon: BarChart3 },
   { href: '/dashboard/export', label: 'Export & Laporan', icon: Download },
-  { href: '/dashboard/logs', label: 'Log Aktivitas', icon: ScrollText },
+  { href: '/dashboard/logs', label: 'Log Aktivitas', icon: ScrollText, superadminOnly: true },
 ];
 
-export function Sidebar() {
+export function Sidebar({ userRole = 'hr' }: { userRole?: string | null }) {
   const pathname = usePathname();
 
   async function handleLogout() {
@@ -65,7 +70,7 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
+          {menuItems.filter(item => !item.superadminOnly || userRole === 'superadmin').map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
@@ -83,6 +88,53 @@ export function Sidebar() {
               </Link>
             );
           })}
+
+          {(userRole === 'superadmin' || userRole === 'developer') && (
+            <div className="mt-6 px-4 mb-2">
+              <span className="text-[10px] font-black tracking-widest text-red-300/40 uppercase">Developer Actions</span>
+              <div className="mt-2 space-y-1">
+                <Link
+                  href="/disc/dev-preview?preview=true"
+                  target="_blank"
+                  className="flex items-center gap-3 px-2 py-2 rounded-xl text-xs font-semibold text-red-200/50 hover:bg-white/5 hover:text-white transition-all duration-200"
+                >
+                  <FileCheck2 className="w-3.5 h-3.5" />
+                  Preview DISC
+                </Link>
+                <Link
+                  href="/wpt/dev-preview?preview=true"
+                  target="_blank"
+                  className="flex items-center gap-3 px-2 py-2 rounded-xl text-xs font-semibold text-red-200/50 hover:bg-white/5 hover:text-white transition-all duration-200"
+                >
+                  <BrainCircuit className="w-3.5 h-3.5" />
+                  Preview WPT
+                </Link>
+                <Link
+                  href="/papikostik/dev-preview?preview=true"
+                  target="_blank"
+                  className="flex items-center gap-3 px-2 py-2 rounded-xl text-xs font-semibold text-red-200/50 hover:bg-white/5 hover:text-white transition-all duration-200"
+                >
+                  <MonitorPlay className="w-3.5 h-3.5" />
+                  Preview PAPI Kostick
+                </Link>
+                <Link
+                  href="/koran/dev-preview?preview=true"
+                  target="_blank"
+                  className="flex items-center gap-3 px-2 py-2 rounded-xl text-xs font-semibold text-red-200/50 hover:bg-white/5 hover:text-white transition-all duration-200"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  Preview Tes Koran
+                </Link>
+                <Link
+                  href="/dashboard/settings/email"
+                  className="flex items-center gap-3 px-2 py-2 rounded-xl text-xs font-semibold text-red-200/50 hover:bg-white/5 hover:text-white transition-all duration-200"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  Template Email
+                </Link>
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Separator */}

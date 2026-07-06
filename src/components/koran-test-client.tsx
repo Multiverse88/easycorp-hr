@@ -17,9 +17,10 @@ import {
 interface KoranTestClientProps {
   candidate: Candidate;
   initialResult?: KoranTestResult;
+  userRole?: string;
 }
 
-export function KoranTestClient({ candidate, initialResult }: KoranTestClientProps) {
+export function KoranTestClient({ candidate, initialResult, userRole }: KoranTestClientProps) {
   const [result, setResult] = useState<KoranTestResult | null>(initialResult || null);
   const [documentName, setDocumentName] = useState(`Tes Koran - ${candidate.nama}`);
   const [file, setFile] = useState<File | null>(null);
@@ -158,6 +159,10 @@ export function KoranTestClient({ candidate, initialResult }: KoranTestClientPro
 
   async function handleDelete() {
     if (!result) return;
+    if (result.id === 'mock-koran-id') {
+      alert('Ini adalah data mock (contoh) untuk preview, tidak dapat dihapus.');
+      return;
+    }
     if (!confirm('Apakah Anda yakin ingin menghapus hasil analisis Tes Koran ini?')) return;
 
     setIsProcessing(true);
@@ -218,73 +223,34 @@ export function KoranTestClient({ candidate, initialResult }: KoranTestClientPro
       )}
 
       {!result && !isProcessing && (
-        <Card className="border border-slate-200 shadow-xl overflow-hidden hover:border-slate-300 transition-all duration-300">
-          <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-5">
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="w-5 h-5" />
-              Unggah Lembar Hasil Tes Koran
-            </CardTitle>
-            <p className="text-xs text-emerald-100 mt-1">Unggah foto hasil pengerjaan Pauli atau Kraepelin Test untuk dianalisis oleh AI.</p>
-          </CardHeader>
-          <CardContent className="p-6">
-            <form onSubmit={handleUpload} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="docName">Nama Dokumen / Tes</Label>
-                <Input 
-                  id="docName"
-                  value={documentName}
-                  onChange={(e) => setDocumentName(e.target.value)}
-                  placeholder="Ketik nama dokumen..."
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Foto Lembar Tes</Label>
-                <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 bg-slate-50/50 hover:bg-slate-50 transition-all duration-150 flex flex-col items-center justify-center cursor-pointer relative group">
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    required
-                  />
-                  {filePreview ? (
-                    <div className="text-center">
-                      <img 
-                        src={filePreview} 
-                        alt="Preview" 
-                        className="max-h-56 rounded-lg shadow border-2 border-white mx-auto mb-4 object-contain"
-                      />
-                      <span className="font-bold text-slate-700 text-sm block truncate max-w-xs">{file?.name}</span>
-                      <span className="text-xs text-slate-400 font-semibold">Klik atau seret untuk mengganti foto</span>
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <div className="p-4 bg-white rounded-full inline-flex text-slate-400 group-hover:text-emerald-600 group-hover:scale-110 shadow-sm border transition-all mb-4">
-                        <Upload className="w-8 h-8" />
-                      </div>
-                      <span className="font-extrabold text-slate-800 text-base block mb-1">Seret & taruh foto di sini</span>
-                      <span className="text-xs text-slate-400 block font-semibold">Mendukung format PNG, JPG, JPEG</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold h-10 shadow"
-                disabled={!file}
-              >
-                Mulai Analisis AI
-              </Button>
-            </form>
+        <Card className="border border-slate-200 shadow-sm overflow-hidden bg-white/50">
+          <CardContent className="p-12 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-4">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Kandidat Belum Mengisi Data</h3>
+            <p className="text-slate-500 max-w-sm">
+              Hasil Tes Koran belum tersedia. Kandidat perlu mengunggah screenshot hasil tes mereka melalui tautan evaluasi yang diberikan.
+            </p>
           </CardContent>
         </Card>
       )}
 
       {result && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <BarChart2 className="w-6 h-6 text-indigo-600" />
+              Hasil Analisis Tes Koran
+              {result.id === 'mock-koran-id' && (
+                <Badge variant="secondary" className="bg-amber-100 text-amber-800 ml-2 border-amber-200">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Dev Preview
+                </Badge>
+              )}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
           {/* Main Results Column */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden bg-white rounded-2xl">
@@ -515,6 +481,7 @@ export function KoranTestClient({ candidate, initialResult }: KoranTestClientPro
               </CardContent>
             </Card>
           </div>
+        </div>
         </div>
       )}
     </div>

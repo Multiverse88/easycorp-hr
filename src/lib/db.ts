@@ -134,6 +134,19 @@ export interface ActivityLog {
   created_at: string;
 }
 
+export interface PapikostikTestResult {
+  id: string;
+  candidate_id: string;
+  nama_file: string;
+  results: {
+    aspek: string;
+    kode: string;
+    skor: number;
+    analisis: string;
+  }[];
+  completed_at: string;
+}
+
 // ==========================================
 // LOG FUNCTIONS
 // ==========================================
@@ -347,6 +360,21 @@ export async function getCandidates(): Promise<Candidate[]> {
 }
 
 export async function getCandidateById(id: string): Promise<Candidate | undefined> {
+  if (id === 'mock-candidate') {
+    return {
+      id: 'mock-candidate',
+      nama: 'John Developer',
+      email: 'dev@easycorp.com',
+      telepon: '08123456789',
+      posisi_dilamar: 'Software Engineer',
+      token: 'dev-preview',
+      token_expires_at: '2099-12-31',
+      status: 'interview_user',
+      created_at: new Date().toISOString(),
+      pendidikan: 'S1 Teknik Informatika',
+    } as Candidate;
+  }
+
   const { data, error } = await supabaseAdmin
     .from('candidates')
     .select('*')
@@ -358,6 +386,21 @@ export async function getCandidateById(id: string): Promise<Candidate | undefine
 }
 
 export async function getCandidateByToken(token: string): Promise<Candidate | undefined> {
+  if (token === 'dev-preview') {
+    return {
+      id: 'mock-candidate',
+      nama: 'John Developer',
+      email: 'dev@easycorp.com',
+      telepon: '08123456789',
+      posisi_dilamar: 'Software Engineer',
+      token: 'dev-preview',
+      token_expires_at: '2099-12-31',
+      status: 'interview_user',
+      created_at: new Date().toISOString(),
+      pendidikan: 'S1 Teknik Informatika',
+    } as Candidate;
+  }
+
   const { data, error } = await supabaseAdmin
     .from('candidates')
     .select('*')
@@ -409,7 +452,7 @@ export async function createCandidate(
   const result = data as Candidate & { emailSent?: boolean; emailError?: string };
 
   if (options?.sendEmail && cand.email) {
-    const origin = options.origin || 'http://localhost:3000';
+    const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://disc.easyai.id';
     const link = `${origin}/disc/${token}`;
     
     try {
@@ -436,6 +479,17 @@ export async function createCandidate(
   return result;
 }
 
+export async function getPapikostikTestResultByCandidate(candidateId: string): Promise<PapikostikTestResult | undefined> {
+  const { data, error } = await supabaseAdmin
+    .from('papikostik_test_results')
+    .select('*')
+    .eq('candidate_id', candidateId)
+    .single();
+
+  if (error) return undefined;
+  return data as PapikostikTestResult;
+}
+
 export async function resendInvitationEmail(
   candidateId: string,
   origin: string
@@ -449,7 +503,8 @@ export async function resendInvitationEmail(
     return { success: false, error: 'EMAIL_KANDIDAT_KOSONG' };
   }
   
-  const link = `${origin}/disc/${candidate.token}`;
+  const productionOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://disc.easyai.id';
+  const link = `${productionOrigin}/disc/${candidate.token}`;
   
   try {
     const res = await sendAssessmentInvitation({
@@ -906,5 +961,128 @@ export async function saveAiAnalysis(candidateId: string, analysis: any): Promis
   });
 
   return data as CandidateAiAnalysis;
+}
+
+// ==========================================
+// 10. PAPIKOSTIK SESSIONS
+// ==========================================
+
+export interface PapikostikSession {
+  id: string;
+  candidate_id: string;
+  token: string;
+  status: 'PENDING' | 'COMPLETED';
+  current_page: number;
+  answers: Record<string, 'a' | 'b'>;
+  results: any;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function getPapikostikSessionByToken(token: string): Promise<PapikostikSession | undefined> {
+  if (token === 'dev-preview') {
+    return {
+      id: 'mock-ps',
+      candidate_id: 'mock-candidate',
+      token: 'dev-preview',
+      status: 'PENDING',
+      current_page: 1,
+      answers: {},
+      results: null,
+    } as PapikostikSession;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('papikostik_sessions')
+    .select('*')
+    .eq('token', token)
+    .single();
+
+  if (error) return undefined;
+  return data as PapikostikSession;
+}
+
+export async function getPapikostikSessionByCandidate(candidateId: string): Promise<PapikostikSession | undefined> {
+  const { data, error } = await supabaseAdmin
+    .from('papikostik_sessions')
+    .select('*')
+    .eq('candidate_id', candidateId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) return undefined;
+  return (data && data.length > 0) ? (data[0] as PapikostikSession) : undefined;
+}
+
+export async function createPapikostikSession(candidateId: string): Promise<PapikostikSession> {
+  const candidate = await getCandidateById(candidateId);
+  if (!candidate) throw new Error("Candidate not found");
+  
+  const token = candidate.token;
+
+  if (candidateId === 'mock-candidate') {
+    return {
+      id: 'mock-ps',
+      candidate_id: 'mock-candidate',
+      token: 'dev-preview',
+      status: 'PENDING',
+      current_page: 1,
+      answers: {},
+      results: null,
+    } as PapikostikSession;
+  }
+
+  // Return existing session if any
+  const existing = await getPapikostikSessionByToken(token);
+  if (existing) return existing;
+
+  const id = `ps-${Date.now()}`;
+
+  const payload = {
+    id,
+    candidate_id: candidateId,
+    token,
+    status: 'PENDING',
+    current_page: 1,
+    answers: {},
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from('papikostik_sessions')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Gagal buat sesi PAPIKOSTIK: ${error.message}`);
+  }
+
+  logActivity({
+    action: 'CREATE',
+    table_name: 'papikostik_sessions',
+    record_id: id,
+    description: `Sesi tes PAPIKOSTIK baru untuk kandidat ${candidateId}`,
+    details: { candidate_id: candidateId, token }
+  });
+
+  return data as PapikostikSession;
+}
+
+export async function updatePapikostikSession(
+  id: string,
+  updates: Partial<Pick<PapikostikSession, 'status' | 'current_page' | 'answers' | 'results'>>
+): Promise<PapikostikSession> {
+  const { data, error } = await supabaseAdmin
+    .from('papikostik_sessions')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Gagal update sesi PAPIKOSTIK: ${error.message}`);
+  }
+
+  return data as PapikostikSession;
 }
 
