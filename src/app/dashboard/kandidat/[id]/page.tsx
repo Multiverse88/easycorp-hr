@@ -7,8 +7,12 @@ import {
   getWptTestResultByCandidate,
   getKoranTestResultByCandidate,
   getInterviewEvaluationByCandidate,
+  getPapikostikTestResultByCandidate,
+  getPapikostikSessionByCandidate,
   getManpowerRequests,
 } from '@/lib/db';
+import { getUserRole } from '@/lib/supabase/server';
+import { MOCK_DISC_RESULT, MOCK_WPT_RESULT, MOCK_PAPIKOSTIK_RESULTS } from '@/lib/mock-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
@@ -26,14 +30,23 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
     return <div className="p-8">Kandidat tidak ditemukan</div>;
   }
 
-  const [discResult, wptResult, koranResult, interviewResult, requests] = await Promise.all([
+  const [discResult, wptResult, koranResult, interviewResult, papikostikResult, papikostikSession, requests, userRole] = await Promise.all([
     getDiscTestResultByCandidate(resolvedParams.id),
     getWptTestResultByCandidate(resolvedParams.id),
     getKoranTestResultByCandidate(resolvedParams.id),
     getInterviewEvaluationByCandidate(resolvedParams.id),
+    getPapikostikTestResultByCandidate(resolvedParams.id),
+    getPapikostikSessionByCandidate(resolvedParams.id),
     getManpowerRequests(),
+    getUserRole(),
   ]);
   const request = requests.find(r => r.id === candidate.manpower_request_id);
+
+  const effectiveDiscResult = discResult || (userRole === 'superadmin' ? MOCK_DISC_RESULT : null);
+  const effectiveWptResult = wptResult || (userRole === 'superadmin' ? MOCK_WPT_RESULT : null);
+
+  const hasPapikostik = papikostikResult || (papikostikSession && papikostikSession.status === 'COMPLETED') || userRole === 'superadmin';
+  const papikostikData = papikostikResult?.results || papikostikSession?.results || (userRole === 'superadmin' && !papikostikResult && (!papikostikSession || papikostikSession.status !== 'COMPLETED') ? MOCK_PAPIKOSTIK_RESULTS : null);
 
   return (
     <div>
@@ -132,11 +145,19 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
           </CardContent>
         </Card>
 
-        {discResult && (
-          <Card className="lg:col-span-2">
+        {effectiveDiscResult && (
+          <Card className={`lg:col-span-2 relative ${!discResult && userRole === 'superadmin' ? 'border-amber-200 bg-amber-50/20' : ''}`}>
+            {!discResult && userRole === 'superadmin' && (
+              <div className="absolute inset-0 z-10 bg-amber-50/20 backdrop-grayscale-[30%] pointer-events-none rounded-xl" />
+            )}
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Hasil DISC Test</CardTitle>
+                <CardTitle>
+                  Hasil DISC Test
+                  {!discResult && userRole === 'superadmin' && (
+                    <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-700 border-amber-200">Mock Data</Badge>
+                  )}
+                </CardTitle>
                 <Link href={`/dashboard/kandidat/${resolvedParams.id}/disc`}>
                   <Button variant="outline" size="sm">Lihat Detail</Button>
                 </Link>
@@ -145,43 +166,100 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
             <CardContent>
               <div className="grid grid-cols-4 gap-4 mb-4">
                 <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">{discResult.persen_d}%</div>
+                  <div className="text-2xl font-bold text-red-600">{effectiveDiscResult.persen_d}%</div>
                   <div className="text-sm text-muted-foreground">D (Dominance)</div>
                 </div>
                 <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{discResult.persen_i}%</div>
+                  <div className="text-2xl font-bold text-yellow-600">{effectiveDiscResult.persen_i}%</div>
                   <div className="text-sm text-muted-foreground">I (Influence)</div>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{discResult.persen_s}%</div>
+                  <div className="text-2xl font-bold text-green-600">{effectiveDiscResult.persen_s}%</div>
                   <div className="text-sm text-muted-foreground">S (Steadiness)</div>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{discResult.persen_c}%</div>
+                  <div className="text-2xl font-bold text-blue-600">{effectiveDiscResult.persen_c}%</div>
                   <div className="text-sm text-muted-foreground">C (Conscientiousness)</div>
                 </div>
               </div>
               <div className="flex gap-4">
                 <div>
                   <span className="text-sm text-muted-foreground">Tipe Primer: </span>
-                  <span className="font-medium">{discResult.tipe_primer}</span>
+                  <span className="font-medium">{effectiveDiscResult.tipe_primer}</span>
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">Tipe Sekunder: </span>
-                  <span className="font-medium">{discResult.tipe_sekunder}</span>
+                  <span className="font-medium">{effectiveDiscResult.tipe_sekunder}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {wptResult && (
-          <Card className="lg:col-span-2">
+        {hasPapikostik && (
+          <Card className={`lg:col-span-2 relative ${userRole === 'superadmin' && !papikostikResult && (!papikostikSession || papikostikSession.status !== 'COMPLETED') ? 'border-amber-200 bg-amber-50/20' : ''}`}>
+            {userRole === 'superadmin' && !papikostikResult && (!papikostikSession || papikostikSession.status !== 'COMPLETED') && (
+              <div className="absolute inset-0 z-10 bg-amber-50/20 backdrop-grayscale-[30%] pointer-events-none rounded-xl" />
+            )}
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-indigo-600" />
+                  Hasil Papikostik
+                  {userRole === 'superadmin' && !papikostikResult && (!papikostikSession || papikostikSession.status !== 'COMPLETED') && (
+                    <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-700 border-amber-200">Mock Data</Badge>
+                  )}
+                </CardTitle>
+                <Link href={`/dashboard/kandidat/${resolvedParams.id}/papikostik`}>
+                  <Button variant="outline" size="sm">Lihat Detail</Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground mb-4">
+                {papikostikResult 
+                  ? <span>Diekstrak dari: <strong className="text-slate-700">{papikostikResult.nama_file}</strong></span>
+                  : <span>Selesai via <strong>Digital Assessment</strong></span>}
+              </div>
+              
+              {papikostikData && Array.isArray(papikostikData) && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {/* Show top 4 highest scoring traits */}
+                  {[...papikostikData]
+                    .sort((a, b) => (b.skor || b.score) - (a.skor || a.score))
+                    .slice(0, 4)
+                    .map((r: any, idx: number) => (
+                      <div key={idx} className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-indigo-700">{r.skor || r.score}</div>
+                        <div className="text-xs font-semibold text-slate-700 mt-1 uppercase tracking-wider">{r.kode || r.code}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{r.aspek || r.name}</div>
+                      </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                <Link href={`/dashboard/kandidat/${resolvedParams.id}/papikostik`}>
+                  <Button variant="default" size="sm" className="bg-indigo-600 hover:bg-indigo-700">Lihat Semua 20 Aspek &rarr;</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {effectiveWptResult && (
+          <Card className={`lg:col-span-2 relative ${!wptResult && userRole === 'superadmin' ? 'border-amber-200 bg-amber-50/20' : ''}`}>
+            {!wptResult && userRole === 'superadmin' && (
+              <div className="absolute inset-0 z-10 bg-amber-50/20 backdrop-grayscale-[30%] pointer-events-none rounded-xl" />
+            )}
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Brain className="h-5 w-5" />
                   Hasil Tes IQ (WPT)
+                  {!wptResult && userRole === 'superadmin' && (
+                    <Badge variant="outline" className="ml-2 bg-amber-50 text-amber-700 border-amber-200">Mock Data</Badge>
+                  )}
                 </CardTitle>
                 <Link href={`/dashboard/kandidat/${resolvedParams.id}/wpt`}>
                   <Button variant="outline" size="sm">Lihat Detail</Button>
@@ -191,22 +269,22 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
             <CardContent>
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{wptResult.skor}<span className="text-sm text-slate-400">/{wptResult.total_soal}</span></div>
+                  <div className="text-2xl font-bold text-purple-600">{effectiveWptResult.skor}<span className="text-sm text-slate-400">/{effectiveWptResult.total_soal}</span></div>
                   <div className="text-sm text-muted-foreground">Skor</div>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{Math.round(wptResult.persen_benar * 100)}%</div>
+                  <div className="text-2xl font-bold text-blue-600">{Math.round(effectiveWptResult.persen_benar * 100)}%</div>
                   <div className="text-sm text-muted-foreground">Benar</div>
                 </div>
                 <div className="text-center p-4 bg-slate-50 rounded-lg">
                   <Badge className={
-                    wptResult.kategori === 'Superior' ? 'bg-purple-100 text-purple-700' :
-                    wptResult.kategori === 'Sangat Baik' ? 'bg-green-100 text-green-700' :
-                    wptResult.kategori === 'Baik' ? 'bg-blue-100 text-blue-700' :
-                    wptResult.kategori === 'Cukup' ? 'bg-yellow-100 text-yellow-700' :
+                    effectiveWptResult.kategori === 'Superior' ? 'bg-purple-100 text-purple-700' :
+                    effectiveWptResult.kategori === 'Sangat Baik' ? 'bg-green-100 text-green-700' :
+                    effectiveWptResult.kategori === 'Baik' ? 'bg-blue-100 text-blue-700' :
+                    effectiveWptResult.kategori === 'Cukup' ? 'bg-yellow-100 text-yellow-700' :
                     'bg-red-100 text-red-700'
                   }>
-                    {wptResult.kategori}
+                    {effectiveWptResult.kategori}
                   </Badge>
                   <div className="text-sm text-muted-foreground mt-1">Kategori</div>
                 </div>

@@ -1,0 +1,452 @@
+[
+  {
+    "id": 1,
+    "optionA": "Saya adalah pekerja keras",
+    "optionB": "Saya tidak mudah murung"
+  },
+  {
+    "id": 2,
+    "optionA": "Saya ingin bekerja lebih baik daripada orang lain",
+    "optionB": "Saya ingin melaksanakan apa yang saya kerjakan sampai selesai"
+  },
+  {
+    "id": 3,
+    "optionA": "Saya suka menunjukkan kepada orang lain bagaimana cara mengerjakan sesuatu",
+    "optionB": "Saya ingin berusaha sebaik mungkin"
+  },
+  {
+    "id": 4,
+    "optionA": "Saya melakukan hal-hal yang lucu",
+    "optionB": "Saya suka mengatakan kepada orang lain apa yang harus dikerjakan"
+  },
+  {
+    "id": 5,
+    "optionA": "Saya suka bergabung didalam kelompok",
+    "optionB": "Saya ingin diperhatikan didalam kelompok"
+  },
+  {
+    "id": 6,
+    "optionA": "Saya suka membuat persahabatan yang akrab",
+    "optionB": "Saya suka berteman dalam suatu kelompok"
+  },
+  {
+    "id": 7,
+    "optionA": "Saya cepat merubah pikiran saya jika memang perlu",
+    "optionB": "Saya suka berteman dalam suatu kelompok"
+  },
+  {
+    "id": 8,
+    "optionA": "Saya suka membalas jika benar-benar disakiti",
+    "optionB": "Saya suka mengerjakan sesuatu hal yang baru dan berbeda"
+  },
+  {
+    "id": 9,
+    "optionA": "Saya ingin disukai atasan saya",
+    "optionB": "Saya suka memberitahu orang lain jika mereka berbuat salah"
+  },
+  {
+    "id": 10,
+    "optionA": "Saya senang mengikuti petunjuk-petunjuk yang diberikan kepada saya",
+    "optionB": "Saya ingin menyenangkan atasan-atasan saya"
+  },
+  {
+    "id": 11,
+    "optionA": "Saya berusaha keras",
+    "optionB": "Saya adalah seorang yang rapi saya menempatkan segala sesuatu ditempatnya"
+  },
+  {
+    "id": 12,
+    "optionA": "Saya mampu mempengaruhi orang lain untuk melakukan apa yang saya kehendaki",
+    "optionB": "Saya tidak mudah marah"
+  },
+  {
+    "id": 13,
+    "optionA": "Saya suka memberitahukan apa yang harus dikerjakan oleh kelompok",
+    "optionB": "Saya selalu mengerjakan tugas sampai selesai"
+  },
+  {
+    "id": 14,
+    "optionA": "Saya ingin kelihatan gembira dan menarik",
+    "optionB": "Saya ingin betul-betul berhasil"
+  },
+  {
+    "id": 15,
+    "optionA": "Saya suka menyesuaikan diri dalam kelompok",
+    "optionB": "Saya suka membantu orang dalam memutuskan sesuatu"
+  },
+  {
+    "id": 16,
+    "optionA": "Saya cemas bila ada yang tidak menyukai saya",
+    "optionB": "Saya senang bila diperhatikan orang"
+  },
+  {
+    "id": 17,
+    "optionA": "Saya senang mencoba hal-hal yang baru",
+    "optionB": "Saya lebih suka bekerja dengan orang lain daripada sendirian"
+  },
+  {
+    "id": 18,
+    "optionA": "Saya kadang-kadang menyalahkan orang lain bila ada sesuatu yang tidak beres",
+    "optionB": "Saya merasa terganggu bila ada yang tidak menyukai saya"
+  },
+  {
+    "id": 19,
+    "optionA": "Saya ingin menyenangkan atasan-atasan saya",
+    "optionB": "Saya suka mencoba suatu pekerjaan yang baru dan berbeda"
+  },
+  {
+    "id": 20,
+    "optionA": "Saya suka penjelasan-penjelasan terperinci dalam bekerja",
+    "optionB": "Saya suka berterus terang bila ada orang yang menjengkelkan saya"
+  },
+  {
+    "id": 21,
+    "optionA": "Saya selalu berusaha keras",
+    "optionB": "Saya suka mengerjakan setiap langkah pekerjaan dengan hati-hati"
+  },
+  {
+    "id": 22,
+    "optionA": "Saya memimpin dengan baik",
+    "optionB": "Saya mengatur pekerjaan dengan baik"
+  },
+  {
+    "id": 23,
+    "optionA": "Saya mudah marah",
+    "optionB": "Saya lamban dalam membuat keputusan-keputusan"
+  },
+  {
+    "id": 24,
+    "optionA": "Saya senang mengerjakan beberapa tugas pada saat yang sama",
+    "optionB": "Dalam kelompok, saya lebih suka diam"
+  },
+  {
+    "id": 25,
+    "optionA": "Saya senang diundang",
+    "optionB": "Saya ingin mengerjakan segala sesuatunya lebih baik dari orang lain"
+  },
+  {
+    "id": 26,
+    "optionA": "Saya suka membuat persahabatan yang akrab",
+    "optionB": "Saya suka memberi nasehat kepada orang lain"
+  },
+  {
+    "id": 27,
+    "optionA": "Saya suka mengerjakan sesuatu hal yang baru dan berbeda",
+    "optionB": "Saya senang menceritakan keberhasilan saya"
+  },
+  {
+    "id": 28,
+    "optionA": "Jika memang saya benar, saya akan mempertahankannya",
+    "optionB": "Saya suka menjadi anggota kelompok"
+  },
+  {
+    "id": 29,
+    "optionA": "Saya menghindari suatu perbedaan pendapat",
+    "optionB": "Saya berusaha untuk lebih akrab dengan orang-orang"
+  },
+  {
+    "id": 30,
+    "optionA": "Saya suka diberitahukan bagaimana melaksanakan tugas",
+    "optionB": "Saya mudah merasa bosan"
+  },
+  {
+    "id": 31,
+    "optionA": "Saya bekerja keras",
+    "optionB": "Saya banyak berfikir dan membuat rencana"
+  },
+  {
+    "id": 32,
+    "optionA": "Saya memimpin suatu kelompok",
+    "optionB": "Hal-hal yang detail menarik minat saya"
+  },
+  {
+    "id": 33,
+    "optionA": "Saya membuat keputusan dengan mudah dan cepat",
+    "optionB": "Saya merawat barang-barang saya dengan rapi dan teratur"
+  },
+  {
+    "id": 34,
+    "optionA": "Saya mengerjakan sesuatu dengan cepat",
+    "optionB": "Saya jarang marah atau sedih"
+  },
+  {
+    "id": 35,
+    "optionA": "Saya ingin menjadi bagian dari suatu kelompok",
+    "optionB": "Saya hanya ingin mengerjakan satu pekerjaan dalam satu saat"
+  },
+  {
+    "id": 36,
+    "optionA": "Saya berusaha membuat teman akrab",
+    "optionB": "Saya berusaha keras untuk menjadi yang paling baik"
+  },
+  {
+    "id": 37,
+    "optionA": "Saya suka baju-baju dan mobil-mobil model mutakhir",
+    "optionB": "Saya senang bertanggung jawab atas orang lain"
+  },
+  {
+    "id": 38,
+    "optionA": "Saya senang berdebat",
+    "optionB": "Saya senang mendapat perhatian"
+  },
+  {
+    "id": 39,
+    "optionA": "Saya suka menyenangkan atasan-atasan saya",
+    "optionB": "Saya tertarik untuk menjadi bagian dari suatu kelompok"
+  },
+  {
+    "id": 40,
+    "optionA": "Saya suka mematuhi peraturan dengan sungguh-sungguh",
+    "optionB": "Saya ingin agar orang-orang benar-benar mengenal saya"
+  },
+  {
+    "id": 41,
+    "optionA": "Saya berusaha keras",
+    "optionB": "Saya sangat ramah"
+  },
+  {
+    "id": 42,
+    "optionA": "Orang-orang menganggap saya adalah pemimpin yang baik",
+    "optionB": "Saya berfikir panjang dan hati-hati"
+  },
+  {
+    "id": 43,
+    "optionA": "Saya sering mengambil kesempatan-kesempatan yang ada",
+    "optionB": "Saya senang mengurusi hal-hal yang kecil"
+  },
+  {
+    "id": 44,
+    "optionA": "Orang-orang menganggap saya bekerja dengan cepat",
+    "optionB": "Orang-orang menganggap saya merawat sesuatu dengan rapi"
+  },
+  {
+    "id": 45,
+    "optionA": "Saya suka berolahraga",
+    "optionB": "Saya sangat menyenangkan"
+  },
+  {
+    "id": 46,
+    "optionA": "Saya senang jika orang-orang akrab dan ramah",
+    "optionB": "Saya selalu berusaha menyelesaikan apa yang saya kerjakan"
+  },
+  {
+    "id": 47,
+    "optionA": "Saya suka bereksperimen dan mencoba hal-hal yang baru",
+    "optionB": "Saya senang menyelesaikan dengan baik pekerjaan yang sulit"
+  },
+  {
+    "id": 48,
+    "optionA": "Saya senang diperlakukan secara adil",
+    "optionB": "Saya suka memberitahu orang bagaimana mengerjakan sesuatu"
+  },
+  {
+    "id": 49,
+    "optionA": "Saya suka melakukan apa yang diharapkan dari saya",
+    "optionB": "Saya senang mendapat perhatian"
+  },
+  {
+    "id": 50,
+    "optionA": "Saya suka penjelasan-penjelasan yang terperinci dalam bekerja",
+    "optionB": "Saya senang berada diantara orang-orang"
+  },
+  {
+    "id": 51,
+    "optionA": "Saya selalu berusaha menyelesaikan tugas-tugas secara sempurna",
+    "optionB": "Saya adalah orang yang tak mengenal lelah"
+  },
+  {
+    "id": 52,
+    "optionA": "Saya adalah tipe pemimpin",
+    "optionB": "Saya mudah berteman"
+  },
+  {
+    "id": 53,
+    "optionA": "Saya suka mengambil kesempatan-kesempatan yang ada",
+    "optionB": "Saya banyak berfikir"
+  },
+  {
+    "id": 54,
+    "optionA": "Saya bekerja dengan cepat dan mantap",
+    "optionB": "Saya senang bekerja sampai pada hal yang sekecil-kecilnya"
+  },
+  {
+    "id": 55,
+    "optionA": "Saya mempunyai banyak tenaga untuk berolah raga dan bermain",
+    "optionB": "Saya merawat barang-barang saya dengan rapi dan teratur"
+  },
+  {
+    "id": 56,
+    "optionA": "Saya berhubungan baik dengan semua orang",
+    "optionB": "Saya bertabiat mantap dan tenang"
+  },
+  {
+    "id": 57,
+    "optionA": "Saya suka bertemu dengan orang-orang baru dan mengerjakan sesuatu yang baru",
+    "optionB": "Saya selalu ingin menyelesaikan pekerjaan yang saya mulai"
+  },
+  {
+    "id": 58,
+    "optionA": "Saya biasanya mempertahankan apa yang saya yakini",
+    "optionB": "Saya biasanya suka bekerja keras"
+  },
+  {
+    "id": 59,
+    "optionA": "Saya senang saran-saran dari orang yang saya hormati",
+    "optionB": "Saya senang bertanggung jawab atas orang lain"
+  },
+  {
+    "id": 60,
+    "optionA": "Saya membiarkan orang lain mempengaruhi saya",
+    "optionB": "Saya senang mendapatkan banyak perhatian"
+  },
+  {
+    "id": 61,
+    "optionA": "Saya biasanya bekerja keras",
+    "optionB": "Saya biasanya bekerja cepat"
+  },
+  {
+    "id": 62,
+    "optionA": "Bila saya berbicara orang-orang mendengarkan",
+    "optionB": "Saya sangat mahir menggunakan peralatan"
+  },
+  {
+    "id": 63,
+    "optionA": "Saya lamban dalam membuat persahabatan",
+    "optionB": "Saya lamban dalam memutuskan sesuatu"
+  },
+  {
+    "id": 64,
+    "optionA": "Saya biasanya makan dengan cepat",
+    "optionB": "Saya senang membaca"
+  },
+  {
+    "id": 65,
+    "optionA": "Saya menyukai pekerjaan dimana saya dapat berkeliling",
+    "optionB": "Saya senang pada pekerjaan yang membutuhkan ketelitian"
+  },
+  {
+    "id": 66,
+    "optionA": "Saya mencari teman sebanyak mungkin",
+    "optionB": "Saya tahu hal-hal apa yang tidak perlu"
+  },
+  {
+    "id": 67,
+    "optionA": "Saya merencanakan sesuatu jauh-jauh sebelumnya",
+    "optionB": "Saya selalu menyenangkan"
+  },
+  {
+    "id": 68,
+    "optionA": "Saya bangga akan ketenaran saya",
+    "optionB": "Saya memusatkan perhatian pada satu persoalan sampai persoalan tersebut terpecahkan"
+  },
+  {
+    "id": 69,
+    "optionA": "Saya suka menyenangkan orang-orang yang saya hormati",
+    "optionB": "Saya ingin berhasil"
+  },
+  {
+    "id": 70,
+    "optionA": "Saya senang orang lain yang membuat keputusan untuk kelompok",
+    "optionB": "Saya suka membuat keputusan untuk kelompok"
+  },
+  {
+    "id": 71,
+    "optionA": "Saya selalu berusaha keras",
+    "optionB": "Saya memutuskan sesuatu dengan mudah dan cepat"
+  },
+  {
+    "id": 72,
+    "optionA": "Kelompok biasanya menjalankan apa yang saya inginkan",
+    "optionB": "Saya terlalu tergesa-gesa"
+  },
+  {
+    "id": 73,
+    "optionA": "Saya sering merasa lelah",
+    "optionB": "Saya lamban dalam memutuskan sesuatu"
+  },
+  {
+    "id": 74,
+    "optionA": "Saya bekerja dengan cepat",
+    "optionB": "Saya mudah berteman"
+  },
+  {
+    "id": 75,
+    "optionA": "Saya biasanya bersemangat dan bergairah",
+    "optionB": "Saya memerlukan banyak waktu untuk berfikir"
+  },
+  {
+    "id": 76,
+    "optionA": "Saya sangat ramah kepada orang",
+    "optionB": "Saya senang pada pekerjaan yang membutuhkan ketepatan"
+  },
+  {
+    "id": 77,
+    "optionA": "Saya banyak sekali berfikir dan membuat rencana",
+    "optionB": "Saya meletakkan segalanya pada tempatnya"
+  },
+  {
+    "id": 78,
+    "optionA": "Saya senang pada pekerjaan yang membutuhkan ketelitian",
+    "optionB": "Saya tidak mudah marah"
+  },
+  {
+    "id": 79,
+    "optionA": "Saya suka menurut pada orang-orang yang saya kagumi",
+    "optionB": "Saya selalu menyelesaikan pekerjaan yang saya mulai"
+  },
+  {
+    "id": 80,
+    "optionA": "Saya senang mengikuti petunjuk-petunjuk yang jelas",
+    "optionB": "Saya senang bekerja keras"
+  },
+  {
+    "id": 81,
+    "optionA": "Saya berusaha mendapatkan apa yang saya inginkan",
+    "optionB": "Saya seorang pemimpin yang baik"
+  },
+  {
+    "id": 82,
+    "optionA": "Saya menyuruh orang untuk bekerja keras",
+    "optionB": "Saya adalah orang yang kurang berfikir panjang"
+  },
+  {
+    "id": 83,
+    "optionA": "Saya memutuskan sesuatu dengan cepat",
+    "optionB": "Saya berbicara dengan cepat"
+  },
+  {
+    "id": 84,
+    "optionA": "Saya biasa bekerja tergesa-gesa",
+    "optionB": "Saya berlatih / berolah raga dengan teratur"
+  },
+  {
+    "id": 85,
+    "optionA": "Saya tidak suka menjumpai orang",
+    "optionB": "Saya cepat merasa lelah"
+  },
+  {
+    "id": 86,
+    "optionA": "Saya banyak membuat persahabatan",
+    "optionB": "Saya memerlukan banyak waktu untuk berfikir"
+  },
+  {
+    "id": 87,
+    "optionA": "Saya suka menerapkan teori-teori dalam bekerja",
+    "optionB": "Saya suka mengerjakan sesuatu sampai pada hal yang sekecil-kecilnya"
+  },
+  {
+    "id": 88,
+    "optionA": "Saya suka mengerjakan sesuatu sampai pada hal yang sekecil-kecilnya",
+    "optionB": "Saya suka mengatur pekerjaan saya"
+  },
+  {
+    "id": 89,
+    "optionA": "Saya meletakkan segalanya pada tempatnya",
+    "optionB": "Saya selalu menyenangkan"
+  },
+  {
+    "id": 90,
+    "optionA": "Saya senang diberi petunjuk apa yang harus dikerjakan",
+    "optionB": "Saya harus menyelesaikan apa yang saya mulai"
+  }
+]

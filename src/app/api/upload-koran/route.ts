@@ -188,16 +188,16 @@ export async function POST(request: NextRequest) {
                   {
                     type: 'text',
                     text: `Anda adalah psikolog industri dan organisasi ahli. Analisis gambar hasil Tes Koran (Pauli/Kraepelin Test) berikut untuk kandidat ini.
-Gambar ini menunjukkan lembar tes koran (angka-angka penjumlahan kolom). AI harus mengamati pola pengerjaan, tingkat pengisian baris/kolom, coretan, fluktuasi grafik kerja yang digambar, atau menyimpulkannya secara logis dari kerapihan dan konsistensi jawaban.
+Gambar ini adalah screenshot hasil akhir dari aplikasi mobile tes Kraepelin. Baca angka dan metrik yang tertera di layar tersebut dengan teliti, dan gunakan data tersebut untuk menyimpulkan indikator kuantitatif dan kualitatif.
 
-Estimasikan dan hitung indikator-indikator kuantitatif berikut secara profesional:
-1. Total Jawaban Benar (total_benar): estimasi jumlah penjumlahan yang berhasil diselesaikan secara keseluruhan (misal: antara 800 - 2000).
-2. Total Kesalahan (total_salah): jumlah penjumlahan yang salah atau dikoreksi.
-3. Kecepatan (Speed): kecepatan kerja rata-rata per segmen. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-4. Akurasi (Accuracy): rasio ketelitian kerja (kebalikan dari tingkat kesalahan). Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-5. Keajegan (Stability): konsistensi ritme kerja tanpa fluktuasi ekstrim. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-6. Ketahanan (Endurance): resiliensi terhadap kelelahan sepanjang sesi tes koran. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-7. Pola Grafik (pola_grafik): deskripsi pola grafik kerja (misal: "Sangat fluktuatif sepanjang X segmen — rentang nilai Y–Z per segmen. Grafik kesalahan juga fluktuatif (A–B), menunjukkan...")
+Ekstrak dan hitung indikator-indikator kuantitatif berikut secara profesional:
+1. Total Jawaban Benar (total_benar): baca jumlah jawaban benar dari screenshot.
+2. Total Kesalahan (total_salah): baca jumlah jawaban salah dari screenshot.
+3. Kecepatan (Speed): ambil nilai kecepatan kerja. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+4. Akurasi (Accuracy): ambil rasio ketelitian kerja. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+5. Keajegan (Stability): ambil nilai konsistensi. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+6. Ketahanan (Endurance): ambil nilai ketahanan/resiliensi. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+7. Pola Grafik (pola_grafik): deskripsikan secara naratif pola grafik kerja jika ada di screenshot, atau simpulkan dari metrik yang ada (misal: "Kecepatan tinggi namun akurasi rendah, menunjukkan gaya kerja terburu-buru...")
 
 Kembalikan jawaban Anda dalam format JSON yang valid dengan struktur berikut:
 {
@@ -266,16 +266,16 @@ Pastikan hanya mengembalikan JSON yang valid tanpa markdown code fences \`\`\`js
                 {
                   type: 'text',
                   text: `Anda adalah psikolog industri dan organisasi ahli. Analisis gambar hasil Tes Koran (Pauli/Kraepelin Test) berikut untuk kandidat ini.
-Gambar ini menunjukkan lembar tes koran (angka-angka penjumlahan kolom). AI harus mengamati pola pengerjaan, tingkat pengisian baris/kolom, coretan, fluktuasi grafik kerja yang digambar, atau menyimpulkannya secara logis dari kerapihan dan konsistensi jawaban.
+Gambar ini adalah screenshot hasil akhir dari aplikasi mobile tes Kraepelin. Baca angka dan metrik yang tertera di layar tersebut dengan teliti, dan gunakan data tersebut untuk menyimpulkan indikator kuantitatif dan kualitatif.
 
-Estimasikan dan hitung indikator-indikator kuantitatif berikut secara profesional:
-1. Total Jawaban Benar (total_benar): estimasi jumlah penjumlahan yang berhasil diselesaikan secara keseluruhan (misal: antara 800 - 2000).
-2. Total Kesalahan (total_salah): jumlah penjumlahan yang salah atau dikoreksi.
-3. Kecepatan (Speed): kecepatan kerja rata-rata per segmen. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-4. Akurasi (Accuracy): rasio ketelitian kerja (kebalikan dari tingkat kesalahan). Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-5. Keajegan (Stability): konsistensi ritme kerja tanpa fluktuasi ekstrim. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-6. Ketahanan (Endurance): resiliensi terhadap kelelahan sepanjang sesi tes koran. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-7. Pola Grafik (pola_grafik): deskripsi pola grafik kerja (misal: "Sangat fluktuatif sepanjang X segmen — rentang nilai Y–Z per segmen. Grafik kesalahan juga fluktuatif (A–B), menunjukkan...")
+Ekstrak dan hitung indikator-indikator kuantitatif berikut secara profesional:
+1. Total Jawaban Benar (total_benar): baca jumlah jawaban benar dari screenshot.
+2. Total Kesalahan (total_salah): baca jumlah jawaban salah dari screenshot.
+3. Kecepatan (Speed): ambil nilai kecepatan kerja. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+4. Akurasi (Accuracy): ambil rasio ketelitian kerja. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+5. Keajegan (Stability): ambil nilai konsistensi. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+6. Ketahanan (Endurance): ambil nilai ketahanan/resiliensi. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
+7. Pola Grafik (pola_grafik): deskripsikan secara naratif pola grafik kerja jika ada di screenshot, atau simpulkan dari metrik yang ada (misal: "Kecepatan tinggi namun akurasi rendah, menunjukkan gaya kerja terburu-buru...")
 
 Kembalikan jawaban Anda dalam format JSON yang valid dengan struktur berikut:
 {

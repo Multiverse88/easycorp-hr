@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, ChevronDownIcon } from 'lucide-react';
 import { LoadingOverlay } from '@/components/loading-overlay';
-import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -134,7 +133,7 @@ function InterviewEvaluationForm({ candidateId, candidateName, position }: Inter
                           "w-full justify-between font-normal h-10 border-input text-left flex items-center"
                         )}
                       >
-                        {date ? format(date, "PPP") : "Pilih tanggal"}
+                        {date ? date.toLocaleDateString('id-ID', { dateStyle: 'long' }) : "Pilih tanggal"}
                         <ChevronDownIcon className="w-4 h-4 opacity-50 ml-2" />
                       </PopoverTrigger>
                       <PopoverContent className="w-auto overflow-hidden p-0" align="start">

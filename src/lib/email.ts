@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import path from 'path';
+import { loadEmailTemplate } from './email-helper';
 
 export interface SendEmailResult {
   success: boolean;
@@ -51,170 +52,23 @@ export async function sendAssessmentInvitation(params: InvitationEmailParams): P
       day: 'numeric',
     });
 
+    const templateData = await loadEmailTemplate();
+    const processTemplate = (tmpl: string) => {
+      return tmpl
+        .replace(/{{logoUrl}}/g, 'cid:logo-ec')
+        .replace(/{{candidateName}}/g, params.candidateName)
+        .replace(/{{position}}/g, params.position || 'Kandidat')
+        .replace(/{{link}}/g, params.link)
+        .replace(/{{token}}/g, params.token)
+        .replace(/{{expiresAt}}/g, formattedDate);
+    };
+
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
       to: params.candidateEmail,
-      subject: 'Undangan Asesmen - EasyCorp',
-      text: `Halo ${params.candidateName},
-
-Anda diundang untuk mengikuti tahapan asesmen di EasyCorp untuk posisi ${params.position || 'Kandidat'}.
-
-Silakan akses tautan berikut untuk memulai:
-${params.link}
-
-Orang Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
-Token: ${params.token}
-Tautan Asesmen: ${params.link}
-
-Token asesmen ini akan aktif hingga: ${formattedDate}.
-
-Terima kasih,
-Tim HR EasyCorp`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Undangan Asesmen EasyCorp</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-              background-color: #f8fafc;
-              margin: 0;
-              padding: 0;
-              -webkit-font-smoothing: antialiased;
-            }
-            .wrapper {
-              background-color: #f8fafc;
-              width: 100%;
-              padding: 40px 0;
-            }
-            .container {
-              max-width: 600px;
-              margin: 0 auto;
-              background-color: #ffffff;
-              border-radius: 16px;
-              border: 1px border #e2e8f0;
-              overflow: hidden;
-              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            }
-            .header {
-              background-color: #ffffff;
-              padding: 32px;
-              text-align: center;
-              border-bottom: 1px solid #f1f5f9;
-            }
-            .content {
-              padding: 40px 32px;
-              color: #334155;
-              line-height: 1.6;
-            }
-            .content h2 {
-              color: #0f172a;
-              margin-top: 0;
-              font-size: 20px;
-              font-weight: 800;
-            }
-            .position-badge {
-              display: inline-block;
-              background-color: #f1f5f9;
-              color: #475569;
-              font-weight: 700;
-              font-size: 14px;
-              padding: 6px 12px;
-              border-radius: 9999px;
-              margin-bottom: 24px;
-            }
-            .btn-container {
-              text-align: center;
-              margin: 32px 0;
-            }
-            .btn {
-              display: inline-block;
-              background-color: #991b1b;
-              color: #ffffff !important;
-              font-weight: 800;
-              font-size: 16px;
-              text-decoration: none;
-              padding: 16px 32px;
-              border-radius: 12px;
-              box-shadow: 0 10px 15px -3px rgba(153, 27, 27, 0.2);
-              transition: background-color 0.2s;
-            }
-            .token-box {
-              background-color: #f8fafc;
-              border: 1px dashed #cbd5e1;
-              border-radius: 12px;
-              padding: 20px;
-              text-align: center;
-              margin: 24px 0;
-            }
-            .token-label {
-              font-size: 12px;
-              font-weight: 800;
-              text-transform: uppercase;
-              letter-spacing: 0.1em;
-              color: #64748b;
-              margin-bottom: 8px;
-            }
-            .token-value {
-              font-family: monospace;
-              font-size: 22px;
-              font-weight: 800;
-              color: #0f172a;
-              letter-spacing: 0.05em;
-            }
-            .footer {
-              background-color: #f1f5f9;
-              padding: 24px 32px;
-              text-align: center;
-              font-size: 12px;
-              color: #64748b;
-              border-top: 1px solid #e2e8f0;
-            }
-            .footer p {
-              margin: 4px 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="wrapper">
-            <div class="container">
-              <div class="header">
-                <img src="cid:logo-ec" alt="EasyCorp Logo" style="height: 56px; width: auto; max-width: 100%; display: block; margin: 0 auto;" />
-              </div>
-              <div class="content">
-                <h2>Halo ${params.candidateName},</h2>
-                <p>Anda telah terdaftar sebagai kandidat dan diundang untuk mengikuti tahapan asesmen online di EasyCorp untuk posisi:</p>
-                <div class="position-badge">${params.position || 'Kandidat'}</div>
-                
-                <p>Silakan klik tombol di bawah ini untuk memulai pengisian tes (DISC & WPT):</p>
-                
-                <div class="btn-container">
-                  <a href="${params.link}" class="btn" target="_blank">Mulai Asesmen Sekarang</a>
-                </div>
-
-                <p>Jika tombol di atas tidak berfungsi, Anda juga dapat membuka langsung halaman masuk asesmen dan memasukkan kode akses unik Anda secara manual:</p>
-                
-                <div class="token-box">
-                  <div class="token-label">Kode Akses Anda</div>
-                  <div class="token-value">${params.token}</div>
-                </div>
-
-                <p style="font-size: 14px; color: #64748b;">
-                  * Tautan dan kode akses ini bersifat rahasia serta berlaku hingga <strong>${formattedDate}</strong>.
-                </p>
-              </div>
-              <div class="footer">
-                <p>Email ini dikirim secara otomatis oleh Sistem Rekrutmen EasyCorp.</p>
-                <p>&copy; ${new Date().getFullYear()} EasyCorp. All rights reserved.</p>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      subject: processTemplate(templateData.subject || 'Undangan Asesmen - EasyCorp'),
+      text: processTemplate(templateData.textTemplate),
+      html: processTemplate(templateData.htmlTemplate),
       attachments: [
         {
           filename: 'logo-ec.png',

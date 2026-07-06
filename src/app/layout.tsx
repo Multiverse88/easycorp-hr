@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   description: "Sistem Rekrutmen Internal EasyCorp - Assessment & DISC Test Portal",
 };
 
+import NextTopLoader from 'nextjs-toploader';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,6 +24,17 @@ export default function RootLayout({
   return (
     <html lang="id" className={cn("font-sans", geist.variable)}>
       <body className="antialiased bg-background text-foreground min-h-screen page-enter">
+        <NextTopLoader
+          color="#9A0000"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #9A0000,0 0 5px #9A0000"
+        />
         {children}
       </body>
     </html>
