@@ -16,7 +16,8 @@ import {
   FileCheck2,
   BrainCircuit,
   FileSpreadsheet,
-  Settings
+  Settings,
+  Code
 } from 'lucide-react';
 
 const menuItems = [
@@ -27,6 +28,7 @@ const menuItems = [
   { href: '/dashboard/kandidat/analisa', label: 'Analisa Batch', icon: BarChart3 },
   { href: '/dashboard/export', label: 'Export & Laporan', icon: Download },
   { href: '/dashboard/logs', label: 'Log Aktivitas', icon: ScrollText, superadminOnly: true },
+  { href: '/dashboard/informasi-algoritma', label: 'Info Algoritma', icon: Code },
 ];
 
 export function Sidebar({ userRole = 'hr' }: { userRole?: string | null }) {

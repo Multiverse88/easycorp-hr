@@ -48,10 +48,12 @@ export default function TambahKandidatPage() {
   const [error, setError] = useState('');
 
   const [jobOptions, setJobOptions] = useState<string[]>([]);
-  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [hasFetchedJobs, setHasFetchedJobs] = useState(false);
 
-  useEffect(() => {
-    async function fetchJobs() {
+  async function handleOpenChange(open: boolean) {
+    if (open && !hasFetchedJobs) {
+      setLoadingJobs(true);
       try {
         const res = await fetch(`https://api.apify.com/v2/datasets/0pp0mpEcLCU3gRdt7/items?token=${process.env.NEXT_PUBLIC_APIFY_TOKEN}`);
         const data: unknown = await res.json();
@@ -65,10 +67,10 @@ export default function TambahKandidatPage() {
         console.error("Failed to fetch jobs:", error);
       } finally {
         setLoadingJobs(false);
+        setHasFetchedJobs(true);
       }
     }
-    fetchJobs();
-  }, []);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -356,7 +358,7 @@ Tim HR EasyLegal`;
                         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-4">
                           <Briefcase className="h-4 w-4 text-muted-foreground/60" />
                         </div>
-                        <Select value={posisiDilamar} onValueChange={(val) => setPosisiDilamar(val || '')}>
+                        <Select value={posisiDilamar} onValueChange={(val) => setPosisiDilamar(val || '')} onOpenChange={handleOpenChange}>
                           <SelectTrigger 
                             id="posisi"
                             className="h-14 w-full rounded-xl border-border bg-muted/30 pl-11 font-semibold transition-all data-[placeholder]:text-muted-foreground/50 hover:bg-muted/50 focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10"

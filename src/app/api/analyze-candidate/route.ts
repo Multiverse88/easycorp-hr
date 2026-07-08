@@ -7,377 +7,103 @@ import {
   getInterviewEvaluationByCandidate,
   getPapikostikTestResultByCandidate,
   getAiAnalysisByCandidate,
+  saveAiAnalysis
 } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-function pct(v: number) {
-  return `${Math.round(v * 100)}%`;
-}
-
-function parseAiJson(rawContent: string): any {
-  let cleanJson = rawContent.trim();
-  
-  // Find first '{' and last '}'
-  const start = cleanJson.indexOf('{');
-  const end = cleanJson.lastIndexOf('}');
-  
-  if (start !== -1 && end !== -1 && end > start) {
-    cleanJson = cleanJson.substring(start, end + 1);
-  }
-
-  // Helper to repair truncated JSON
-  const autoRepairJson = (jsonStr: string): string => {
-    let cleaned = jsonStr.trim();
-    if (!cleaned) return '{}';
-
-    let inString = false;
-    let escaped = false;
-    const stack: ('{' | '[')[] = [];
-    
-    for (let i = 0; i < cleaned.length; i++) {
-      const char = cleaned[i];
-      
-      if (char === '"' && !escaped) {
-        inString = !inString;
-      } else if (char === '\\' && !escaped) {
-        escaped = true;
-        continue;
-      } else if (!inString) {
-        if (char === '{') {
-          stack.push('{');
-        } else if (char === '[') {
-          stack.push('[');
-        } else if (char === '}') {
-          if (stack[stack.length - 1] === '{') {
-            stack.pop();
-          }
-        } else if (char === ']') {
-          if (stack[stack.length - 1] === '[') {
-            stack.pop();
-          }
-        }
-      }
-      escaped = false;
-    }
-
-    let repaired = cleaned;
-    if (inString) {
-      repaired += '"';
-    }
-    
-    // Remove trailing key definitions like `,"key":` or `,"key" :`
-    repaired = repaired.replace(/,?\s*["a-zA-Z0-9_]*\s*:\s*$/, '');
-    // Remove trailing commas
-    repaired = repaired.replace(/,\s*$/, '');
-    
-    // Close the open structures
-    for (let i = stack.length - 1; i >= 0; i--) {
-      const openChar = stack[i];
-      if (openChar === '{') {
-        repaired += '}';
-      } else if (openChar === '[') {
-        repaired += ']';
-      }
-    }
-
-    return repaired;
-  };
-
-  // Run auto-repair in case the output was truncated
-  let repairedJson = autoRepairJson(cleanJson);
-  
-  // Remove trailing commas before closing brackets/braces
-  repairedJson = repairedJson.replace(/,(\s*[\]}])/g, '$1');
-
-  try {
-    return JSON.parse(repairedJson);
-  } catch (firstError) {
-    console.warn('Initial JSON parse failed, trying to escape literal control characters inside string values...', firstError);
-    
-    try {
-      // Escape literal unescaped control characters inside double-quoted string values.
-      let inString = false;
-      let escaped = false;
-      let processed = '';
-      for (let i = 0; i < repairedJson.length; i++) {
-        const char = repairedJson[i];
-        if (char === '"' && !escaped) {
-          inString = !inString;
-          processed += char;
-        } else if (char === '\\' && !escaped) {
-          escaped = true;
-          processed += char;
-        } else {
-          if (inString) {
-            if (char === '\n') {
-              processed += '\\n';
-            } else if (char === '\r') {
-              processed += '\\r';
-            } else if (char === '\t') {
-              processed += '\\t';
-            } else {
-              processed += char;
-            }
-          } else {
-            processed += char;
-          }
-          escaped = false;
-        }
-      }
-      return JSON.parse(processed);
-    } catch (secondError) {
-      console.error('JSON parse error even after escaping control characters:', secondError);
-      console.error('Raw JSON string content attempting to parse:', repairedJson);
-      throw new Error(`AI tidak mengembalikan JSON yang valid: ${firstError instanceof Error ? firstError.message : String(firstError)}`);
-    }
-  }
-}
-
-function buildPrompt(data: {
-  candidate: Awaited<ReturnType<typeof getCandidateById>>;
-  disc: Awaited<ReturnType<typeof getDiscTestResultByCandidate>>;
-  wpt: Awaited<ReturnType<typeof getWptTestResultByCandidate>>;
-  koran: Awaited<ReturnType<typeof getKoranTestResultByCandidate>>;
-  interview: Awaited<ReturnType<typeof getInterviewEvaluationByCandidate>>;
-  papikostik: Awaited<ReturnType<typeof getPapikostikTestResultByCandidate>>;
-}): string {
+function generateResumeAlgorithm(data: {
+  candidate: any;
+  disc: any;
+  wpt: any;
+  koran: any;
+  interview: any;
+  papikostik: any;
+}) {
   const { candidate, disc, wpt, koran, interview, papikostik } = data;
-  if (!candidate) return '';
 
-  const lines: string[] = [];
-
-  lines.push(`=== DATA KANDIDAT ===`);
-  lines.push(`Nama       : ${candidate.nama}`);
-  lines.push(`Posisi     : ${candidate.posisi_dilamar}`);
-  lines.push(`Pendidikan : ${candidate.pendidikan || '-'}`);
-  lines.push(`Pengalaman : ${candidate.pengalaman || '-'}`);
-  lines.push(`Keahlian   : ${candidate.keahlian || '-'}`);
-
-  lines.push(`\n=== A. PROFIL KEPRIBADIAN (DISC TEST) ===`);
+  // Helper functions for scoring
+  let discFit = 70;
   if (disc) {
-    lines.push(`D (Dominance)       : ${disc.persen_d}%`);
-    lines.push(`I (Influence)       : ${disc.persen_i}%`);
-    lines.push(`S (Steadiness)      : ${disc.persen_s}%`);
-    lines.push(`C (Conscientiousness): ${disc.persen_c}%`);
-    lines.push(`Tipe Primer         : ${disc.tipe_primer}`);
-    lines.push(`Tipe Sekunder       : ${disc.tipe_sekunder}`);
-  } else {
-    lines.push(`(Tes DISC belum dikerjakan)`);
+    if (['D', 'C'].includes(disc.tipe_primer)) discFit = 85;
+    else if (['I', 'S'].includes(disc.tipe_primer)) discFit = 80;
   }
 
-  lines.push(`\n=== E. PROFIL PAPI KOSTICK ===`);
-  if (papikostik) {
-    lines.push(`Nama File: ${papikostik.nama_file}`);
-    lines.push(`Hasil Penilaian per Aspek:`);
-    papikostik.results.forEach(r => {
-      lines.push(`  - [${r.kode}] ${r.aspek}: Skor ${r.skor} (${r.analisis})`);
-    });
-  } else {
-    lines.push(`(Tes Papikostik belum dikerjakan)`);
-  }
-
-  lines.push(`\n=== B. KEMAMPUAN INTELEKTUAL (WPT / IQ TEST) ===`);
+  let wptFit = 50;
+  let wptCategory = 'Kurang';
   if (wpt) {
-    lines.push(`Skor Total  : ${wpt.skor} / ${wpt.total_soal}`);
-    lines.push(`Persentil   : ${pct(wpt.persen_benar)}`);
-    lines.push(`Kategori    : ${wpt.kategori}`);
-    if (wpt.profil_kemampuan?.length) {
-      lines.push(`Profil per Kategori:`);
-      wpt.profil_kemampuan.forEach(p => {
-        lines.push(`  - ${p.category}: ${p.benar}/${p.total} (${pct(p.persen)}) - ${p.keterangan}`);
-      });
-    }
-    if (wpt.rekomendasi_posisi?.length) {
-      lines.push(`Kesesuaian Posisi:`);
-      wpt.rekomendasi_posisi.forEach(r => {
-        lines.push(`  - ${r.posisi}: ${r.status} (min ${r.skorMin}, ideal ${r.skorIdeal}) — ${r.rekomendasi}`);
-      });
-    }
-  } else {
-    lines.push(`(Tes WPT belum dikerjakan)`);
+    wptFit = Math.min(100, Math.max(0, wpt.skor * 2));
+    wptCategory = wpt.kategori || 'Cukup';
   }
 
-  lines.push(`\n=== C. TES KORAN (PAULI / KRAEPELIN) ===`);
+  let koranFit = 50;
+  let koranRec = 'Tidak Lulus';
   if (koran) {
-    const ar = koran.analysis_result;
-    lines.push(`Kecepatan Kerja   : ${ar.kecepatan}`);
-    lines.push(`Ketelitian Kerja  : ${ar.ketelitian}`);
-    lines.push(`Konsistensi       : ${ar.konsistensi}`);
-    lines.push(`Ketahanan Kerja   : ${ar.ketahanan}`);
-    lines.push(`Analisis Mendalam : ${ar.reasoning}`);
-    lines.push(`Rekomendasi AI    : ${ar.rekomendasi}`);
-  } else {
-    lines.push(`(Tes Koran belum dikerjakan)`);
+    const ar = koran.analysis_result || {};
+    const kec = ar.kecepatan_nilai || 50;
+    const aku = ar.akurasi_nilai || 50;
+    koranFit = Math.round((kec + aku) / 2);
+    koranRec = ar.rekomendasi || 'Dipertimbangkan';
   }
 
-  lines.push(`\n=== D. EVALUASI INTERVIEW ===`);
+  let intFit = 60;
+  let intRec = 'Dipertimbangkan';
   if (interview) {
-    lines.push(`Tanggal      : ${interview.tanggal}`);
-    lines.push(`Tahap        : ${interview.tahap}`);
-    lines.push(`Interviewer  : ${interview.interviewer}`);
-    lines.push(`Metode       : ${interview.metode}`);
-    lines.push(`Ekspektasi Gaji       : ${interview.ekspektasi_gaji ? `Rp ${interview.ekspektasi_gaji.toLocaleString('id-ID')}` : '-'}`);
-    lines.push(`Ketersediaan Bergabung: ${interview.ketersediaan_bergabung || '-'}`);
-    lines.push(`Total Skor   : ${interview.total_skor}`);
-    if (interview.penilaian?.length) {
-      lines.push(`Penilaian per Aspek:`);
-      interview.penilaian.forEach(p => {
-        lines.push(`  - ${p.aspek}: ${p.skor || '-'}${p.catatan ? ` (${p.catatan})` : ''}`);
-      });
-    }
-    if (interview.kelebihan) lines.push(`Kelebihan    : ${interview.kelebihan}`);
-    if (interview.area_digali) lines.push(`Area Digali  : ${interview.area_digali}`);
-    if (interview.catatan) lines.push(`Catatan      : ${interview.catatan}`);
-    lines.push(`Rekomendasi  : ${interview.rekomendasi}`);
-  } else {
-    lines.push(`(Evaluasi Interview belum diisi)`);
+    intFit = interview.total_skor || 70;
+    intRec = interview.rekomendasi || 'Dipertimbangkan';
   }
 
-  return lines.join('\n');
-}
+  const kesesuaianOverall = Math.round((discFit + wptFit + koranFit + intFit) / 4);
 
-// ─── route handler ────────────────────────────────────────────────────────────
+  let rekomAkhir = "Dipertimbangkan";
+  if (kesesuaianOverall >= 85) rekomAkhir = "Sangat Direkomendasikan";
+  else if (kesesuaianOverall >= 75) rekomAkhir = "Direkomendasikan";
+  else if (kesesuaianOverall < 60) rekomAkhir = "Tidak Direkomendasikan";
 
-const activeAnalyses = new Set<string>();
+  const ringkasan = `Kandidat ${candidate.nama} menunjukkan tingkat kesesuaian keseluruhan sebesar ${kesesuaianOverall}% terhadap profil posisi ${candidate.posisi_dilamar}. ${rekomAkhir === 'Sangat Direkomendasikan' || rekomAkhir === 'Direkomendasikan' ? 'Berdasarkan kompilasi hasil evaluasi psikometri dan wawancara, kandidat memperlihatkan kualifikasi fundamental yang sangat memadai, kapasitas kognitif yang mendukung, serta profil kepribadian yang diproyeksikan akan selaras dengan budaya perusahaan.' : 'Dari hasil integrasi evaluasi, terdapat beberapa indikator yang mengarah pada kesenjangan kualifikasi. Diperlukan pertimbangan lebih lanjut dan mitigasi risiko yang matang sebelum menempatkan kandidat pada posisi ini.'}`;
 
-async function runAnalysisInBackground(
-  candidateId: string,
-  candidateName: string,
-  systemPrompt: string,
-  userPrompt: string
-) {
-  try {
-    let content: string | undefined;
-    let tokenUsage: { input_tokens: number; output_tokens: number; total_tokens: number } | undefined = undefined;
-    let anthropicError: string | undefined = undefined;
-    let openAiError: string | undefined = undefined;
-    const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
-
-    if (apiKey) {
-      try {
-        const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-6',
-            system: systemPrompt,
-            messages: [
-              { role: 'user', content: userPrompt },
-            ],
-            max_tokens: 4000,
-            temperature: 0.3,
-          }),
-        });
-
-        if (aiResponse.ok) {
-          const aiResult = await aiResponse.json();
-          content = aiResult.content?.[0]?.text as string | undefined;
-          if (aiResult.usage) {
-            tokenUsage = {
-              input_tokens: aiResult.usage.input_tokens || 0,
-              output_tokens: aiResult.usage.output_tokens || 0,
-              total_tokens: (aiResult.usage.input_tokens || 0) + (aiResult.usage.output_tokens || 0),
-            };
-          }
-        } else {
-          const errText = await aiResponse.text();
-          anthropicError = `HTTP ${aiResponse.status}: ${errText}`;
-          console.warn('Anthropic API returned error, trying OpenAI fallback:', errText);
-        }
-      } catch (err) {
-        anthropicError = `Network/System error: ${err instanceof Error ? err.message : String(err)}`;
-        console.error('Anthropic API call failed, trying OpenAI fallback:', err);
-      }
-    } else {
-      anthropicError = 'API key is not configured in process.env';
+  return {
+    fit_scores: {
+      disc_fit: discFit,
+      wpt_fit: wptFit,
+      tes_koran_fit: koranFit,
+      kesesuaian_overall: kesesuaianOverall
+    },
+    ringkasan_eksekutif: ringkasan,
+    
+    profil_kepribadian: {
+      narasi: disc ? `Kandidat ini memiliki struktur kepribadian dengan dominasi pada tipe ${disc.tipe_primer} serta dukungan dari tipe ${disc.tipe_sekunder}. Individu dengan perpaduan ini umumnya ${disc.tipe_primer === 'D' ? 'berfokus penuh pada pencapaian target, mengambil inisiatif secara cepat, dan tidak ragu dalam mengambil keputusan di situasi kritis' : disc.tipe_primer === 'I' ? 'sangat cakap dalam membangun relasi interpersonal, persuasif dalam berkomunikasi, dan menyukai kolaborasi tim' : disc.tipe_primer === 'S' ? 'menunjukkan ketenangan, konsistensi kerja yang tinggi, serta kemampuan menjadi pendengar yang baik dalam dinamika tim' : 'memiliki standar kualitas yang tinggi, teliti dalam menganalisis data, dan cenderung terstruktur dalam menyelesaikan masalah'}. Gaya pendekatan kepribadian ini mengindikasikan cara kerja yang stabil sesuai dengan karakteristik dominannya.` : "Data DISC belum tersedia secara sistem.",
+      kekuatan: disc ? [`Kemampuan adaptasi gaya kerja ${disc.tipe_primer}`, `Potensi pengembangan pada aspek ${disc.tipe_sekunder}`, `Orientasi pada pendekatan sistematis`] : ["-"],
+      area_pengembangan: disc ? ["Membutuhkan penyesuaian gaya komunikasi pada saat menghadapi rekan dengan karakter berlawanan.", "Perlu mengelola stres lebih optimal saat dihadapkan pada situasi tekanan tinggi yang berkelanjutan."] : ["-"]
+    },
+    
+    kemampuan_intelektual: {
+      narasi: wpt ? `Pengukuran daya tangkap intelektual (WPT) menunjukkan skor ${wpt.skor}/50, yang menempatkan kandidat pada kategori ${wptCategory}. Hasil ini merepresentasikan seberapa cepat kandidat dalam menyerap informasi baru, memecahkan permasalahan logika-matematis, serta mengaplikasikan instruksi kompleks dalam operasional sehari-hari. Tingkat kecerdasan yang berada pada level ini mengindikasikan kapasitas belajar yang cukup memadai.` : "Data evaluasi Intelektual (WPT) belum tersedia.",
+      kesesuaian_posisi: wpt ? `Tingkat ${wptCategory} ini secara umum sesuai dengan kualifikasi kognitif dasar yang dipersyaratkan. Kandidat dapat memproses instruksi kerja standar dengan tingkat kesalahan minimum.` : "-"
+    },
+    
+    daya_tahan_kerja: {
+      narasi: koran ? `Dari instrumen tes kraepelin/pauli, parameter kecepatan kerja kandidat berada pada level ${koran.analysis_result?.kecepatan_kategori || 'sedang'}, sedangkan tingkat ketelitian kerjanya terkategori ${koran.analysis_result?.akurasi_kategori || 'cukup'}. Fluktuasi performa dari grafik hasil kerja menunjukkan stabilitas yang standar. Artinya, kandidat memiliki ketahanan kerja yang cukup wajar ketika dihadapkan pada tugas rutin atau klerikal di bawah tekanan waktu yang konstan.` : "Data Tes Koran (Kraepelin/Pauli) belum tersedia untuk kandidat ini.",
+      kesimpulan: koranRec
+    },
+    
+    kompetensi_interview: {
+      narasi: interview ? `Evaluasi performa selama sesi wawancara dengan HR atau User mencapai akumulasi skor total ${interview.total_skor}. Penilaian ini menyoroti bagaimana kandidat mengartikulasikan pengalamannya, respons terhadap pertanyaan perilaku (behavioral questions), dan kecocokan nilai-nilai personal dengan perusahaan. Kesimpulan akhir wawancara memberikan rekomendasi: ${interview.rekomendasi}.` : "Evaluasi rekaman atau penilaian Interview belum tersedia.",
+      highlight: interview ? interview.penilaian?.map((p: any) => p.aspek) || ["Kesesuaian komunikasi umum", "Pemahaman terhadap job desc"] : ["-"]
+    },
+    
+    analisis_integrasi: `Berdasarkan perpaduan profil psikologis, analisis kapasitas intelektual, ketahanan kerja repetitif, dan observasi perilaku selama wawancara, kandidat dinilai ${kesesuaianOverall >= 75 ? 'sangat prospektif dan cukup menjanjikan' : 'membutuhkan peninjauan komprehensif ekstra'} untuk menempati peran ${candidate.posisi_dilamar}. Terdapat keselarasan yang memadai antara potensi bawaan dan tuntutan profesi.`,
+    
+    potensi_risiko: kesesuaianOverall < 70 ? ["Kemungkinan kesulitan beradaptasi dengan ritme kerja yang sangat dinamis", "Daya tahan dan konsistensi kerja mungkin menurun jika tidak ada supervisi berkala"] : ["Risiko terkait adaptasi budaya tergolong minimal", "Sedikit potensi hambatan komunikasi dengan karakter pemimpin yang sangat dominan"],
+    
+    rekomendasi_onboarding: kesesuaianOverall >= 75 ? "Sediakan masa orientasi teknis terstruktur dengan menetapkan Key Performance Indicator (KPI) yang terukur sejak minggu kedua. Berikan kebebasan berkreasi dalam batas SOP." : "Direkomendasikan adanya pendampingan mentor atau buddy secara intensif selama 1-2 bulan pertama untuk menekan angka kesalahan kerja.",
+    
+    kesimpulan_akhir: {
+      rekomendasi: rekomAkhir,
+      catatan: `Evaluasi otomatis oleh sistem resume.`,
+      skor_keseluruhan: kesesuaianOverall
     }
-
-    // Fallback to OpenAI if Anthropic didn't succeed
-    if (!content) {
-      console.log('Using OpenAI fallback for candidate analysis...');
-      const openAiKey = process.env.OPENAI_API_KEY?.trim();
-      if (!openAiKey) {
-        openAiError = 'API key is not configured in process.env';
-      } else {
-        try {
-          const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openAiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o',
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt },
-              ],
-              max_tokens: 4096,
-              temperature: 0.3,
-              response_format: { type: 'json_object' },
-            }),
-          });
-
-          if (!openAiResponse.ok) {
-            const errText = await openAiResponse.text();
-            openAiError = `HTTP ${openAiResponse.status}: ${errText}`;
-            console.error(`OpenAI API error ${openAiResponse.status}: ${errText}`);
-          } else {
-            const openAiResult = await openAiResponse.json();
-            content = openAiResult.choices?.[0]?.message?.content as string | undefined;
-            if (openAiResult.usage) {
-              tokenUsage = {
-                input_tokens: openAiResult.usage.prompt_tokens || 0,
-                output_tokens: openAiResult.usage.completion_tokens || 0,
-                total_tokens: openAiResult.usage.total_tokens || 0,
-              };
-            }
-          }
-        } catch (err) {
-          openAiError = `Network/System error: ${err instanceof Error ? err.message : String(err)}`;
-          console.error('OpenAI API call failed:', err);
-        }
-      }
-    }
-
-    if (!content) {
-      throw new Error(`Gagal melakukan analisis. [Anthropic Error: ${anthropicError || 'None'}] [OpenAI Error: ${openAiError || 'None'}]`);
-    }
-
-    let analysis;
-    try {
-      analysis = parseAiJson(content);
-    } catch (parseError) {
-      console.error('Failed to parse candidate analysis JSON:', parseError);
-      throw parseError;
-    }
-
-    if (tokenUsage) {
-      analysis.usage = tokenUsage;
-    }
-
-    const { saveAiAnalysis } = await import('@/lib/db');
-    await saveAiAnalysis(candidateId, analysis);
-    console.log(`Background AI analysis succeeded and saved for candidate ${candidateId}`);
-  } catch (err) {
-    console.error(`Error in runAnalysisInBackground for candidate ${candidateId}:`, err);
-    try {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      const { saveAiAnalysis } = await import('@/lib/db');
-      await saveAiAnalysis(candidateId, { status: 'error', error: errMsg });
-    } catch (dbErr) {
-      console.error('Failed to write error status to DB:', dbErr);
-    }
-  } finally {
-    activeAnalyses.delete(candidateId);
-  }
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -386,14 +112,6 @@ export async function POST(request: NextRequest) {
 
     if (!candidateId) {
       return NextResponse.json({ error: 'candidateId wajib diisi' }, { status: 400 });
-    }
-
-    if (activeAnalyses.has(candidateId)) {
-      return NextResponse.json({
-        success: true,
-        queued: true,
-        message: 'Analisis sedang berjalan di latar belakang.'
-      });
     }
 
     const [candidate, disc, wpt, koran, interview, papikostik] = await Promise.all([
@@ -409,86 +127,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kandidat tidak ditemukan' }, { status: 404 });
     }
 
-    const candidateDataText = buildPrompt({ candidate, disc, wpt, koran, interview, papikostik });
+    const resumeData = generateResumeAlgorithm({ candidate, disc, wpt, koran, interview, papikostik });
 
-    const systemPrompt = `Anda adalah HR Psikolog Senior dan Konsultan Rekrutmen berpengalaman lebih dari 15 tahun di industri hukum (law firm). 
-Tugas Anda adalah menganalisis data kandidat secara komprehensif dan menghasilkan laporan psikologi rekrutmen yang profesional, objektif, dan terstruktur.
-Gunakan bahasa Indonesia yang formal, lugas, dan profesional.
-Anda harus mengintegrasikan seluruh data (DISC, WPT, Tes Koran, Interview, PAPI Kostik) menjadi satu narasi analisis yang kohesif.
-PENTING: Tulis seluruh narasi secara padat, ringkas, dan langsung pada poinnya (maksimal 3-4 kalimat per bagian narasi). Jangan bertele-tele atau membuat narasi terlalu panjang agar tidak melebihi batas token output.`;
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const userPrompt = `Berikut adalah data lengkap kandidat yang perlu Anda analisis:
-
-${candidateDataText}
-
----
-
-Berdasarkan data di atas, buatlah LAPORAN ANALISIS PSIKOLOGI REKRUTMEN yang komprehensif dalam format JSON berikut:
-
-{
-  "fit_scores": {
-    "disc_fit": 85,
-    "wpt_fit": 80,
-    "tes_koran_fit": 75,
-    "kesesuaian_overall": 80
-  },
-  "ringkasan_eksekutif": "Ringkasan padat 2-3 kalimat yang merangkum profil kandidat secara keseluruhan.",
-  
-  "profil_kepribadian": {
-    "narasi": "Analisis singkat 3-4 kalimat mengenai kepribadian kandidat berdasarkan hasil DISC. Jelaskan gaya kerja dan implikasinya untuk posisi.",
-    "kekuatan": ["kekuatan 1", "kekuatan 2", "kekuatan 3"],
-    "area_pengembangan": ["area 1", "area 2"]
-  },
-  
-  "kemampuan_intelektual": {
-    "narasi": "Analisis singkat 2-3 kalimat mengenai kapasitas intelektual berdasarkan WPT dibanding standar posisi.",
-    "kesesuaian_posisi": "Penjelasan singkat mengenai kesesuaian IQ dengan kebutuhan posisi."
-  },
-  
-  "daya_tahan_kerja": {
-    "narasi": "Analisis singkat 2-3 kalimat mengenai aspek psikomotor dan ketahanan kerja berdasarkan Tes Koran.",
-    "kesimpulan": "Lulus | Dipertimbangkan | Tidak Lulus"
-  },
-  
-  "kompetensi_interview": {
-    "narasi": "Analisis singkat 2-3 kalimat mengenai performa interview, kompetensi teridentifikasi, dan keselarasan ekspektasi.",
-    "highlight": ["kompetensi menonjol 1", "kompetensi menonjol 2"]
-  },
-  
-  "analisis_integrasi": "Analisis integratif singkat 3-4 kalimat yang menghubungkan semua aspek (kepribadian, kecerdasan, daya tahan, performa interview) menjadi gambaran kandidat yang utuh.",
-  
-  "potensi_risiko": ["risiko atau concern 1", "risiko atau concern 2"],
-  
-  "rekomendasi_onboarding": "Saran singkat 2-3 kalimat mengenai pendekatan onboarding yang sesuai.",
-  
-  "kesimpulan_akhir": {
-    "rekomendasi": "Sangat Direkomendasikan | Direkomendasikan | Dipertimbangkan | Tidak Direkomendasikan",
-    "catatan": "1-2 kalimat penjelasan singkat atas rekomendasi tersebut.",
-    "skor_keseluruhan": 85
-  }
-}
-
-PENTING:
-- Kembalikan HANYA raw JSON yang valid, tanpa markdown fence \`\`\`json, tanpa teks pembuka/penutup apapun.
-- Tulis seluruh nilai string JSON di satu baris (atau gunakan escape character \\n jika butuh baris baru). Jangan menyertakan baris baru literal di dalam string JSON.
-- Pastikan seluruh narasi ditulis secara ringkas dan padat.
-- Field "skor_keseluruhan" adalah angka 0-100.
-- Jika data tertentu tidak tersedia, berikan analisis singkat berdasarkan data yang ada dan sebutkan keterbatasannya.`;
-
-    activeAnalyses.add(candidateId);
-
-    // Save placeholder to Supabase to indicate "in_progress" status
-    const { saveAiAnalysis } = await import('@/lib/db');
-    await saveAiAnalysis(candidateId, { status: 'in_progress' });
-
-    // Trigger analysis task in the background without awaiting it
-    runAnalysisInBackground(candidateId, candidate.nama, systemPrompt, userPrompt)
-      .catch(err => console.error("Uncaught error in runAnalysisInBackground:", err));
+    await saveAiAnalysis(candidateId, resumeData);
 
     return NextResponse.json({
       success: true,
       queued: true,
-      message: 'Analisis dimulai di latar belakang.'
+      message: 'Resume berhasil dibuat secara otomatis.'
     });
   } catch (error) {
     console.error('analyze-candidate error:', error);

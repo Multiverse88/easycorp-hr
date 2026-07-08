@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import {
+  FileText,
+  Loader2,
   Brain,
   Sparkles,
   CheckCircle2,
@@ -392,21 +394,20 @@ export function AiAnalysisClient({
           <div className={`w-24 h-24 rounded-3xl flex items-center justify-center shadow-lg ${
             isBlocked
               ? 'bg-gradient-to-br from-slate-400 to-slate-500 shadow-slate-200'
-              : 'bg-gradient-to-br from-[#8B2252] to-[#c0507a] shadow-[#8B2252]/20'
+              : 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/20'
           }`}>
-            <Brain className="w-12 h-12 text-white" />
+            <FileText className="w-12 h-12 text-white" />
           </div>
           <div className="absolute -top-1 -right-1 w-7 h-7 bg-amber-400 rounded-full flex items-center justify-center shadow">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">Analisis AI Kandidat</h2>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">Resume Evaluasi Kandidat</h2>
         <p className="text-slate-500 max-w-md mb-1">
-          Sistem menganalisis data DISC, WPT, Tes Koran, dan Interview menggunakan{' '}
-          <span className="font-semibold text-[#8B2252]">Claude Sonnet 4.6 (Anthropic)</span>.
+          Sistem menyusun resume dari data DISC, WPT, Tes Koran, dan Interview secara otomatis.
         </p>
-        <p className="text-xs text-slate-400 mb-6">Proses analisis memerlukan sekitar 10–30 detik.</p>
+        <p className="text-xs text-slate-400 mb-6">Proses analisis memerlukan waktu beberapa detik.</p>
 
         {/* Assessment readiness status */}
         <div className="w-full max-w-sm bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 text-left">
@@ -457,22 +458,21 @@ export function AiAnalysisClient({
         ) : null}
 
         <Button
-          onClick={runAnalysis}
+          onClick={executeAnalysis}
           disabled={isBlocked}
-          title={isBlocked ? `Minimal 3 asesmen diperlukan (saat ini: ${completedCount})` : undefined}
-          className={`h-12 px-8 text-white font-semibold rounded-xl shadow-md flex items-center gap-2 ${
+          className={`px-8 py-6 rounded-full text-base font-bold shadow-xl transition-all duration-300 ${
             isBlocked
-              ? 'bg-slate-300 cursor-not-allowed shadow-slate-200 opacity-60'
-              : 'bg-gradient-to-r from-[#8B2252] to-[#c0507a] hover:opacity-90 shadow-[#8B2252]/20 cursor-pointer'
+              ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
+              : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-indigo-500/25 hover:-translate-y-1'
           }`}
         >
-          <Sparkles className="w-4 h-4" />
-          Jalankan Analisis AI
+          <Sparkles className="w-5 h-5 mr-2" />
+          Buat Resume Evaluasi
         </Button>
 
         {isBlocked && (
-          <p className="text-xs text-slate-400 mt-3">
-            Lengkapi minimal 3 asesmen untuk mengaktifkan analisis AI.
+          <p className="text-xs text-rose-500 font-medium mt-3">
+            Lengkapi minimal 3 asesmen untuk mengaktifkan fitur resume.
           </p>
         )}
       </div>
@@ -485,14 +485,14 @@ export function AiAnalysisClient({
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <div className="relative mb-6">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#8B2252] to-[#c0507a] flex items-center justify-center shadow-lg animate-pulse">
-            <Brain className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg animate-pulse">
+            <FileText className="w-10 h-10 text-white" />
           </div>
-          <div className="absolute inset-0 rounded-2xl border-4 border-[#8B2252]/30 animate-ping" />
+          <div className="absolute inset-0 rounded-2xl border-4 border-indigo-600/30 animate-ping" />
         </div>
-        <h3 className="text-lg font-semibold text-slate-700 mb-2">Menganalisis Data Kandidat…</h3>
+        <h3 className="text-lg font-semibold text-slate-700 mb-2">Menyusun Resume Evaluasi…</h3>
         <p className="text-sm text-slate-400 max-w-xs">
-          Claude Sonnet 4.6 sedang membaca dan mengintegrasikan semua data tes dan interview kandidat.
+          Sistem sedang memproses hasil DISC, WPT, Tes Koran, dan Interview untuk menyusun resume otomatis.
         </p>
         <div className="flex gap-1.5 mt-6">
           {[0, 1, 2].map(i => (
@@ -537,29 +537,16 @@ export function AiAnalysisClient({
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="outline" className="text-[10px] text-slate-500 border-slate-300 bg-slate-50">
-            Powered by Claude Sonnet 4.6 (Anthropic)
-          </Badge>
-          {result.usage && (
-            <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-250 bg-emerald-50 font-semibold">
-              Token: {result.usage.input_tokens.toLocaleString()} In / {result.usage.output_tokens.toLocaleString()} Out (Total: {result.usage.total_tokens.toLocaleString()})
-            </Badge>
-          )}
           <span className="text-[11px] text-slate-400" suppressHydrationWarning>
             {new Date(result.generatedAt).toLocaleString('id-ID')}
           </span>
         </div>
         <div className="flex items-center gap-2">
           {result.usage && (() => {
-            const costUsd = (result.usage.input_tokens / 1000000) * 3 + (result.usage.output_tokens / 1000000) * 15;
-            const costIdr = Math.round(costUsd * 16000);
             return (
-              <div 
-                className="flex items-center gap-1.5 px-2.5 h-8 bg-slate-50 rounded-md border border-slate-200 hidden sm:flex" 
-                title={`~$${costUsd.toFixed(4)} USD`}
-              >
-                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Biaya AI:</span>
-                <span className="text-xs font-bold text-slate-700">Rp {costIdr.toLocaleString('id-ID')}</span>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Status:</span>
+                <span className="text-xs font-bold text-slate-700 font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200 mt-0.5">Selesai</span>
               </div>
             );
           })()}
@@ -580,7 +567,7 @@ export function AiAnalysisClient({
           <div className="flex-1">
             <h4 className="font-bold text-amber-800 text-sm">Data Tes Baru Terdeteksi</h4>
             <p className="text-xs text-amber-700 mt-1 leading-relaxed">
-              Kandidat telah menyelesaikan atau memperbarui data tes (WPT/DISC/Koran/Interview) setelah laporan analisis AI ini dibuat. 
+              Kandidat telah menyelesaikan atau memperbarui data tes (WPT/DISC/Koran/Interview) setelah Resume Evaluasi ini dibuat. 
               Disarankan untuk melakukan <strong>Analisis Ulang</strong> untuk memperbarui laporan psikologi.
             </p>
           </div>
@@ -601,7 +588,7 @@ export function AiAnalysisClient({
           <div className={`${cfg.color} px-6 py-5`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-white/70 text-xs font-medium mb-1">Hasil Analisis AI untuk</p>
+                <p className="text-white/70 text-xs font-medium mb-1">Hasil Resume Evaluasi untuk</p>
                 <h2 className="text-xl font-bold text-white">{result.candidateName}</h2>
                 <div className="flex items-center gap-2 mt-3">
                   <RekIcon className="w-5 h-5 text-white/90" />
@@ -640,7 +627,13 @@ export function AiAnalysisClient({
 
           {/* Executive summary */}
           <div className="px-6 py-4 bg-white border-t border-slate-100">
-            <div className="flex items-start gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <span className="text-xs font-semibold text-slate-500 bg-slate-200 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                Sistem Otomatis
+              </span>
+            </div>
+            <div className="flex items-start gap-3 mt-3">
               <div className="w-7 h-7 rounded-lg bg-[#8B2252]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Star className="w-3.5 h-3.5 text-[#8B2252]" />
               </div>
@@ -727,13 +720,13 @@ export function AiAnalysisClient({
       {/* Onboarding */}
       <Section title="G. Rekomendasi Onboarding" icon={Sparkles} defaultOpen={false}>
         <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{a.rekomendasi_onboarding}</p>
+        <div className="mt-8 text-center border-t border-slate-200 pt-6">
+          <p className="text-xs text-slate-400 font-medium leading-relaxed max-w-xl mx-auto">
+            Resume ini dihasilkan oleh algoritma sistem EasyLegal.
+            Analisis ini bersifat pendukung keputusan, bukan pengganti penilaian profesional HR.
+          </p>
+        </div>
       </Section>
-
-      {/* Footer note */}
-      <p className="text-center text-[11px] text-slate-400 pb-4">
-        Laporan dihasilkan oleh EasyLegal AI System menggunakan Claude Sonnet 4.6 (Anthropic).
-        Analisis ini bersifat pendukung keputusan, bukan pengganti penilaian profesional HR.
-      </p>
 
       {/* Drawer Dialog untuk Konfirmasi / Blokir Data Tidak Lengkap */}
       <Drawer open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
@@ -777,8 +770,8 @@ export function AiAnalysisClient({
               ))}
             </ul>
             {completedCount <= 2 && (
-              <p className="text-xs text-rose-600 mt-3 leading-relaxed">
-                Analisis AI membutuhkan minimal <strong>3 dari 4 asesmen</strong> untuk menghasilkan
+              <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+                Pembuatan resume otomatis membutuhkan minimal <strong>3 dari 4 asesmen</strong> untuk menghasilkan
                 laporan yang bermakna dan akurat. Dengan data yang sangat terbatas, hasil analisis
                 berpotensi <strong>menyesatkan</strong> dan tidak dapat diandalkan sebagai dasar keputusan rekrutmen.
               </p>

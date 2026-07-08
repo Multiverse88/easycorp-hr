@@ -334,33 +334,29 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
           </Card>
         )}
 
-        {/* Analisis AI promo card */}
-        <Card className="lg:col-span-2 border-2 border-[#8B2252]/20 bg-gradient-to-r from-[#8B2252]/5 to-purple-50/50 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#8B2252] to-[#c0507a] flex items-center justify-center shadow-md flex-shrink-0">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-slate-800">Analisis AI Komprehensif</h3>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8B2252] text-white font-medium">Claude Sonnet</span>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    Dapatkan laporan psikologi rekrutmen mendalam yang mengintegrasikan semua data tes dan interview kandidat ini secara otomatis.
-                  </p>
-                </div>
+        {/* Resume Evaluasi promo card */}
+        <div className="mt-12 mb-6">
+          <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-6 rounded-2xl border border-indigo-100 flex items-start gap-4 shadow-sm">
+            <div className="bg-white p-3 rounded-xl shadow-sm">
+              <FileText className="w-8 h-8 text-indigo-600" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-4 h-4 text-indigo-500" />
+                <h3 className="font-semibold text-slate-800">Resume Evaluasi Komprehensif</h3>
               </div>
-              <Link href={`/dashboard/kandidat/${resolvedParams.id}/analisis-ai`} className="ml-4 flex-shrink-0">
-                <Button className="bg-gradient-to-r from-[#8B2252] to-[#c0507a] text-white hover:opacity-90 flex items-center gap-2 shadow-sm">
+              <p className="text-sm text-slate-600 mb-4 max-w-2xl leading-relaxed">
+                Dapatkan resume evaluasi rekrutmen mendalam yang mengintegrasikan semua data tes dan interview kandidat ini secara otomatis (Algoritma Sistem).
+              </p>
+              <Link href={`/dashboard/kandidat/${resolvedParams.id}/analisis-ai`}>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
-                  Jalankan Analisis
+                  Buat Resume Evaluasi
                 </Button>
               </Link>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
       </div>
     </div>
