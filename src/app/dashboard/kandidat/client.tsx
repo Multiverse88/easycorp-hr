@@ -79,7 +79,7 @@ export function KandidatListClient({ initialCandidates }: { initialCandidates: C
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Select value={sortOrder} onValueChange={setSortOrder}>
+          <Select value={sortOrder} onValueChange={(value) => value && setSortOrder(value)}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Urutkan berdasarkan...">
                 {SORT_OPTIONS[sortOrder]}
