@@ -359,6 +359,89 @@ export async function getCandidates(): Promise<Candidate[]> {
   return (data || []) as Candidate[];
 }
 
+export type CandidateWithScore = Candidate & { score: number; ai_status?: string; testCount?: number };
+
+export async function getCandidatesWithAnalysis(): Promise<CandidateWithScore[]> {
+  // 1. Fetch all candidates
+  const { data: candidates, error: candError } = await supabaseAdmin
+    .from('candidates')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (candError) {
+    console.error('getCandidatesWithAnalysis (candidates) error:', candError);
+    return [];
+  }
+
+  if (!candidates || candidates.length === 0) {
+    return [];
+  }
+
+  // 2. Fetch all AI analyses and test completions in parallel
+  const [
+    { data: analyses },
+    { data: discTests },
+    { data: wptTests },
+    { data: koranTests },
+    { data: papiTests }
+  ] = await Promise.all([
+    supabaseAdmin.from('candidate_ai_analysis').select('candidate_id, analysis, created_at').order('created_at', { ascending: false }),
+    supabaseAdmin.from('disc_tests').select('candidate_id'),
+    supabaseAdmin.from('wpt_tests').select('candidate_id'),
+    supabaseAdmin.from('koran_tests').select('candidate_id'),
+    supabaseAdmin.from('papikostik_test_results').select('candidate_id')
+  ]);
+
+  // 3. Group analyses by candidate_id
+  const analysesByCandidate: Record<string, any[]> = {};
+  if (analyses) {
+    for (const record of analyses) {
+      if (!analysesByCandidate[record.candidate_id]) {
+        analysesByCandidate[record.candidate_id] = [];
+      }
+      analysesByCandidate[record.candidate_id].push(record);
+    }
+  }
+
+  const discSet = new Set(discTests?.map((t: any) => t.candidate_id) || []);
+  const wptSet = new Set(wptTests?.map((t: any) => t.candidate_id) || []);
+  const koranSet = new Set(koranTests?.map((t: any) => t.candidate_id) || []);
+  const papiSet = new Set(papiTests?.map((t: any) => t.candidate_id) || []);
+
+  // 4. Merge
+  return candidates.map((cand: any) => {
+    let score = 0;
+    let ai_status = undefined;
+    let testCount = 0;
+    
+    if (discSet.has(cand.id)) testCount++;
+    if (wptSet.has(cand.id)) testCount++;
+    if (koranSet.has(cand.id)) testCount++;
+    if (papiSet.has(cand.id)) testCount++;
+    
+    const candAnalyses = analysesByCandidate[cand.id];
+    
+    if (candAnalyses && candAnalyses.length > 0) {
+      // The query is already ordered by created_at DESC, so the first one is the latest
+      const latest = candAnalyses[0];
+      
+      if (latest.analysis?.kesimpulan_akhir?.skor_keseluruhan) {
+        score = Number(latest.analysis.kesimpulan_akhir.skor_keseluruhan);
+      }
+      if (latest.analysis?.status) {
+        ai_status = latest.analysis.status;
+      }
+    }
+    
+    return {
+      ...cand,
+      score,
+      ai_status,
+      testCount
+    } as CandidateWithScore;
+  });
+}
+
 export async function getCandidateById(id: string): Promise<Candidate | undefined> {
   if (id === 'mock-candidate') {
     return {
@@ -935,9 +1018,7 @@ export async function getAiAnalysisByCandidate(candidateId: string): Promise<Can
 }
 
 export async function saveAiAnalysis(candidateId: string, analysis: any): Promise<CandidateAiAnalysis> {
-  const id = `ai-${Date.now()}`;
   const payload = {
-    id,
     candidate_id: candidateId,
     analysis,
   };
@@ -955,7 +1036,7 @@ export async function saveAiAnalysis(candidateId: string, analysis: any): Promis
   logActivity({
     action: 'CREATE',
     table_name: 'candidate_ai_analysis',
-    record_id: id,
+    record_id: data.id,
     description: `Hasil Analisis AI baru untuk kandidat ${candidateId}`,
     details: { candidate_id: candidateId }
   });

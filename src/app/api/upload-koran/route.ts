@@ -156,38 +156,29 @@ export async function POST(request: NextRequest) {
     const base64Image = buffer.toString('base64');
     const mimeType = file.type || 'image/jpeg';
 
-    // Step 3: Call Anthropic Messages API with Image block
+    // Step 3: Call OpenAI API with Image block
     let content: string | undefined;
-    const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
 
-    if (apiKey) {
-      try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'claude-3-5-sonnet-latest',
-            max_tokens: 4000,
-            temperature: 0.3,
-            messages: [
+    const openAiKey = process.env.OPENAI_API_KEY?.trim();
+    if (!openAiKey) {
+      return NextResponse.json({ error: 'Tidak ada API Key yang valid (OPENAI_API_KEY tidak dikonfigurasi)' }, { status: 500 });
+    }
+
+    const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
               {
-                role: 'user',
-                content: [
-                  {
-                    type: 'image',
-                    source: {
-                      type: 'base64',
-                      media_type: mimeType,
-                      data: base64Image
-                    }
-                  },
-                  {
-                    type: 'text',
-                    text: `Anda adalah psikolog industri dan organisasi ahli. Analisis gambar hasil Tes Koran (Pauli/Kraepelin Test) berikut untuk kandidat ini.
+                type: 'text',
+                text: `Anda adalah psikolog industri dan organisasi ahli. Analisis gambar hasil Tes Koran (Pauli/Kraepelin Test) berikut untuk kandidat ini.
 Gambar ini adalah screenshot hasil akhir dari aplikasi mobile tes Kraepelin. Baca angka dan metrik yang tertera di layar tersebut dengan teliti, dan gunakan data tersebut untuk menyimpulkan indikator kuantitatif dan kualitatif.
 
 Ekstrak dan hitung indikator-indikator kuantitatif berikut secara profesional:
@@ -224,109 +215,30 @@ Kembalikan jawaban Anda dalam format JSON yang valid dengan struktur berikut:
   "rekomendasi": "Lulus | Dipertimbangkan | Tidak Lulus"
 }
 Pastikan hanya mengembalikan JSON yang valid tanpa markdown code fences \`\`\`json atau teks lainnya. Jangan menambahkan teks pembuka/penutup, langsung kembalikan raw JSON saja.`
-                  }
-                ]
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mimeType};base64,${base64Image}`
+                }
               }
             ]
-          })
-        });
+          }
+        ],
+        response_format: { type: 'json_object' }
+      })
+    });
 
-        if (response.ok) {
-          const aiResult = await response.json();
-          content = aiResult.content?.[0]?.text;
-        } else {
-          const errText = await response.text();
-          console.warn('Anthropic API returned error, trying OpenAI fallback:', errText);
-        }
-      } catch (err) {
-        console.error('Anthropic API call failed, trying OpenAI fallback:', err);
-      }
+    if (!openAiResponse.ok) {
+      const errorText = await openAiResponse.text();
+      throw new Error(`OpenAI API error status: ${openAiResponse.status} - ${errorText}`);
     }
 
-    // Fallback to OpenAI if Anthropic didn't succeed
-    if (!content) {
-      console.log('Using OpenAI fallback for Koran upload...');
-      const openAiKey = process.env.OPENAI_API_KEY?.trim();
-      if (!openAiKey) {
-        return NextResponse.json({ error: 'Tidak ada API Key yang valid (Anthropic & OpenAI tidak aktif)' }, { status: 500 });
-      }
-
-      const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: `Anda adalah psikolog industri dan organisasi ahli. Analisis gambar hasil Tes Koran (Pauli/Kraepelin Test) berikut untuk kandidat ini.
-Gambar ini adalah screenshot hasil akhir dari aplikasi mobile tes Kraepelin. Baca angka dan metrik yang tertera di layar tersebut dengan teliti, dan gunakan data tersebut untuk menyimpulkan indikator kuantitatif dan kualitatif.
-
-Ekstrak dan hitung indikator-indikator kuantitatif berikut secara profesional:
-1. Total Jawaban Benar (total_benar): baca jumlah jawaban benar dari screenshot.
-2. Total Kesalahan (total_salah): baca jumlah jawaban salah dari screenshot.
-3. Kecepatan (Speed): ambil nilai kecepatan kerja. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-4. Akurasi (Accuracy): ambil rasio ketelitian kerja. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-5. Keajegan (Stability): ambil nilai konsistensi. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-6. Ketahanan (Endurance): ambil nilai ketahanan/resiliensi. Kembalikan nilai (angka 0-100) dan kategori (RENDAH / SEDANG / CUKUP TINGGI / TINGGI / SANGAT TINGGI).
-7. Pola Grafik (pola_grafik): deskripsikan secara naratif pola grafik kerja jika ada di screenshot, atau simpulkan dari metrik yang ada (misal: "Kecepatan tinggi namun akurasi rendah, menunjukkan gaya kerja terburu-buru...")
-
-Kembalikan jawaban Anda dalam format JSON yang valid dengan struktur berikut:
-{
-  "total_benar": 1564,
-  "total_salah": 34,
-  "kecepatan": {
-    "nilai": 65.0,
-    "kategori": "SEDANG"
-  },
-  "akurasi": {
-    "nilai": 45.0,
-    "kategori": "RENDAH"
-  },
-  "keajegan": {
-    "nilai": 70.0,
-    "kategori": "CUKUP TINGGI"
-  },
-  "ketahanan": {
-    "nilai": 67.5,
-    "kategori": "CUKUP TINGGI"
-  },
-  "pola_grafik": "Deskripsi singkat pola grafik kerja...",
-  "reasoning": "Analisis psikologis menyeluruh yang mendalam, detail, dan deskriptif mengenai performa kandidat pada tes koran...",
-  "rekomendasi": "Lulus | Dipertimbangkan | Tidak Lulus"
-}
-Pastikan hanya mengembalikan JSON yang valid tanpa markdown code fences \`\`\`json atau teks lainnya. Jangan menambahkan teks pembuka/penutup, langsung kembalikan raw JSON saja.`
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:${mimeType};base64,${base64Image}`
-                  }
-                }
-              ]
-            }
-          ],
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      if (!openAiResponse.ok) {
-        const errorText = await openAiResponse.text();
-        throw new Error(`OpenAI API fallback error status: ${openAiResponse.status} - ${errorText}`);
-      }
-
-      const openAiResult = await openAiResponse.json();
-      content = openAiResult.choices?.[0]?.message?.content;
-    }
+    const openAiResult = await openAiResponse.json();
+    content = openAiResult.choices?.[0]?.message?.content;
 
     if (!content) {
-      throw new Error('Respons AI kosong atau tidak valid (gagal pada Anthropic dan OpenAI).');
+      throw new Error('Respons AI kosong atau tidak valid (gagal pada ChatGPT).');
     }
 
     let analysisResult;
