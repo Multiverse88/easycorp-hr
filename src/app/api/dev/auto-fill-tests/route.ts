@@ -111,11 +111,10 @@ export async function POST(req: Request) {
     }
 
     const papiPayload = {
-      id: `dev-papi-${Date.now()}`,
       candidate_id: candidateId,
       nama_file: 'auto-generated-dev.pdf',
       results: randomPapi,
-      created_at: new Date().toISOString()
+      completed_at: new Date().toISOString()
     };
 
     const papiSessionPayload = {
