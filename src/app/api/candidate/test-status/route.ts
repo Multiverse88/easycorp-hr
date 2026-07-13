@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const candidateId = searchParams.get('candidateId');
-
     if (!candidateId) {
       return NextResponse.json({ error: 'candidateId is required' }, { status: 400 });
     }
