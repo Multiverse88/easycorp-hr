@@ -15,4 +15,5 @@ jobs:
           ssh_private_key: ${{ secrets.DOKKU_SSH_KEY }}
           ssh_host: ${{ secrets.DOKKU_HOST }}
           ssh_user: ${{ secrets.DOKKU_USER }}
-          app: recruit-el-app
+          git_remote_url: dokku@${{ secrets.DOKKU_HOST }}:recruit-el-app
+          ssh_host_key: `157.10.252.77 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCU+bqSRtYCIlrWr21pJcuChpbj5hxoTN74J8Tm9d1o32bTWUcoUOSLhXwTWgeGMCVEhy7wMytYdDPIKmTN3/MK4EIz8lVuvNw2/RejMVoh8l036/X9I2Y4imrrFr9tUP99u4NSnPtJkOGjIXtWt0t8ly0CatpJW+ELjLD0TO+vn3LMEGqNUtBhj6+hRpoD8jWq8inTyNZfC9iwwlnFUhcUIuU4np7+oS38SpCnkyYiy1FCxkWLTLYfbgrrZqkslshKKJ/g2w0M5/QcJwUeeT/OQNhzDN7lUHlL1TnNHEqFEP75Rv0TfYu0VBPnD/5DuuV2fduRiiJzD1O13kgjBwVYrWrkyBrw+s5GvTadNzzmqn+P4SUz1F4oMbJ1ugSIv1L6h7AYScYe+/KmWNosHJKhB4VOv80CTe40KFQzSzyTtijubyoNgUVnOwSDiH+FpR3q90o243fe5g7sUarXfCkbVuajKjuS5RD0BF9b2nqA9Ba+unX1Vebrjbp+g/aiCq0=`
