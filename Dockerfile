@@ -15,6 +15,10 @@ COPY . .
 # Disable telemetry during the build
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Allow DATABASE_URL to be passed at build time (Next.js collects page data at build)
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+
 RUN npm run build
 
 # Stage 3: Production image, copy all the files and run next
