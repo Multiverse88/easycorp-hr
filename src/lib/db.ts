@@ -1,8 +1,13 @@
 'use server';
 
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { prisma } from '@/lib/prisma';
 import { sendAssessmentInvitation } from '@/lib/email';
-import crypto from 'crypto';
+
+function toDateStr(val: any): string {
+  if (!val) return '';
+  if (val instanceof Date) return val.toISOString();
+  return String(val);
+}
 
 // ==========================================
 // INTERFACES (unchanged)
@@ -39,6 +44,7 @@ export interface ManpowerRequest {
   approval_user_at?: string;
   approval_hrga_at?: string;
   approval_management_at?: string;
+  created_at?: string;
 }
 
 export interface Candidate {
@@ -148,6 +154,147 @@ export interface PapikostikTestResult {
 }
 
 // ==========================================
+// HELPER: Convert Prisma result to snake_case interface
+// ==========================================
+
+function mapManpowerRequest(row: any): ManpowerRequest {
+  return {
+    id: row.id,
+    no_request: row.noRequest,
+    tanggal: row.tanggal,
+    divisi: row.divisi,
+    pemohon: row.pemohon,
+    jabatan_pemohon: row.jabatanPemohon,
+    atasan_pemohon: row.atasanPemohon,
+    posisi: row.posisi,
+    jumlah: row.jumlah,
+    lokasi: row.lokasi,
+    tanggal_dibutuhkan: row.tanggalDibutuhkan,
+    jenis_kebutuhan: row.jenisKebutuhan,
+    replacement_name: row.replacementName || undefined,
+    status_karyawan: row.statusKaryawan,
+    urgensi: row.urgensi,
+    alasan: row.alasan,
+    jobdesk: row.jobdesk,
+    kualifikasi: row.kualifikasi as any,
+    range_gaji: row.rangeGaji as any,
+    benefit: row.benefit,
+    status: row.status,
+    approval_user_at: row.approvalUserAt || undefined,
+    approval_hrga_at: row.approvalHrgaAt || undefined,
+    approval_management_at: row.approvalManagementAt || undefined,
+    created_at: toDateStr(row.createdAt),
+  };
+}
+
+function mapCandidate(row: any): Candidate {
+  return {
+    id: row.id,
+    nama: row.nama,
+    email: row.email || '',
+    telepon: row.telepon || '',
+    posisi_dilamar: row.posisiDilamar,
+    manpower_request_id: row.manpowerRequestId || undefined,
+    token: row.token,
+    token_expires_at: row.tokenExpiresAt,
+    status: row.status,
+    created_at: toDateStr(row.createdAt),
+    pendidikan: row.pendidikan || undefined,
+    pengalaman: row.pengalaman || undefined,
+    keahlian: row.keahlian || undefined,
+  };
+}
+
+function mapSelectionTestResult(row: any): SelectionTestResult {
+  return {
+    id: row.id,
+    candidate_id: row.candidateId,
+    tanggal_tes: row.tanggalTes,
+    penyelenggara: row.penyelenggara,
+    komponen: row.komponen as any,
+    kesimpulan: row.kesimpulan,
+    catatan_akhir: row.catatanAkhir,
+  };
+}
+
+function mapInterviewEvaluation(row: any): InterviewEvaluation {
+  return {
+    id: row.id,
+    candidate_id: row.candidateId,
+    tanggal: row.tanggal,
+    tahap: row.tahap,
+    interviewer: row.interviewer,
+    metode: row.metode,
+    ekspektasi_gaji: row.ekspektasiGaji || 0,
+    ketersediaan_bergabung: row.ketersediaanBergabung || '',
+    penilaian: row.penilaian as any,
+    total_skor: row.totalSkor || 0,
+    kelebihan: row.kelebihan || '',
+    area_digali: row.areaDigali || '',
+    catatan: row.catatan || '',
+    rekomendasi: row.rekomendasi,
+  };
+}
+
+function mapDiscTestResult(row: any): DiscTestResult {
+  return {
+    id: row.id,
+    candidate_id: row.candidateId,
+    answers: row.answers as any,
+    skor_d: row.skorD,
+    skor_i: row.skorI,
+    skor_s: row.skorS,
+    skor_c: row.skorC,
+    persen_d: row.persenD,
+    persen_i: row.persenI,
+    persen_s: row.persenS,
+    persen_c: row.persenC,
+    tipe_primer: row.tipePrimer,
+    tipe_sekunder: row.tipeSekunder,
+    completed_at: row.completedAt,
+  };
+}
+
+function mapWptTestResult(row: any): WptTestResult {
+  return {
+    id: row.id,
+    candidate_id: row.candidateId,
+    answers: row.answers as any,
+    skor: row.skor,
+    total_soal: row.totalSoal,
+    persen_benar: row.persenBenar,
+    kategori: row.kategori,
+    profil_kemampuan: row.profilKemampuan as any,
+    rekomendasi_posisi: row.rekomendasiPosisi as any,
+    completed_at: row.completedAt,
+  };
+}
+
+function mapKoranTestResult(row: any) {
+  return {
+    id: row.id,
+    candidate_id: row.candidateId,
+    nama_file: row.namaFile,
+    foto_url: row.fotoUrl,
+    analysis_result: row.analysisResult,
+    created_at: toDateStr(row.createdAt),
+  };
+}
+
+function mapActivityLog(row: any): ActivityLog {
+  return {
+    id: row.id,
+    action: row.action,
+    table_name: row.tableName,
+    record_id: row.recordId,
+    description: row.description,
+    details: row.details as Record<string, unknown> | null,
+    user_email: row.userEmail,
+    created_at: toDateStr(row.createdAt),
+  };
+}
+
+// ==========================================
 // LOG FUNCTIONS
 // ==========================================
 
@@ -160,14 +307,16 @@ export async function logActivity(params: {
   user_email?: string;
 }): Promise<void> {
   try {
-    await supabaseAdmin.from('logs').insert({
-      id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      action: params.action,
-      table_name: params.table_name,
-      record_id: params.record_id,
-      description: params.description,
-      details: params.details || null,
-      user_email: params.user_email || null,
+    await prisma.log.create({
+      data: {
+        id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        action: params.action,
+        tableName: params.table_name,
+        recordId: params.record_id,
+        description: params.description,
+        details: (params.details as any) || undefined,
+        userEmail: params.user_email || undefined,
+      },
     });
   } catch (err) {
     console.error('logActivity error:', err);
@@ -175,17 +324,16 @@ export async function logActivity(params: {
 }
 
 export async function getLogs(limit: number = 100): Promise<ActivityLog[]> {
-  const { data, error } = await supabaseAdmin
-    .from('logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) {
+  try {
+    const rows = await prisma.log.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    return rows.map(mapActivityLog);
+  } catch (error) {
     console.error('getLogs error:', error);
     return [];
   }
-  return (data || []) as ActivityLog[];
 }
 
 // ==========================================
@@ -193,152 +341,132 @@ export async function getLogs(limit: number = 100): Promise<ActivityLog[]> {
 // ==========================================
 
 export async function getManpowerRequests(): Promise<ManpowerRequest[]> {
-  const { data, error } = await supabaseAdmin
-    .from('manpower_requests')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
+  try {
+    const rows = await prisma.manpowerRequest.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map(mapManpowerRequest);
+  } catch (error) {
     console.error('getManpowerRequests error:', error);
     return [];
   }
-  return (data || []) as ManpowerRequest[];
 }
 
 export async function getManpowerRequestById(id: string): Promise<ManpowerRequest | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('manpower_requests')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) return undefined;
-  return data as ManpowerRequest;
+  try {
+    const row = await prisma.manpowerRequest.findUnique({ where: { id } });
+    if (!row) return undefined;
+    return mapManpowerRequest(row);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function saveManpowerRequest(req: Omit<ManpowerRequest, 'id' | 'no_request' | 'status'> & { id?: string }): Promise<ManpowerRequest> {
   if (req.id) {
-    // Update existing
-    const { data, error } = await supabaseAdmin
-      .from('manpower_requests')
-      .update({
+    const row = await prisma.manpowerRequest.update({
+      where: { id: req.id },
+      data: {
         tanggal: req.tanggal,
         divisi: req.divisi,
         pemohon: req.pemohon,
-        jabatan_pemohon: req.jabatan_pemohon,
-        atasan_pemohon: req.atasan_pemohon,
+        jabatanPemohon: req.jabatan_pemohon,
+        atasanPemohon: req.atasan_pemohon,
         posisi: req.posisi,
         jumlah: req.jumlah,
         lokasi: req.lokasi,
-        tanggal_dibutuhkan: req.tanggal_dibutuhkan,
-        jenis_kebutuhan: req.jenis_kebutuhan,
-        replacement_name: req.replacement_name || null,
-        status_karyawan: req.status_karyawan,
+        tanggalDibutuhkan: req.tanggal_dibutuhkan,
+        jenisKebutuhan: req.jenis_kebutuhan,
+        replacementName: req.replacement_name || null,
+        statusKaryawan: req.status_karyawan,
         urgensi: req.urgensi,
         alasan: req.alasan,
         jobdesk: req.jobdesk,
-        kualifikasi: req.kualifikasi,
-        range_gaji: req.range_gaji,
+        kualifikasi: req.kualifikasi as any,
+        rangeGaji: req.range_gaji as any,
         benefit: req.benefit,
-      })
-      .eq('id', req.id)
-      .select()
-      .single();
-
-    if (error) throw new Error(`Gagal update: ${error.message}`);
-    logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: req.id!, description: `Manpower request ${req.id} diperbarui - posisi: ${req.posisi}`, details: { posisi: req.posisi, divisi: req.divisi, jumlah: req.jumlah } });
-    return data as ManpowerRequest;
+      },
+    });
+    logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: req.id, description: `Manpower request ${req.id} diperbarui - posisi: ${req.posisi}`, details: { posisi: req.posisi, divisi: req.divisi, jumlah: req.jumlah } });
+    return mapManpowerRequest(row);
   }
 
-  // Create new
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const year = now.getFullYear();
 
-  // Get count for sequence number
-  const { count } = await supabaseAdmin
-    .from('manpower_requests')
-    .select('*', { count: 'exact', head: true });
-
-  const seq = String((count || 0) + 1).padStart(3, '0');
+  const count = await prisma.manpowerRequest.count();
+  const seq = String(count + 1).padStart(3, '0');
   const no_request = `MR/${month}/${year}/${seq}`;
   const id = `mr-${Date.now()}`;
 
-  const { data, error } = await supabaseAdmin
-    .from('manpower_requests')
-    .insert({
+  const row = await prisma.manpowerRequest.create({
+    data: {
       id,
-      no_request,
+      noRequest: no_request,
       tanggal: req.tanggal,
       divisi: req.divisi,
       pemohon: req.pemohon,
-      jabatan_pemohon: req.jabatan_pemohon,
-      atasan_pemohon: req.atasan_pemohon,
+      jabatanPemohon: req.jabatan_pemohon,
+      atasanPemohon: req.atasan_pemohon,
       posisi: req.posisi,
       jumlah: req.jumlah,
       lokasi: req.lokasi,
-      tanggal_dibutuhkan: req.tanggal_dibutuhkan,
-      jenis_kebutuhan: req.jenis_kebutuhan,
-      replacement_name: req.replacement_name || null,
-      status_karyawan: req.status_karyawan,
+      tanggalDibutuhkan: req.tanggal_dibutuhkan,
+      jenisKebutuhan: req.jenis_kebutuhan,
+      replacementName: req.replacement_name || null,
+      statusKaryawan: req.status_karyawan,
       urgensi: req.urgensi,
       alasan: req.alasan,
       jobdesk: req.jobdesk,
-      kualifikasi: req.kualifikasi,
-      range_gaji: req.range_gaji,
+      kualifikasi: req.kualifikasi as any,
+      rangeGaji: req.range_gaji as any,
       benefit: req.benefit,
       status: 'submitted',
-      approval_user_at: now.toISOString().split('T')[0],
-    })
-    .select()
-    .single();
+      approvalUserAt: now.toISOString().split('T')[0],
+    },
+  });
 
-  if (error) throw new Error(`Gagal simpan: ${error.message}`);
   logActivity({ action: 'CREATE', table_name: 'manpower_requests', record_id: id, description: `Manpower request baru ${no_request} dibuat - posisi: ${req.posisi} oleh ${req.pemohon}`, details: { no_request, posisi: req.posisi, divisi: req.divisi, pemohon: req.pemohon } });
-  return data as ManpowerRequest;
+  return mapManpowerRequest(row);
 }
 
 export async function approveManpowerRequest(id: string, role: 'hrga' | 'management'): Promise<ManpowerRequest | undefined> {
   const nowStr = new Date().toISOString().split('T')[0];
 
-  const update: Record<string, string> = {};
+  const data: Record<string, any> = {};
   if (role === 'hrga') {
-    update.status = 'verified';
-    update.approval_hrga_at = nowStr;
+    data.status = 'verified';
+    data.approvalHrgaAt = nowStr;
   } else if (role === 'management') {
-    update.status = 'approved';
-    update.approval_management_at = nowStr;
+    data.status = 'approved';
+    data.approvalManagementAt = nowStr;
   }
 
-  console.log('approveManpowerRequest called:', { id, role, update });
+  console.log('approveManpowerRequest called:', { id, role, data });
 
-  const { data, error } = await supabaseAdmin
-    .from('manpower_requests')
-    .update(update)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('approveManpowerRequest error:', JSON.stringify(error, null, 2));
+  try {
+    const row = await prisma.manpowerRequest.update({ where: { id }, data });
+    console.log('approveManpowerRequest success:', row);
+    logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: id, description: `Manpower request ${id} disetujui oleh ${role === 'hrga' ? 'HRGA' : 'Management'} - status: ${data.status}`, details: { role, new_status: data.status } });
+    return mapManpowerRequest(row);
+  } catch (error) {
+    console.error('approveManpowerRequest error:', error);
     return undefined;
   }
-  console.log('approveManpowerRequest success:', data);
-  logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: id, description: `Manpower request ${id} disetujui oleh ${role === 'hrga' ? 'HRGA' : 'Management'} - status: ${update.status}`, details: { role, new_status: update.status } });
-  return data as ManpowerRequest;
 }
 
 export async function rejectManpowerRequest(id: string): Promise<ManpowerRequest | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('manpower_requests')
-    .update({ status: 'rejected' })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) return undefined;
-  logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: id, description: `Manpower request ${id} ditolak`, details: { new_status: 'rejected' } });
-  return data as ManpowerRequest;
+  try {
+    const row = await prisma.manpowerRequest.update({
+      where: { id },
+      data: { status: 'rejected' },
+    });
+    logActivity({ action: 'UPDATE', table_name: 'manpower_requests', record_id: id, description: `Manpower request ${id} ditolak`, details: { new_status: 'rejected' } });
+    return mapManpowerRequest(row);
+  } catch {
+    return undefined;
+  }
 }
 
 // ==========================================
@@ -346,100 +474,87 @@ export async function rejectManpowerRequest(id: string): Promise<ManpowerRequest
 // ==========================================
 
 export async function getCandidates(): Promise<Candidate[]> {
-  const { data, error } = await supabaseAdmin
-    .from('candidates')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('getCandidates error:', JSON.stringify(error, null, 2));
+  try {
+    const rows = await prisma.candidate.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    console.log(`getCandidates: ${rows.length} records`);
+    return rows.map(mapCandidate);
+  } catch (error) {
+    console.error('getCandidates error:', error);
     return [];
   }
-  console.log(`getCandidates: ${data?.length || 0} records`);
-  return (data || []) as Candidate[];
 }
 
 export type CandidateWithScore = Candidate & { score: number; ai_status?: string; testCount?: number };
 
 export async function getCandidatesWithAnalysis(): Promise<CandidateWithScore[]> {
-  // 1. Fetch all candidates
-  const { data: candidates, error: candError } = await supabaseAdmin
-    .from('candidates')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    const candidates = await prisma.candidate.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
 
-  if (candError) {
-    console.error('getCandidatesWithAnalysis (candidates) error:', candError);
-    return [];
-  }
+    if (candidates.length === 0) return [];
 
-  if (!candidates || candidates.length === 0) {
-    return [];
-  }
+    const candidateIds = candidates.map(c => c.id);
 
-  // 2. Fetch all AI analyses and test completions in parallel
-  const [
-    { data: analyses },
-    { data: discTests },
-    { data: wptTests },
-    { data: koranTests },
-    { data: papiTests }
-  ] = await Promise.all([
-    supabaseAdmin.from('candidate_ai_analysis').select('candidate_id, analysis, created_at').order('created_at', { ascending: false }),
-    supabaseAdmin.from('disc_tests').select('candidate_id'),
-    supabaseAdmin.from('wpt_tests').select('candidate_id'),
-    supabaseAdmin.from('koran_tests').select('candidate_id'),
-    supabaseAdmin.from('papikostik_test_results').select('candidate_id')
-  ]);
+    const [analyses, discTests, wptTests, koranTests, papiTests] = await Promise.all([
+      prisma.candidateAiAnalysis.findMany({
+        where: { candidateId: { in: candidateIds } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.discTest.findMany({ where: { candidateId: { in: candidateIds } } }),
+      prisma.wptTest.findMany({ where: { candidateId: { in: candidateIds } } }),
+      prisma.koranTest.findMany({ where: { candidateId: { in: candidateIds } } }),
+      prisma.papikostikTestResult.findMany({ where: { candidateId: { in: candidateIds } } }),
+    ]);
 
-  // 3. Group analyses by candidate_id
-  const analysesByCandidate: Record<string, any[]> = {};
-  if (analyses) {
+    const analysesByCandidate: Record<string, any[]> = {};
     for (const record of analyses) {
-      if (!analysesByCandidate[record.candidate_id]) {
-        analysesByCandidate[record.candidate_id] = [];
+      if (!analysesByCandidate[record.candidateId]) {
+        analysesByCandidate[record.candidateId] = [];
       }
-      analysesByCandidate[record.candidate_id].push(record);
+      analysesByCandidate[record.candidateId].push(record);
     }
-  }
 
-  const discSet = new Set(discTests?.map((t: any) => t.candidate_id) || []);
-  const wptSet = new Set(wptTests?.map((t: any) => t.candidate_id) || []);
-  const koranSet = new Set(koranTests?.map((t: any) => t.candidate_id) || []);
-  const papiSet = new Set(papiTests?.map((t: any) => t.candidate_id) || []);
+    const discSet = new Set(discTests.map(t => t.candidateId));
+    const wptSet = new Set(wptTests.map(t => t.candidateId));
+    const koranSet = new Set(koranTests.map(t => t.candidateId));
+    const papiSet = new Set(papiTests.map(t => t.candidateId));
 
-  // 4. Merge
-  return candidates.map((cand: any) => {
-    let score = 0;
-    let ai_status = undefined;
-    let testCount = 0;
-    
-    if (discSet.has(cand.id)) testCount++;
-    if (wptSet.has(cand.id)) testCount++;
-    if (koranSet.has(cand.id)) testCount++;
-    if (papiSet.has(cand.id)) testCount++;
-    
-    const candAnalyses = analysesByCandidate[cand.id];
-    
-    if (candAnalyses && candAnalyses.length > 0) {
-      // The query is already ordered by created_at DESC, so the first one is the latest
-      const latest = candAnalyses[0];
+    return candidates.map((cand) => {
+      let score = 0;
+      let ai_status: string | undefined;
+      let testCount = 0;
       
-      if (latest.analysis?.kesimpulan_akhir?.skor_keseluruhan) {
-        score = Number(latest.analysis.kesimpulan_akhir.skor_keseluruhan);
+      if (discSet.has(cand.id)) testCount++;
+      if (wptSet.has(cand.id)) testCount++;
+      if (koranSet.has(cand.id)) testCount++;
+      if (papiSet.has(cand.id)) testCount++;
+      
+      const candAnalyses = analysesByCandidate[cand.id];
+      
+      if (candAnalyses && candAnalyses.length > 0) {
+        const latest = candAnalyses[0];
+        if ((latest.analysis as any)?.kesimpulan_akhir?.skor_keseluruhan) {
+          score = Number((latest.analysis as any).kesimpulan_akhir.skor_keseluruhan);
+        }
+        if ((latest.analysis as any)?.status) {
+          ai_status = (latest.analysis as any).status;
+        }
       }
-      if (latest.analysis?.status) {
-        ai_status = latest.analysis.status;
-      }
-    }
-    
-    return {
-      ...cand,
-      score,
-      ai_status,
-      testCount
-    } as CandidateWithScore;
-  });
+      
+      return {
+        ...mapCandidate(cand),
+        score,
+        ai_status,
+        testCount,
+      } as CandidateWithScore;
+    });
+  } catch (error) {
+    console.error('getCandidatesWithAnalysis error:', error);
+    return [];
+  }
 }
 
 export async function getCandidateById(id: string): Promise<Candidate | undefined> {
@@ -458,14 +573,13 @@ export async function getCandidateById(id: string): Promise<Candidate | undefine
     } as Candidate;
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('candidates')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) return undefined;
-  return data as Candidate;
+  try {
+    const row = await prisma.candidate.findUnique({ where: { id } });
+    if (!row) return undefined;
+    return mapCandidate(row);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function getCandidateByToken(token: string): Promise<Candidate | undefined> {
@@ -484,14 +598,13 @@ export async function getCandidateByToken(token: string): Promise<Candidate | un
     } as Candidate;
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('candidates')
-    .select('*')
-    .eq('token', token)
-    .single();
-
-  if (error) return undefined;
-  return data as Candidate;
+  try {
+    const row = await prisma.candidate.findUnique({ where: { token } });
+    if (!row) return undefined;
+    return mapCandidate(row);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function createCandidate(
@@ -503,27 +616,22 @@ export async function createCandidate(
 
   const expiry = new Date();
   expiry.setDate(expiry.getDate() + 14);
-  const token_expires_at = expiry.toISOString().split('T')[0];
+  const token_expires_at = expiry.toISOString();
 
-  const { data, error } = await supabaseAdmin
-    .from('candidates')
-    .insert({
+  const row = await prisma.candidate.create({
+    data: {
       id,
       nama: cand.nama,
-      email: cand.email,
-      telepon: cand.telepon,
-      posisi_dilamar: cand.posisi_dilamar,
-      manpower_request_id: cand.manpower_request_id || null,
+      email: cand.email || '',
+      telepon: cand.telepon || '',
+      posisiDilamar: cand.posisi_dilamar,
+      manpowerRequestId: cand.manpower_request_id || null,
       token,
-      token_expires_at,
+      tokenExpiresAt: token_expires_at,
       status: 'interview_user',
-      created_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+    },
+  });
 
-  if (error) throw new Error(`Gagal buat kandidat: ${error.message}`);
-  
   logActivity({ 
     action: 'CREATE', 
     table_name: 'candidates', 
@@ -532,7 +640,7 @@ export async function createCandidate(
     details: { nama: cand.nama, email: cand.email, posisi_dilamar: cand.posisi_dilamar } 
   });
 
-  const result = data as Candidate & { emailSent?: boolean; emailError?: string };
+  const result = mapCandidate(row) as Candidate & { emailSent?: boolean; emailError?: string };
 
   if (options?.sendEmail && cand.email) {
     const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://disc.easyai.id';
@@ -563,14 +671,19 @@ export async function createCandidate(
 }
 
 export async function getPapikostikTestResultByCandidate(candidateId: string): Promise<PapikostikTestResult | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('papikostik_test_results')
-    .select('*')
-    .eq('candidate_id', candidateId)
-    .single();
-
-  if (error) return undefined;
-  return data as PapikostikTestResult;
+  try {
+    const row = await prisma.papikostikTestResult.findUnique({ where: { candidateId } });
+    if (!row) return undefined;
+    return {
+      id: row.id,
+      candidate_id: row.candidateId,
+      nama_file: row.namaFile,
+      results: row.results as any,
+      completed_at: toDateStr(row.completedAt),
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 export async function resendInvitationEmail(
@@ -607,48 +720,45 @@ export async function resendInvitationEmail(
 
 
 export async function updateCandidateStatus(id: string, status: Candidate['status']): Promise<Candidate | undefined> {
-  // Ambil data sebelum update untuk logging
-  const { data: current, error: fetchError } = await supabaseAdmin
-    .from('candidates')
-    .select('status, nama, email')
-    .eq('id', id)
-    .single();
+  try {
+    const current = await prisma.candidate.findUnique({
+      where: { id },
+      select: { status: true, nama: true, email: true },
+    });
 
-  if (fetchError) {
-    console.error('updateCandidateStatus: gagal ambil data kandidat:', fetchError.message);
-  }
+    if (!current) {
+      console.error('updateCandidateStatus: kandidat tidak ditemukan:', id);
+      return undefined;
+    }
 
-  const { data, error } = await supabaseAdmin
-    .from('candidates')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single();
+    const row = await prisma.candidate.update({
+      where: { id },
+      data: { status },
+    });
 
-  if (error) {
-    console.error('updateCandidateStatus: gagal update:', error.message);
+    logActivity({ action: 'UPDATE', table_name: 'candidates', record_id: id, description: `Status kandidat ${current.nama || id}: "${current.status}" diubah menjadi "${status}"`, details: { old_status: current.status, new_status: status, nama: current.nama }, user_email: current.email || undefined });
+    return mapCandidate(row);
+  } catch (error) {
+    console.error('updateCandidateStatus error:', error);
     return undefined;
   }
-
-  logActivity({ action: 'UPDATE', table_name: 'candidates', record_id: id, description: `Status kandidat ${current?.nama || id}: "${current?.status}" diubah menjadi "${status}"`, details: { old_status: current?.status, new_status: status, nama: current?.nama }, user_email: current?.email });
-  return data as Candidate;
 }
 
 export async function saveCandidateBio(token: string, bio: { pendidikan: string; pengalaman: string; keahlian: string }): Promise<Candidate | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('candidates')
-    .update({
-      pendidikan: bio.pendidikan,
-      pengalaman: bio.pengalaman,
-      keahlian: bio.keahlian,
-    })
-    .eq('token', token)
-    .select()
-    .single();
-
-  if (error) return undefined;
-  logActivity({ action: 'UPDATE', table_name: 'candidates', record_id: data?.id || token, description: `Bio kandidat ${data?.nama || token} diperbarui`, details: { pendidikan: bio.pendidikan, pengalaman: bio.pengalaman }, user_email: data?.email });
-  return data as Candidate;
+  try {
+    const row = await prisma.candidate.update({
+      where: { token },
+      data: {
+        pendidikan: bio.pendidikan,
+        pengalaman: bio.pengalaman,
+        keahlian: bio.keahlian,
+      },
+    });
+    logActivity({ action: 'UPDATE', table_name: 'candidates', record_id: row.id, description: `Bio kandidat ${row.nama || token} diperbarui`, details: { pendidikan: bio.pendidikan, pengalaman: bio.pengalaman }, user_email: row.email || undefined });
+    return mapCandidate(row);
+  } catch {
+    return undefined;
+  }
 }
 
 // ==========================================
@@ -656,53 +766,47 @@ export async function saveCandidateBio(token: string, bio: { pendidikan: string;
 // ==========================================
 
 export async function getInterviewEvaluationByCandidate(candidateId: string): Promise<InterviewEvaluation | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('interview_evaluations')
-    .select('*')
-    .eq('candidate_id', candidateId)
-    .single();
-
-  if (error) return undefined;
-  return data as InterviewEvaluation;
+  try {
+    const row = await prisma.interviewEvaluation.findUnique({ where: { candidateId } });
+    if (!row) return undefined;
+    return mapInterviewEvaluation(row);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function saveInterviewEvaluation(evalData: Omit<InterviewEvaluation, 'id'> & { id?: string }): Promise<InterviewEvaluation> {
-  const payload: Record<string, unknown> = {
-    candidate_id: evalData.candidate_id,
+  const payload: Record<string, any> = {
+    candidateId: evalData.candidate_id,
     tanggal: evalData.tanggal,
     tahap: evalData.tahap,
     interviewer: evalData.interviewer,
     metode: evalData.metode,
-    ekspektasi_gaji: evalData.ekspektasi_gaji || null,
-    ketersediaan_bergabung: evalData.ketersediaan_bergabung || null,
-    penilaian: evalData.penilaian,
-    total_skor: evalData.total_skor,
+    ekspektasiGaji: evalData.ekspektasi_gaji || null,
+    ketersediaanBergabung: evalData.ketersediaan_bergabung || null,
+    penilaian: evalData.penilaian as any,
+    totalSkor: evalData.total_skor,
     kelebihan: evalData.kelebihan || null,
-    area_digali: evalData.area_digali || null,
+    areaDigali: evalData.area_digali || null,
     catatan: evalData.catatan || null,
     rekomendasi: evalData.rekomendasi,
   };
 
-  let query;
+  let row;
   if (evalData.id) {
-    payload.id = evalData.id;
-    query = supabaseAdmin.from('interview_evaluations').update(payload).eq('id', evalData.id);
+    row = await prisma.interviewEvaluation.update({
+      where: { id: evalData.id },
+      data: payload as any,
+    });
   } else {
     payload.id = `ie-${Date.now()}`;
-    query = supabaseAdmin.from('interview_evaluations').insert(payload);
-  }
-
-  const { data, error } = await query.select().single();
-
-  if (error) {
-    console.error('Interview eval error:', JSON.stringify(error, null, 2));
-    throw new Error(`Gagal simpan evaluasi: ${error.message}`);
+    row = await prisma.interviewEvaluation.create({ data: payload as any });
   }
 
   const evalAction = evalData.id ? 'UPDATE' : 'CREATE';
-  logActivity({ action: evalAction, table_name: 'interview_evaluations', record_id: data.id, description: `${evalAction === 'CREATE' ? 'Evaluasi interview baru' : 'Evaluasi interview diperbarui'} - tahap ${evalData.tahap} untuk kandidat ${evalData.candidate_id}`, details: { candidate_id: evalData.candidate_id, tahap: evalData.tahap, rekomendasi: evalData.rekomendasi, total_skor: evalData.total_skor } });
+  logActivity({ action: evalAction, table_name: 'interview_evaluations', record_id: row.id, description: `${evalAction === 'CREATE' ? 'Evaluasi interview baru' : 'Evaluasi interview diperbarui'} - tahap ${evalData.tahap} untuk kandidat ${evalData.candidate_id}`, details: { candidate_id: evalData.candidate_id, tahap: evalData.tahap, rekomendasi: evalData.rekomendasi, total_skor: evalData.total_skor } });
 
-  return data as InterviewEvaluation;
+  return mapInterviewEvaluation(row);
 }
 
 // ==========================================
@@ -710,44 +814,39 @@ export async function saveInterviewEvaluation(evalData: Omit<InterviewEvaluation
 // ==========================================
 
 export async function getSelectionTestResultByCandidate(candidateId: string): Promise<SelectionTestResult | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('selection_test_results')
-    .select('*')
-    .eq('candidate_id', candidateId)
-    .single();
-
-  if (error) return undefined;
-  return data as SelectionTestResult;
+  try {
+    const row = await prisma.selectionTestResult.findUnique({ where: { candidateId } });
+    if (!row) return undefined;
+    return mapSelectionTestResult(row);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function saveSelectionTestResult(resultData: Omit<SelectionTestResult, 'id'> & { id?: string }): Promise<SelectionTestResult> {
-  const payload: Record<string, unknown> = {
-    candidate_id: resultData.candidate_id,
-    tanggal_tes: resultData.tanggal_tes,
+  const payload: Record<string, any> = {
+    candidateId: resultData.candidate_id,
+    tanggalTes: resultData.tanggal_tes,
     penyelenggara: resultData.penyelenggara,
-    komponen: resultData.komponen,
+    komponen: resultData.komponen as any,
     kesimpulan: resultData.kesimpulan,
-    catatan_akhir: resultData.catatan_akhir || null,
+    catatanAkhir: resultData.catatan_akhir || null,
   };
 
-  let query;
+  let row;
   if (resultData.id) {
-    payload.id = resultData.id;
-    query = supabaseAdmin.from('selection_test_results').update(payload).eq('id', resultData.id);
+    row = await prisma.selectionTestResult.update({
+      where: { id: resultData.id },
+      data: payload as any,
+    });
   } else {
     payload.id = `st-${Date.now()}`;
-    query = supabaseAdmin.from('selection_test_results').insert(payload);
+    row = await prisma.selectionTestResult.create({ data: payload as any });
   }
 
-  const { data, error } = await query.select().single();
-
-  if (error) {
-    console.error('Selection test error:', JSON.stringify(error, null, 2));
-    throw new Error(`Gagal simpan tes seleksi: ${error.message}`);
-  }
   const testAction = resultData.id ? 'UPDATE' : 'CREATE';
-  logActivity({ action: testAction, table_name: 'selection_test_results', record_id: data.id, description: `${testAction === 'CREATE' ? 'Hasil tes seleksi baru' : 'Hasil tes seleksi diperbarui'} - kandidat ${resultData.candidate_id}`, details: { candidate_id: resultData.candidate_id, kesimpulan: resultData.kesimpulan, penyelenggara: resultData.penyelenggara } });
-  return data as SelectionTestResult;
+  logActivity({ action: testAction, table_name: 'selection_test_results', record_id: row.id, description: `${testAction === 'CREATE' ? 'Hasil tes seleksi baru' : 'Hasil tes seleksi diperbarui'} - kandidat ${resultData.candidate_id}`, details: { candidate_id: resultData.candidate_id, kesimpulan: resultData.kesimpulan, penyelenggara: resultData.penyelenggara } });
+  return mapSelectionTestResult(row);
 }
 
 // ==========================================
@@ -755,23 +854,20 @@ export async function saveSelectionTestResult(resultData: Omit<SelectionTestResu
 // ==========================================
 
 export async function getDiscTestResultByCandidate(candidateId: string): Promise<DiscTestResult | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('disc_tests')
-    .select('*')
-    .eq('candidate_id', candidateId)
-    .single();
-
-  if (error) return undefined;
-  return data as DiscTestResult;
+  try {
+    const row = await prisma.discTest.findUnique({ where: { candidateId } });
+    if (!row) return undefined;
+    return mapDiscTestResult(row);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function saveDiscTestResult(res: Omit<DiscTestResult, 'id'>): Promise<DiscTestResult> {
-  // Check if DISC test already exists for this candidate
-  const { data: existing } = await supabaseAdmin
-    .from('disc_tests')
-    .select('id')
-    .eq('candidate_id', res.candidate_id)
-    .maybeSingle();
+  const existing = await prisma.discTest.findUnique({
+    where: { candidateId: res.candidate_id },
+    select: { id: true },
+  });
 
   if (existing) {
     throw new Error('DISC_TEST_ALREADY_COMPLETED');
@@ -779,39 +875,35 @@ export async function saveDiscTestResult(res: Omit<DiscTestResult, 'id'>): Promi
 
   const id = `dt-${Date.now()}`;
 
-  const payload = {
-    id,
-    candidate_id: res.candidate_id,
-    answers: res.answers,
-    skor_d: res.skor_d,
-    skor_i: res.skor_i,
-    skor_s: res.skor_s,
-    skor_c: res.skor_c,
-    persen_d: res.persen_d,
-    persen_i: res.persen_i,
-    persen_s: res.persen_s,
-    persen_c: res.persen_c,
-    tipe_primer: res.tipe_primer,
-    tipe_sekunder: res.tipe_sekunder,
-    completed_at: res.completed_at,
-  };
+  console.log('Saving DISC result:', JSON.stringify({ ...res, id }, null, 2));
 
-  console.log('Saving DISC result:', JSON.stringify(payload, null, 2));
+  try {
+    const row = await prisma.discTest.create({
+      data: {
+        id,
+        candidateId: res.candidate_id,
+        answers: res.answers as any,
+        skorD: res.skor_d,
+        skorI: res.skor_i,
+        skorS: res.skor_s,
+        skorC: res.skor_c,
+        persenD: res.persen_d,
+        persenI: res.persen_i,
+        persenS: res.persen_s,
+        persenC: res.persen_c,
+        tipePrimer: res.tipe_primer,
+        tipeSekunder: res.tipe_sekunder,
+        completedAt: res.completed_at,
+      },
+    });
 
-  const { data, error } = await supabaseAdmin
-    .from('disc_tests')
-    .insert(payload)
-    .select()
-    .single();
+    logActivity({ action: 'CREATE', table_name: 'disc_tests', record_id: id, description: `Hasil tes DISC baru untuk kandidat ${res.candidate_id} - tipe primer: ${res.tipe_primer}`, details: { candidate_id: res.candidate_id, tipe_primer: res.tipe_primer, tipe_sekunder: res.tipe_sekunder } });
 
-  if (error) {
-    console.error('DISC insert error:', JSON.stringify(error, null, 2));
-    throw new Error(`Gagal simpan DISC: ${error.message} (code: ${error.code})`);
+    return mapDiscTestResult(row);
+  } catch (error: any) {
+    console.error('DISC insert error:', error);
+    throw new Error(`Gagal simpan DISC: ${error.message}`);
   }
-
-  logActivity({ action: 'CREATE', table_name: 'disc_tests', record_id: id, description: `Hasil tes DISC baru untuk kandidat ${res.candidate_id} - tipe primer: ${res.tipe_primer}`, details: { candidate_id: res.candidate_id, tipe_primer: res.tipe_primer, tipe_sekunder: res.tipe_sekunder } });
-
-  return data as DiscTestResult;
 }
 
 // ==========================================
@@ -819,22 +911,20 @@ export async function saveDiscTestResult(res: Omit<DiscTestResult, 'id'>): Promi
 // ==========================================
 
 export async function getWptTestResultByCandidate(candidateId: string): Promise<WptTestResult | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('wpt_tests')
-    .select('*')
-    .eq('candidate_id', candidateId)
-    .maybeSingle();
-
-  if (error) return undefined;
-  return data as WptTestResult;
+  try {
+    const row = await prisma.wptTest.findUnique({ where: { candidateId } });
+    if (!row) return undefined;
+    return mapWptTestResult(row);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function saveWptTestResult(res: Omit<WptTestResult, 'id'>): Promise<WptTestResult> {
-  const { data: existing } = await supabaseAdmin
-    .from('wpt_tests')
-    .select('id')
-    .eq('candidate_id', res.candidate_id)
-    .maybeSingle();
+  const existing = await prisma.wptTest.findUnique({
+    where: { candidateId: res.candidate_id },
+    select: { id: true },
+  });
 
   if (existing) {
     throw new Error('WPT_TEST_ALREADY_COMPLETED');
@@ -842,55 +932,24 @@ export async function saveWptTestResult(res: Omit<WptTestResult, 'id'>): Promise
 
   const id = `wpt-${Date.now()}`;
 
-  const payload = {
-    id,
-    candidate_id: res.candidate_id,
-    answers: res.answers,
-    skor: res.skor,
-    total_soal: res.total_soal,
-    persen_benar: res.persen_benar,
-    kategori: res.kategori,
-    profil_kemampuan: res.profil_kemampuan,
-    rekomendasi_posisi: res.rekomendasi_posisi,
-    completed_at: res.completed_at,
-  };
-
-  const { data, error } = await supabaseAdmin
-    .from('wpt_tests')
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`Gagal simpan WPT: ${error.message}`);
-  }
+  const row = await prisma.wptTest.create({
+    data: {
+      id,
+      candidateId: res.candidate_id,
+      answers: res.answers as any,
+      skor: res.skor,
+      totalSoal: res.total_soal,
+      persenBenar: res.persen_benar,
+      kategori: res.kategori,
+      profilKemampuan: res.profil_kemampuan as any,
+      rekomendasiPosisi: res.rekomendasi_posisi as any,
+      completedAt: res.completed_at,
+    },
+  });
 
   logActivity({ action: 'CREATE', table_name: 'wpt_tests', record_id: id, description: `Hasil tes WPT baru untuk kandidat ${res.candidate_id} - skor: ${res.skor}/50 (${res.kategori})`, details: { candidate_id: res.candidate_id, skor: res.skor, kategori: res.kategori } });
 
-  return data as WptTestResult;
-}
-
-function base64UrlEncode(str: string | Buffer): string {
-  const base64 = typeof str === 'string' 
-    ? Buffer.from(str).toString('base64') 
-    : str.toString('base64');
-  return base64
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-}
-
-function signJWT(payload: object, secret: string): string {
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const encodedHeader = base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-  const tokenInput = `${encodedHeader}.${encodedPayload}`;
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(tokenInput)
-    .digest();
-  const encodedSignature = base64UrlEncode(signature);
-  return `${tokenInput}.${encodedSignature}`;
+  return mapWptTestResult(row);
 }
 
 // ==========================================
@@ -925,41 +984,44 @@ export interface KoranTestResult {
 }
 
 export async function getKoranTestResultByCandidate(candidateId: string): Promise<KoranTestResult | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('koran_tests')
-    .select('*')
-    .eq('candidate_id', candidateId)
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  if (error) {
+  try {
+    const rows = await prisma.koranTest.findMany({
+      where: { candidateId },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+    });
+    if (rows.length === 0) return undefined;
+    return mapKoranTestResult(rows[0]) as KoranTestResult;
+  } catch (error) {
     console.error('getKoranTestResultByCandidate error:', error);
     return undefined;
   }
-  return (data && data.length > 0) ? (data[0] as KoranTestResult) : undefined;
 }
 
 export async function saveKoranTestResult(res: Omit<KoranTestResult, 'id'> & { id?: string }): Promise<KoranTestResult> {
   const id = res.id || `koran-${Date.now()}`;
-  const payload = {
-    id,
-    candidate_id: res.candidate_id,
-    nama_file: res.nama_file,
-    foto_url: res.foto_url,
-    analysis_result: res.analysis_result,
-  };
 
-  let query;
+  let row;
   if (res.id) {
-    query = supabaseAdmin.from('koran_tests').update(payload).eq('id', res.id);
+    row = await prisma.koranTest.update({
+      where: { id: res.id },
+      data: {
+        candidateId: res.candidate_id,
+        namaFile: res.nama_file,
+        fotoUrl: res.foto_url,
+        analysisResult: res.analysis_result as any,
+      },
+    });
   } else {
-    query = supabaseAdmin.from('koran_tests').insert(payload);
-  }
-
-  const { data, error } = await query.select().single();
-
-  if (error) {
-    throw new Error(`Gagal simpan Tes Koran: ${error.message}`);
+    row = await prisma.koranTest.create({
+      data: {
+        id,
+        candidateId: res.candidate_id,
+        namaFile: res.nama_file,
+        fotoUrl: res.foto_url,
+        analysisResult: res.analysis_result as any,
+      },
+    });
   }
 
   logActivity({
@@ -970,18 +1032,11 @@ export async function saveKoranTestResult(res: Omit<KoranTestResult, 'id'> & { i
     details: { candidate_id: res.candidate_id }
   });
 
-  return data as KoranTestResult;
+  return mapKoranTestResult(row) as KoranTestResult;
 }
 
 export async function deleteKoranTestResult(id: string): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from('koran_tests')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    throw new Error(`Gagal hapus Tes Koran: ${error.message}`);
-  }
+  await prisma.koranTest.delete({ where: { id } });
 
   logActivity({
     action: 'DELETE',
@@ -1003,45 +1058,48 @@ export interface CandidateAiAnalysis {
 }
 
 export async function getAiAnalysisByCandidate(candidateId: string): Promise<CandidateAiAnalysis | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('candidate_ai_analysis')
-    .select('*')
-    .eq('candidate_id', candidateId)
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  if (error) {
+  try {
+    const rows = await prisma.candidateAiAnalysis.findMany({
+      where: { candidateId },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+    });
+    if (rows.length === 0) return undefined;
+    const row = rows[0];
+    return {
+      id: row.id,
+      candidate_id: row.candidateId,
+      analysis: row.analysis,
+      created_at: toDateStr(row.createdAt),
+    };
+  } catch (error) {
     console.error('getAiAnalysisByCandidate error:', error);
     return undefined;
   }
-  return (data && data.length > 0) ? (data[0] as CandidateAiAnalysis) : undefined;
 }
 
 export async function saveAiAnalysis(candidateId: string, analysis: any): Promise<CandidateAiAnalysis> {
-  const payload = {
-    candidate_id: candidateId,
-    analysis,
-  };
-
-  const { data, error } = await supabaseAdmin
-    .from('candidate_ai_analysis')
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`Gagal simpan Analisis AI: ${error.message}`);
-  }
+  const row = await prisma.candidateAiAnalysis.create({
+    data: {
+      candidateId,
+      analysis,
+    },
+  });
 
   logActivity({
     action: 'CREATE',
     table_name: 'candidate_ai_analysis',
-    record_id: data.id,
+    record_id: row.id,
     description: `Hasil Analisis AI baru untuk kandidat ${candidateId}`,
     details: { candidate_id: candidateId }
   });
 
-  return data as CandidateAiAnalysis;
+  return {
+    id: row.id,
+    candidate_id: row.candidateId,
+    analysis: row.analysis,
+    created_at: toDateStr(row.createdAt),
+  };
 }
 
 // ==========================================
@@ -1073,26 +1131,48 @@ export async function getPapikostikSessionByToken(token: string): Promise<Papiko
     } as PapikostikSession;
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('papikostik_sessions')
-    .select('*')
-    .eq('token', token)
-    .single();
-
-  if (error) return undefined;
-  return data as PapikostikSession;
+  try {
+    const row = await prisma.papikostikSession.findUnique({ where: { token } });
+    if (!row) return undefined;
+    return {
+      id: row.id,
+      candidate_id: row.candidateId,
+      token: row.token,
+      status: row.status as 'PENDING' | 'COMPLETED',
+      current_page: row.currentPage,
+      answers: row.answers as Record<string, 'a' | 'b'>,
+      results: row.results,
+      created_at: toDateStr(row.createdAt),
+      updated_at: toDateStr(row.updatedAt),
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 export async function getPapikostikSessionByCandidate(candidateId: string): Promise<PapikostikSession | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('papikostik_sessions')
-    .select('*')
-    .eq('candidate_id', candidateId)
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  if (error) return undefined;
-  return (data && data.length > 0) ? (data[0] as PapikostikSession) : undefined;
+  try {
+    const rows = await prisma.papikostikSession.findMany({
+      where: { candidateId },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+    });
+    if (rows.length === 0) return undefined;
+    const row = rows[0];
+    return {
+      id: row.id,
+      candidate_id: row.candidateId,
+      token: row.token,
+      status: row.status as 'PENDING' | 'COMPLETED',
+      current_page: row.currentPage,
+      answers: row.answers as Record<string, 'a' | 'b'>,
+      results: row.results,
+      created_at: toDateStr(row.createdAt),
+      updated_at: toDateStr(row.updatedAt),
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 export async function createPapikostikSession(candidateId: string): Promise<PapikostikSession> {
@@ -1113,30 +1193,21 @@ export async function createPapikostikSession(candidateId: string): Promise<Papi
     } as PapikostikSession;
   }
 
-  // Return existing session if any
   const existing = await getPapikostikSessionByToken(token);
   if (existing) return existing;
 
   const id = `ps-${Date.now()}`;
 
-  const payload = {
-    id,
-    candidate_id: candidateId,
-    token,
-    status: 'PENDING',
-    current_page: 1,
-    answers: {},
-  };
-
-  const { data, error } = await supabaseAdmin
-    .from('papikostik_sessions')
-    .insert(payload)
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`Gagal buat sesi PAPIKOSTIK: ${error.message}`);
-  }
+  const row = await prisma.papikostikSession.create({
+    data: {
+      id,
+      candidateId,
+      token,
+      status: 'PENDING',
+      currentPage: 1,
+      answers: {},
+    },
+  });
 
   logActivity({
     action: 'CREATE',
@@ -1146,24 +1217,43 @@ export async function createPapikostikSession(candidateId: string): Promise<Papi
     details: { candidate_id: candidateId, token }
   });
 
-  return data as PapikostikSession;
+  return {
+    id: row.id,
+    candidate_id: row.candidateId,
+    token: row.token,
+    status: row.status as 'PENDING' | 'COMPLETED',
+    current_page: row.currentPage,
+    answers: row.answers as Record<string, 'a' | 'b'>,
+    results: row.results,
+    created_at: toDateStr(row.createdAt),
+    updated_at: toDateStr(row.updatedAt),
+  };
 }
 
 export async function updatePapikostikSession(
   id: string,
   updates: Partial<Pick<PapikostikSession, 'status' | 'current_page' | 'answers' | 'results'>>
 ): Promise<PapikostikSession> {
-  const { data, error } = await supabaseAdmin
-    .from('papikostik_sessions')
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
+  const data: Record<string, any> = {};
+  if (updates.status !== undefined) data.status = updates.status;
+  if (updates.current_page !== undefined) data.currentPage = updates.current_page;
+  if (updates.answers !== undefined) data.answers = updates.answers;
+  if (updates.results !== undefined) data.results = updates.results;
 
-  if (error) {
-    throw new Error(`Gagal update sesi PAPIKOSTIK: ${error.message}`);
-  }
+  const row = await prisma.papikostikSession.update({
+    where: { id },
+    data,
+  });
 
-  return data as PapikostikSession;
+  return {
+    id: row.id,
+    candidate_id: row.candidateId,
+    token: row.token,
+    status: row.status as 'PENDING' | 'COMPLETED',
+    current_page: row.currentPage,
+    answers: row.answers as Record<string, 'a' | 'b'>,
+    results: row.results,
+    created_at: toDateStr(row.createdAt),
+    updated_at: toDateStr(row.updatedAt),
+  };
 }
-

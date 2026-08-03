@@ -11,7 +11,7 @@ import {
   getPapikostikSessionByCandidate,
   getManpowerRequests,
 } from '@/lib/db';
-import { getUserRole } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/auth';
 import { MOCK_DISC_RESULT, MOCK_WPT_RESULT, MOCK_PAPIKOSTIK_RESULTS } from '@/lib/mock-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

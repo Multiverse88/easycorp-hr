@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { prisma } from '@/lib/prisma';
 import * as XLSX from 'xlsx';
 
 export async function POST(request: NextRequest) {
@@ -28,8 +28,6 @@ export async function POST(request: NextRequest) {
 
     const results = [];
     
-    // According to parsed format, rows with CODE are the result rows
-    // It's mostly column 2 for CODE, col 3 for SCORE, col 4 for ANALISIS
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       if (row.length >= 5) {
@@ -53,24 +51,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gagal mengekstrak hasil dari file Excel.' }, { status: 400 });
     }
 
-    const papikostikData = {
-      candidate_id: candidateId,
-      nama_file: file.name,
-      results: results,
-      completed_at: new Date().toISOString()
-    };
+    // Upsert: delete existing then insert
+    await prisma.papikostikTestResult.deleteMany({ where: { candidateId } });
 
-    // Use upsert to replace existing result if any
-    const { data: inserted, error } = await supabaseAdmin
-      .from('papikostik_test_results')
-      .upsert(papikostikData, { onConflict: 'candidate_id' })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error inserting papikostik:', error);
-      return NextResponse.json({ error: 'Gagal menyimpan ke database' }, { status: 500 });
-    }
+    const inserted = await prisma.papikostikTestResult.create({
+      data: {
+        id: `papi-${Date.now()}`,
+        candidateId,
+        namaFile: file.name,
+        results,
+      }
+    });
 
     return NextResponse.json(inserted);
   } catch (error) {
@@ -84,12 +75,8 @@ export async function DELETE(request: NextRequest) {
     const id = request.nextUrl.searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
-    const { error } = await supabaseAdmin
-      .from('papikostik_test_results')
-      .delete()
-      .eq('id', id);
+    await prisma.papikostikTestResult.delete({ where: { id } });
 
-    if (error) throw error;
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Delete papikostik error:', error);

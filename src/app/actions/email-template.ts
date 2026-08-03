@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { getUserRole } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/auth';
 
 const TEMPLATE_PATH = path.join(process.cwd(), 'src/lib/email-template.json');
 

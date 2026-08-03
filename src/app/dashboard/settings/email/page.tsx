@@ -1,6 +1,6 @@
 import { getEmailTemplate } from '@/app/actions/email-template';
 import { EmailTemplateForm } from './form';
-import { getUserRole } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export default async function EmailSettingsPage() {

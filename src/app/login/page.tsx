@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { LoadingOverlay } from '@/components/loading-overlay';
+import { Eye, EyeOff } from 'lucide-react';
 import gsap from 'gsap';
 
 export default function LoginPage() {
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Refs for GSAP animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -263,31 +265,44 @@ export default function LoginPage() {
                 <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider pl-1" style={{ color: '#3a0a0a' }}>
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password"
-                  required
-                  className="w-full h-12 px-4 rounded-xl text-sm font-medium outline-none transition-all duration-300"
-                  style={{
-                    background: 'rgba(255,255,255,0.62)',
-                    border: '1.5px solid rgba(180,180,180,0.55)',
-                    color: '#111111',
-                    backdropFilter: 'blur(8px)',
-                  }}
-                  onFocus={e => {
-                    e.currentTarget.style.border = '1.5px solid rgba(139,0,0,0.45)';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.88)';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,0,0,0.07)';
-                  }}
-                  onBlur={e => {
-                    e.currentTarget.style.border = '1.5px solid rgba(180,180,180,0.55)';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.62)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Masukkan password"
+                    required
+                    className="w-full h-12 px-4 pr-11 rounded-xl text-sm font-medium outline-none transition-all duration-300"
+                    style={{
+                      background: 'rgba(255,255,255,0.62)',
+                      border: '1.5px solid rgba(180,180,180,0.55)',
+                      color: '#111111',
+                      backdropFilter: 'blur(8px)',
+                    }}
+                    onFocus={e => {
+                      e.currentTarget.style.border = '1.5px solid rgba(139,0,0,0.45)';
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.88)';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,0,0,0.07)';
+                    }}
+                    onBlur={e => {
+                      e.currentTarget.style.border = '1.5px solid rgba(180,180,180,0.55)';
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.62)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md transition-colors duration-200"
+                    style={{ color: '#8B0000' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(139,0,0,0.08)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                  </button>
+                </div>
               </div>
 
               <button

@@ -1,5 +1,5 @@
 import { Sidebar } from '@/components/sidebar';
-import { getUserRole } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/auth';
 
 export default async function DashboardLayout({
   children,

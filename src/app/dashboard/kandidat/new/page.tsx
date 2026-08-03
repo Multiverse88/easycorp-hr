@@ -28,10 +28,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-type JobDatasetItem = {
-  title?: unknown;
-};
-
 export default function TambahKandidatPage() {
   const [nama, setNama] = useState('');
   const [posisiDilamar, setPosisiDilamar] = useState('');
@@ -55,11 +51,12 @@ export default function TambahKandidatPage() {
     if (open && !hasFetchedJobs) {
       setLoadingJobs(true);
       try {
-        const res = await fetch(`https://api.apify.com/v2/datasets/0pp0mpEcLCU3gRdt7/items?token=${process.env.NEXT_PUBLIC_APIFY_TOKEN}`);
+        const res = await fetch(`/api/jobs?t=${Date.now()}`);
         const data: unknown = await res.json();
         if (Array.isArray(data)) {
           const titles = data
-            .map((item: JobDatasetItem) => item.title)
+            .filter((item: { isActive?: boolean }) => item.isActive !== false)
+            .map((item: { title?: unknown }) => item.title)
             .filter((title): title is string => typeof title === 'string' && title.trim().length > 0);
           setJobOptions(titles);
         }

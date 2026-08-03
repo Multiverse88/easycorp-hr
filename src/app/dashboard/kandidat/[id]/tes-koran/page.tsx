@@ -2,7 +2,7 @@ import { getCandidateById, getKoranTestResultByCandidate } from '@/lib/db';
 import { KoranTestClient } from '@/components/koran-test-client';
 import Link from 'next/link';
 import { MOCK_KORAN_RESULT } from '@/lib/mock-data';
-import { getUserRole } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 

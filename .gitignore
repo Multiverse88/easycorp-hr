@@ -84,3 +84,5 @@ skills-lock.json
 # ─── Scripts ─────────────────────────────────────────────────
 /scripts/
 
+
+/src/generated/prisma

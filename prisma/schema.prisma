@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// USERS (replacing Supabase Auth + profiles)
+// ==========================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("hr")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+// ==========================================
+// MANPOWER REQUESTS
+// ==========================================
+
+model ManpowerRequest {
+  id                    String   @id
+  noRequest             String   @map("no_request")
+  tanggal               DateTime @map("tanggal")
+  divisi                String
+  pemohon               String
+  jabatanPemohon        String   @map("jabatan_pemohon")
+  atasanPemohon         String   @map("atasan_pemohon")
+  posisi                String
+  jumlah                Int      @default(1)
+  lokasi                String
+  tanggalDibutuhkan     DateTime @map("tanggal_dibutuhkan")
+  jenisKebutuhan        String?  @map("jenis_kebutuhan")
+  replacementName       String?  @map("replacement_name")
+  statusKaryawan        String?  @map("status_karyawan")
+  urgensi               String?  @map("urgensi")
+  alasan                String
+  jobdesk               String
+  kualifikasi           Json
+  rangeGaji             Json     @map("range_gaji")
+  benefit               String
+  status                String?  @default("submitted")
+  approvalUserAt        DateTime? @map("approval_user_at")
+  approvalHrgaAt        DateTime? @map("approval_hrga_at")
+  approvalManagementAt  DateTime? @map("approval_management_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  candidates            Candidate[]
+
+  @@map("manpower_requests")
+}
+
+// ==========================================
+// CANDIDATES
+// ==========================================
+
+model Candidate {
+  id                  String    @id
+  nama                String
+  email               String
+  telepon             String
+  posisiDilamar       String    @map("posisi_dilamar")
+  manpowerRequestId   String?   @map("manpower_request_id")
+  token               String    @unique
+  tokenExpiresAt      DateTime  @map("token_expires_at")
+  status              String?   @default("interview_user")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  pendidikan          String?
+  pengalaman          String?
+  keahlian            String?
+  aiAnalysis          Json?     @map("ai_analysis")
+
+  manpowerRequest     ManpowerRequest? @relation(fields: [manpowerRequestId], references: [id])
+  discTest            DiscTest?
+  wptTest             WptTest?
+  koranTests          KoranTest[]
+  selectionTestResult SelectionTestResult?
+  interviewEvaluation InterviewEvaluation?
+  aiAnalyses          CandidateAiAnalysis[]
+  papikostikSession   PapikostikSession?
+  papikostikResult    PapikostikTestResult?
+
+  @@map("candidates")
+}
+
+// ==========================================
+// SELECTION TEST RESULTS
+// ==========================================
+
+model SelectionTestResult {
+  id             String    @id
+  candidateId    String    @unique @map("candidate_id")
+  tanggalTes     DateTime  @map("tanggal_tes")
+  penyelenggara  String
+  komponen       Json      @default("[]")
+  kesimpulan     String?
+  catatanAkhir   String?   @map("catatan_akhir")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  candidate      Candidate @relation(fields: [candidateId], references: [id])
+
+  @@map("selection_test_results")
+}
+
+// ==========================================
+// INTERVIEW EVALUATIONS
+// ==========================================
+
+model InterviewEvaluation {
+  id                    String    @id
+  candidateId           String    @unique @map("candidate_id")
+  tanggal               DateTime  @map("tanggal")
+  tahap                 String?
+  interviewer           String
+  metode                String?
+  ekspektasiGaji        Int?      @map("ekspektasi_gaji")
+  ketersediaanBergabung String?   @map("ketersediaan_bergabung")
+  penilaian             Json      @default("[]")
+  totalSkor             Int       @default(0) @map("total_skor")
+  kelebihan             String?
+  areaDigali            String?   @map("area_digali")
+  catatan               String?
+  rekomendasi           String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  candidate             Candidate @relation(fields: [candidateId], references: [id])
+
+  @@map("interview_evaluations")
+}
+
+// ==========================================
+// DISC TESTS
+// ==========================================
+
+model DiscTest {
+  id           String   @id
+  candidateId  String   @unique @map("candidate_id")
+  answers      Json     @default("[]")
+  skorD        Int      @default(0) @map("skor_d")
+  skorI        Int      @default(0) @map("skor_i")
+  skorS        Int      @default(0) @map("skor_s")
+  skorC        Int      @default(0) @map("skor_c")
+  persenD      Decimal  @default(0) @map("persen_d") @db.Decimal
+  persenI      Decimal  @default(0) @map("persen_i") @db.Decimal
+  persenS      Decimal  @default(0) @map("persen_s") @db.Decimal
+  persenC      Decimal  @default(0) @map("persen_c") @db.Decimal
+  tipePrimer   String   @map("tipe_primer")
+  tipeSekunder String   @map("tipe_sekunder")
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  candidate    Candidate @relation(fields: [candidateId], references: [id])
+
+  @@map("disc_tests")
+}
+
+// ==========================================
+// WPT TESTS
+// ==========================================
+
+model WptTest {
+  id                String   @id
+  candidateId       String   @unique @map("candidate_id")
+  answers           Json
+  skor              Int
+  totalSoal         Int      @default(50) @map("total_soal")
+  persenBenar       Decimal  @map("persen_benar") @db.Decimal
+  kategori          String
+  profilKemampuan   Json     @map("profil_kemampuan")
+  rekomendasiPosisi Json     @map("rekomendasi_posisi")
+  completedAt       DateTime @default(now()) @map("completed_at")
+
+  candidate         Candidate @relation(fields: [candidateId], references: [id])
+
+  @@map("wpt_tests")
+}
+
+// ==========================================
+// KORAN TESTS
+// ==========================================
+
+model KoranTest {
+  id              String   @id
+  candidateId     String   @map("candidate_id")
+  namaFile        String   @map("nama_file")
+  fotoUrl         String   @map("foto_url")
+  analysisResult  Json     @map("analysis_result")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  candidate       Candidate @relation(fields: [candidateId], references: [id])
+
+  @@map("koran_tests")
+}
+
+// ==========================================
+// CANDIDATE AI ANALYSIS
+// ==========================================
+
+model CandidateAiAnalysis {
+  id          String   @id @default(cuid())
+  candidateId String   @map("candidate_id")
+  analysis    Json
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+
+  @@map("candidate_ai_analysis")
+}
+
+// ==========================================
+// PAPIKOSTIK SESSIONS
+// ==========================================
+
+model PapikostikSession {
+  id           String   @id
+  candidateId  String   @unique @map("candidate_id")
+  token        String   @unique
+  status       String   @default("PENDING")
+  currentPage  Int      @default(1) @map("current_page")
+  answers      Json?
+  results      Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  candidate    Candidate @relation(fields: [candidateId], references: [id])
+
+  @@map("papikostik_sessions")
+}
+
+// ==========================================
+// PAPIKOSTIK TEST RESULTS
+// ==========================================
+
+model PapikostikTestResult {
+  id          String   @id
+  candidateId String   @unique @map("candidate_id")
+  namaFile    String   @map("nama_file")
+  results     Json
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+
+  @@map("papikostik_test_results")
+}
+
+// ==========================================
+// JOBS (managed positions for recruitment)
+// ==========================================
+
+model Job {
+  id          String   @id @default(cuid())
+  title       String
+  jobFunction String?  @map("job_function")
+  jobType     String?  @map("job_type")
+  location    String?
+  salaryMin   Int?     @map("salary_min")
+  salaryMax   Int?     @map("salary_max")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("jobs")
+}
+
+// ==========================================
+// ACTIVITY LOGS
+// ==========================================
+
+model Log {
+  id          String   @id
+  action      String
+  tableName   String   @map("table_name")
+  recordId    String   @map("record_id")
+  description String
+  details     Json?
+  userEmail   String?  @map("user_email")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("logs")
+}

@@ -1,6 +1,6 @@
 import { getCandidateById, getPapikostikTestResultByCandidate, getPapikostikSessionByCandidate } from '@/lib/db';
 import { PapikostikTestClient } from '@/components/papikostik-test-client';
-import { getUserRole } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 

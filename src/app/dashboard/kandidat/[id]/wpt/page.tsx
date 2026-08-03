@@ -1,5 +1,5 @@
 import { getCandidateById, getWptTestResultByCandidate } from '@/lib/db';
-import { getUserRole } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/auth';
 import { MOCK_WPT_RESULT } from '@/lib/mock-data';
 import { WptHrView } from '@/components/wpt-hr-view';
 import { Card, CardContent } from '@/components/ui/card';

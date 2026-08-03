@@ -1,5 +1,5 @@
 import { getCandidateById, getDiscTestResultByCandidate } from '@/lib/db';
-import { getUserRole } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/auth';
 import { MOCK_DISC_RESULT } from '@/lib/mock-data';
 import { DiscHrView } from '@/components/disc-hr-view';
 import { Card, CardContent } from '@/components/ui/card';
