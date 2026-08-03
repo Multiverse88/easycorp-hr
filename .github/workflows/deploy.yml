@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Dokku
-        uses: dokku/github-action@v21
+        uses: dokku/github-action@v1
         with:
           ssh_private_key: ${{ secrets.DOKKU_SSH_KEY }}
           ssh_host: ${{ secrets.DOKKU_HOST }}
