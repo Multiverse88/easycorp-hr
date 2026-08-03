@@ -19,6 +19,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 
+# Generate Prisma client (output is gitignored)
+RUN npx prisma generate
+
 RUN npm run build
 
 # Stage 3: Production image, copy all the files and run next
