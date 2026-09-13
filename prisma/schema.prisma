@@ -77,6 +77,9 @@ model Candidate {
   pengalaman          String?
   keahlian            String?
   aiAnalysis          Json?     @map("ai_analysis")
+  discDraftAnswers    Json?     @map("disc_draft_answers")
+  wptDraftAnswers     Json?     @map("wpt_draft_answers")
+  wptDraftTimeLeft    Int?      @map("wpt_draft_time_left")
 
   manpowerRequest     ManpowerRequest? @relation(fields: [manpowerRequestId], references: [id])
   discTest            DiscTest?

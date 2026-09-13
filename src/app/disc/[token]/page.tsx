@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { getCandidateByToken, saveDiscTestResult, getDiscTestResultByCandidate, Candidate } from '@/lib/db';
+import { getCandidateByToken, saveDiscTestResult, getDiscTestResultByCandidate, saveDiscDraft, Candidate } from '@/lib/db';
 import { discQuestions } from '@/lib/discData';
 import { calculateDiscResult } from '@/lib/discParser';
 import { Check, ArrowRight, MousePointerClick, ListChecks, ThumbsUp, Clock } from 'lucide-react';
@@ -40,7 +40,11 @@ function DiscTestContent() {
         const existingTest = await getDiscTestResultByCandidate(data.id);
         if (existingTest && !isPreview) { router.push(`/wpt/${token}`); return; }
         setCandidate(data);
-        setAnswers(discQuestions.map(q => ({ questionId: q.id, most: null, least: null })));
+        setAnswers(
+          data.disc_draft_answers && data.disc_draft_answers.length === discQuestions.length
+            ? data.disc_draft_answers
+            : discQuestions.map(q => ({ questionId: q.id, most: null, least: null }))
+        );
         setTimeout(() => setRevealed(true), 80);
       } catch (err) {
         console.error(err);
@@ -52,7 +56,11 @@ function DiscTestContent() {
     if (token) loadCandidate();
   }, [token, router, isPreview]);
 
+  const hasInteractedRef = useRef(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleSelect = (questionId: number, type: 'most' | 'least', wordText: string) => {
+    hasInteractedRef.current = true;
     setAnswers(prev => prev.map(ans => {
       if (ans.questionId !== questionId) return ans;
       let newMost = ans.most;
@@ -62,6 +70,15 @@ function DiscTestContent() {
       return { questionId, most: newMost, least: newLeast };
     }));
   };
+
+  useEffect(() => {
+    if (!candidate || !hasInteractedRef.current) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveDiscDraft(candidate.id, answers);
+    }, 800);
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [answers, candidate]);
 
   const completedCount = answers.filter(a => a.most !== null && a.least !== null).length;
   const isTestComplete = completedCount === discQuestions.length;
@@ -83,6 +100,7 @@ function DiscTestContent() {
         persen_c: isNaN(result.C.percent) ? 0 : result.C.percent,
         tipe_primer: result.primary, tipe_sekunder: result.secondary, completed_at: new Date().toISOString()
       });
+      saveDiscDraft(candidate.id, []);
       router.push(`/wpt/${token}`);
     } catch (err: any) {
       setSubmitError(`Gagal mengirim: ${err.message}`);

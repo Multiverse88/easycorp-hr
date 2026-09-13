@@ -62,6 +62,9 @@ export interface Candidate {
   pendidikan?: string;
   pengalaman?: string;
   keahlian?: string;
+  disc_draft_answers?: { questionId: number; most: string | null; least: string | null }[];
+  wpt_draft_answers?: { questionId: number; answer: string }[];
+  wpt_draft_time_left?: number;
 }
 
 export interface SelectionTestResult {
@@ -203,6 +206,9 @@ function mapCandidate(row: any): Candidate {
     pendidikan: row.pendidikan || undefined,
     pengalaman: row.pengalaman || undefined,
     keahlian: row.keahlian || undefined,
+    disc_draft_answers: row.discDraftAnswers || undefined,
+    wpt_draft_answers: row.wptDraftAnswers || undefined,
+    wpt_draft_time_left: row.wptDraftTimeLeft ?? undefined,
   };
 }
 
@@ -808,6 +814,39 @@ export async function saveCandidateBio(token: string, bio: { pendidikan: string;
     return mapCandidate(row);
   } catch {
     return undefined;
+  }
+}
+
+export async function saveDiscDraft(
+  candidateId: string,
+  answers: { questionId: number; most: string | null; least: string | null }[]
+): Promise<boolean> {
+  if (candidateId === 'mock-candidate') return true;
+  try {
+    await prisma.candidate.update({
+      where: { id: candidateId },
+      data: { discDraftAnswers: answers },
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function saveWptDraft(
+  candidateId: string,
+  answers: { questionId: number; answer: string }[],
+  timeLeft: number
+): Promise<boolean> {
+  if (candidateId === 'mock-candidate') return true;
+  try {
+    await prisma.candidate.update({
+      where: { id: candidateId },
+      data: { wptDraftAnswers: answers, wptDraftTimeLeft: timeLeft },
+    });
+    return true;
+  } catch {
+    return false;
   }
 }
 

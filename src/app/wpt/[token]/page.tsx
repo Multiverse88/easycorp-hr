@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { getCandidateByToken, saveWptTestResult, getWptTestResultByCandidate, getDiscTestResultByCandidate, Candidate } from '@/lib/db';
+import { getCandidateByToken, saveWptTestResult, getWptTestResultByCandidate, getDiscTestResultByCandidate, saveWptDraft, Candidate } from '@/lib/db';
 import { wptQuestions, WPT_DURATION_MINUTES, WPT_TOTAL_QUESTIONS } from '@/lib/wptData';
 import { calculateWptResult } from '@/lib/wptParser';
 import { ChevronLeft, ChevronRight, Clock, Check, ArrowRight, Brain, AlarmClock, Navigation, CheckCircle } from 'lucide-react';
@@ -41,8 +41,17 @@ function WptTestContent() {
         if (!discResult && !isPreview) { router.push(`/disc/${token}`); return; }
         const existingTest = await getWptTestResultByCandidate(data.id);
         if (existingTest && !isPreview) { router.push(`/papikostik/${token}`); return; }
+        const hasDraft = data.wpt_draft_answers && data.wpt_draft_answers.length === WPT_TOTAL_QUESTIONS;
         setCandidate(data);
-        setAnswers(wptQuestions.map(q => ({ questionId: q.id, answer: '' })));
+        setAnswers(
+          hasDraft
+            ? (data.wpt_draft_answers as { questionId: number; answer: string }[])
+            : wptQuestions.map(q => ({ questionId: q.id, answer: '' }))
+        );
+        if (hasDraft) {
+          setTimeLeft(Math.max(0, data.wpt_draft_time_left ?? 0));
+          setShowInstructions(false);
+        }
         setTimeout(() => setRevealed(true), 80);
       } catch (err) {
         console.error(err);
@@ -73,6 +82,7 @@ function WptTestContent() {
         kategori: result.kategori, profil_kemampuan: result.profilKemampuan,
         rekomendasi_posisi: result.rekomendasiPosisi, completed_at: new Date().toISOString(),
       });
+      saveWptDraft(candidate.id, [], 0);
       router.push(`/papikostik/${token}`);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan';
@@ -93,6 +103,27 @@ function WptTestContent() {
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loading, submitted, submitting, error, showInstructions, handleSubmit]);
+
+  const answersRef = useRef(answers);
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+  const timeLeftRef = useRef(timeLeft);
+  useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+
+  useEffect(() => {
+    if (!candidate || showInstructions || submitting || error) return;
+    const t = setTimeout(() => {
+      saveWptDraft(candidate.id, answers, timeLeftRef.current);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [answers, candidate, showInstructions, submitting, error]);
+
+  useEffect(() => {
+    if (!candidate || showInstructions || submitting || error) return;
+    const interval = setInterval(() => {
+      saveWptDraft(candidate.id, answersRef.current, timeLeftRef.current);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [candidate, showInstructions, submitting, error]);
 
   const handleAnswerChange = (questionId: number, value: string) => {
     setAnswers(prev => prev.map(a => a.questionId === questionId ? { ...a, answer: value } : a));
