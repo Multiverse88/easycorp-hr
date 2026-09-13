@@ -38,7 +38,7 @@ function DiscTestContent() {
         if (!data) { setError('Tautan tidak valid atau telah kedaluwarsa.'); return; }
         if (!data.pendidikan) { router.push(`/apply/${token}`); return; }
         const existingTest = await getDiscTestResultByCandidate(data.id);
-        if (existingTest && !isPreview) { router.push(`/wpt/${token}`); return; }
+        if (existingTest && !isPreview) { router.push(`/mulai/${token}`); return; }
         setCandidate(data);
         setAnswers(
           data.disc_draft_answers && data.disc_draft_answers.length === discQuestions.length
@@ -101,7 +101,7 @@ function DiscTestContent() {
         tipe_primer: result.primary, tipe_sekunder: result.secondary, completed_at: new Date().toISOString()
       });
       saveDiscDraft(candidate.id, []);
-      router.push(`/wpt/${token}`);
+      router.push(`/mulai/${token}`);
     } catch (err: any) {
       setSubmitError(`Gagal mengirim: ${err.message}`);
     } finally {
@@ -206,8 +206,15 @@ function DiscTestContent() {
           </button>
 
           <p className="text-center text-xs text-[#9A0000] mt-4">
-            Anda tidak dapat kembali ke halaman ini setelah memulai
+            Progress tersimpan otomatis, Anda dapat melanjutkan kapan saja
           </p>
+
+          <button
+            onClick={() => router.push(`/mulai/${token}`)}
+            className="w-full text-center text-xs text-slate-400 hover:text-slate-600 mt-6 transition-colors"
+          >
+            ← Kembali ke pilihan tahap
+          </button>
         </div>
       </div>
     );

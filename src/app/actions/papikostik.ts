@@ -51,7 +51,7 @@ export async function submitPapikostikPage(
       status: 'COMPLETED'
     });
 
-    redirect(`/koran/${token}`);
+    redirect(`/mulai/${token}`);
   } else {
     // 5. Update and go to next page
     await updatePapikostikSession(session.id, {

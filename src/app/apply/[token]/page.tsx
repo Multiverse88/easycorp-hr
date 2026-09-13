@@ -31,9 +31,9 @@ export default function ApplyPage() {
           return;
         }
 
-        // Cek jika sudah pernah mengisi bio → arahkan ke DISC test
+        // Cek jika sudah pernah mengisi bio → arahkan ke hub pemilihan tahap
         if (data.pendidikan) {
-          window.location.href = `/disc/${token}`;
+          window.location.href = `/mulai/${token}`;
           return;
         }
 
@@ -64,8 +64,8 @@ export default function ApplyPage() {
     try {
       setSaving(true);
       await saveCandidateBio(token, { pendidikan, pengalaman, keahlian });
-      // Sukses, arahkan ke DISC Test
-      window.location.href = `/disc/${token}`;
+      // Sukses, arahkan ke hub pemilihan tahap asesmen
+      window.location.href = `/mulai/${token}`;
     } catch (err) {
       console.error(err);
       alert('Gagal menyimpan biodata. Silakan coba lagi.');
@@ -211,7 +211,7 @@ export default function ApplyPage() {
                 </>
               ) : (
                 <>
-                  Simpan & Lanjut ke DISC Test
+                  Simpan & Lanjut ke Tahap Asesmen
                   <ChevronRight className="w-4 h-4" />
                 </>
               )}

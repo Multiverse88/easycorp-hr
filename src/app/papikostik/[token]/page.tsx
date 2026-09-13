@@ -1,5 +1,6 @@
 import { getPapikostikSessionByToken, getCandidateByToken, getCandidateById, createPapikostikSession } from '@/lib/db';
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
 import { submitPapikostikPage } from '@/app/actions/papikostik';
 import questions from '@/lib/papikostik-questions.json';
 import { ArrowRight, BookOpen, ToggleLeft, ThumbsUp, Layers } from 'lucide-react';
@@ -109,6 +110,14 @@ export default async function PapikostikTestPage({
           <p className="text-slate-900 text-sm leading-relaxed max-w-md">
             Pilih pernyataan yang <strong className="text-[#9A0000] font-semibold">paling mencerminkan</strong> diri Anda dari setiap pasangan.
           </p>
+          {currentPage === 1 && (
+            <Link
+              href={`/mulai/${resolvedParams.token}`}
+              className="inline-block text-xs text-slate-400 hover:text-slate-600 mt-3 transition-colors"
+            >
+              ← Kembali ke pilihan tahap
+            </Link>
+          )}
         </div>
 
         {/* Tutorial card — only on page 1 */}

@@ -219,6 +219,13 @@ function KoranTestContent() {
           <p className="text-center text-xs text-[#9A0000] mt-4">
             Kandidat: {candidate?.nama}
           </p>
+
+          <button
+            onClick={() => router.push(`/mulai/${token}`)}
+            className="w-full text-center text-xs text-slate-400 hover:text-slate-600 mt-6 transition-colors"
+          >
+            ← Kembali ke pilihan tahap
+          </button>
         </div>
       </div>
     );
@@ -235,10 +242,17 @@ function KoranTestContent() {
           <div className="w-20 h-20 rounded-3xl bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto mb-8">
             <CheckCircle2 className="w-9 h-9 text-emerald-600" />
           </div>
-          <h2 className="text-3xl font-light text-slate-900 mb-4 tracking-tight">Semua Selesai</h2>
+          <h2 className="text-3xl font-light text-slate-900 mb-4 tracking-tight">Tes Koran Terkirim</h2>
           <p className="text-slate-900 text-sm leading-relaxed mb-10">
-            Terima kasih, <strong className="text-slate-700">{candidate?.nama}</strong>. Tes Koran berhasil diunggah dan seluruh tahap evaluasi telah selesai.
+            Terima kasih, <strong className="text-slate-700">{candidate?.nama}</strong>. Screenshot Tes Koran berhasil diunggah dan akan dianalisis oleh sistem.
           </p>
+          <button
+            onClick={() => router.push(`/mulai/${token}`)}
+            className="w-full flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[#9A0000] text-white text-sm font-semibold hover:bg-red-800 transition-all duration-200 active:scale-[0.98] shadow-lg shadow-[#9A0000]/20 mb-6"
+          >
+            Lihat Status Tahap Lainnya
+            <ArrowRight className="w-5 h-5" />
+          </button>
           <div className="text-[10px] font-medium text-[#9A0000] uppercase tracking-[0.3em] border-t border-slate-100 pt-6">
             EasyCorp HR System
           </div>

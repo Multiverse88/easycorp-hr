@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { getCandidateByToken, saveWptTestResult, getWptTestResultByCandidate, getDiscTestResultByCandidate, saveWptDraft, Candidate } from '@/lib/db';
+import { getCandidateByToken, saveWptTestResult, getWptTestResultByCandidate, saveWptDraft, Candidate } from '@/lib/db';
 import { wptQuestions, WPT_DURATION_MINUTES, WPT_TOTAL_QUESTIONS } from '@/lib/wptData';
 import { calculateWptResult } from '@/lib/wptParser';
 import { ChevronLeft, ChevronRight, Clock, Check, ArrowRight, Brain, AlarmClock, Navigation, CheckCircle } from 'lucide-react';
@@ -37,10 +37,8 @@ function WptTestContent() {
         const data = await getCandidateByToken(token);
         if (!data) { setError('Tautan tidak valid atau telah kedaluwarsa.'); return; }
         if (!data.pendidikan) { router.push(`/apply/${token}`); return; }
-        const discResult = await getDiscTestResultByCandidate(data.id);
-        if (!discResult && !isPreview) { router.push(`/disc/${token}`); return; }
         const existingTest = await getWptTestResultByCandidate(data.id);
-        if (existingTest && !isPreview) { router.push(`/papikostik/${token}`); return; }
+        if (existingTest && !isPreview) { router.push(`/mulai/${token}`); return; }
         const hasDraft = data.wpt_draft_answers && data.wpt_draft_answers.length === WPT_TOTAL_QUESTIONS;
         setCandidate(data);
         setAnswers(
@@ -83,7 +81,7 @@ function WptTestContent() {
         rekomendasi_posisi: result.rekomendasiPosisi, completed_at: new Date().toISOString(),
       });
       saveWptDraft(candidate.id, [], 0);
-      router.push(`/papikostik/${token}`);
+      router.push(`/mulai/${token}`);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan';
       setSubmitError(`Gagal mengirim: ${errorMsg}`);
@@ -157,10 +155,10 @@ function WptTestContent() {
           <h2 className="text-2xl font-light text-slate-900 mb-3">Akses Error</h2>
           <p className="text-slate-400 text-sm leading-relaxed mb-8">{error}</p>
           <button
-            onClick={() => router.push(`/disc/${token}`)}
+            onClick={() => router.push('/masuk')}
             className="w-full bg-[#9A0000] text-white py-3.5 rounded-xl text-sm font-medium hover:bg-red-800 transition-colors"
           >
-            Mulai DISC Dulu
+            Kembali ke Halaman Masuk
           </button>
         </div>
       </div>
@@ -238,6 +236,13 @@ function WptTestContent() {
           <p className="text-center text-xs text-[#9A0000] mt-4">
             Timer {WPT_DURATION_MINUTES} menit dimulai saat tombol ini ditekan
           </p>
+
+          <button
+            onClick={() => router.push(`/mulai/${token}`)}
+            className="w-full text-center text-xs text-slate-400 hover:text-slate-600 mt-6 transition-colors"
+          >
+            ← Kembali ke pilihan tahap
+          </button>
         </div>
       </div>
     );
