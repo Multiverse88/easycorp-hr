@@ -618,7 +618,7 @@ export type CandidateInvitation = {
 };
 
 function candidateAppUrl(): string {
-  return (process.env.CANDIDATE_APP_URL || 'https://disc.easyai.id').replace(/\/$/, '');
+  return (process.env.CANDIDATE_APP_URL || 'https://hr.easycorp.id').replace(/\/$/, '');
 }
 
 function getCandidateInvitation(token: string, expiresAt: string): CandidateInvitation {

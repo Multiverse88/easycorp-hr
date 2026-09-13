@@ -44,8 +44,8 @@ export function EmailTemplateForm({ initialTemplate }: { initialTemplate: any })
       .replace(/{{logoUrl}}/g, logoUrl)
       .replace(/{{candidateName}}/g, 'Budi Santoso')
       .replace(/{{position}}/g, 'Software Engineer')
-      .replace(/{{link}}/g, 'https://disc.easyai.id/apply/ABC-123')
-      .replace(/{{loginLink}}/g, 'https://disc.easyai.id/masuk')
+      .replace(/{{link}}/g, 'https://hr.easycorp.id/apply/ABC-123')
+      .replace(/{{loginLink}}/g, 'https://hr.easycorp.id/masuk')
       .replace(/{{token}}/g, 'ABC-123')
       .replace(/{{expiresAt}}/g, '31 Desember 2026');
   };

@@ -20,45 +20,29 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Detect environment
   const isLocalhost = hostname.startsWith('localhost') || hostname.startsWith('127.0.0.1');
-  const isDiscSubdomain = hostname.startsWith('disc.');
-  const isDashboardSubdomain = hostname.startsWith('dashboard.');
+  const isCandidatePage =
+    path.startsWith('/wpt/') ||
+    path.startsWith('/disc/') ||
+    path.startsWith('/apply/') ||
+    path.startsWith('/koran/') ||
+    path.startsWith('/papikostik/') ||
+    path.startsWith('/masuk');
 
-  // === LOCALHOST: skip semua redirect subdomain, treat as dashboard ===
-  if (isLocalhost) {
-    if (path === '/') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-
-    // Halaman kandidat: skip session check (akses via token, bukan login HR)
-    const isCandidatePage = path.startsWith('/wpt/') || path.startsWith('/disc/') || path.startsWith('/apply/') || path.startsWith('/masuk');
-
-    // Session expiry check hanya untuk halaman HR (bukan halaman kandidat)
-    if (!path.startsWith('/login') && !isCandidatePage) {
-      const sessionDate = request.cookies.get('session_date')?.value;
-      const todayWIB = getWIBDate();
-      if (!sessionDate || sessionDate !== todayWIB) {
-        const response = NextResponse.redirect(new URL('/login', request.url));
-        request.cookies.getAll().forEach((cookie) => {
-          if (cookie.name.startsWith('sb-') || cookie.name === 'session_date') {
-            response.cookies.delete(cookie.name);
-          }
-        });
-        return response;
-      }
-    }
-    return NextResponse.next();
+  // Semua halaman publik memakai satu domain kanonis.
+  if (!isLocalhost && hostname.split(':')[0] !== 'hr.easycorp.id') {
+    const canonicalPath = path === '/' ? '/login' : path;
+    return NextResponse.redirect(new URL(`https://hr.easycorp.id${canonicalPath}`, request.url));
+  }
+  if (path === '/') {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // === SESSION EXPIRY CHECK (dashboard subdomain only) ===
-  // Logout otomatis jika sudah lewat tengah malam WIB
-  if (isDashboardSubdomain && !path.startsWith('/login')) {
+  // Session expiry check hanya untuk halaman HR.
+  if (!path.startsWith('/login') && !isCandidatePage) {
     const sessionDate = request.cookies.get('session_date')?.value;
     const todayWIB = getWIBDate();
-
     if (!sessionDate || sessionDate !== todayWIB) {
-      // Session expired — hapus semua cookie Supabase
       const response = NextResponse.redirect(new URL('/login', request.url));
       request.cookies.getAll().forEach((cookie) => {
         if (cookie.name.startsWith('sb-') || cookie.name === 'session_date') {
@@ -67,43 +51,6 @@ export async function proxy(request: NextRequest) {
       });
       return response;
     }
-  }
-
-  // === SUBDOMAIN: disc.easyai.id (Kandidat) ===
-  if (isDiscSubdomain) {
-    if (path === '/') {
-      return NextResponse.redirect(new URL('/masuk', request.url));
-    }
-    if (path.startsWith('/dashboard') || path.startsWith('/login')) {
-      return NextResponse.redirect(new URL('/masuk', request.url));
-    }
-    return NextResponse.next();
-  }
-
-  // === SUBDOMAIN: dashboard.easyai.id (HR Internal) ===
-  if (isDashboardSubdomain) {
-    if (path === '/') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    if (path.startsWith('/masuk') || path.startsWith('/apply/') || path === '/disc') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    return NextResponse.next();
-  }
-
-  // === MAIN DOMAIN: easyai.id → redirect to subdomains ===
-  const protocol = request.nextUrl.protocol;
-
-  if (path === '/' || path === '/login') {
-    return NextResponse.redirect(new URL(`${protocol}//dashboard.easyai.id/login`, request.url));
-  }
-
-  if (path === '/masuk' || path.startsWith('/apply/') || path.startsWith('/disc/')) {
-    return NextResponse.redirect(new URL(`${protocol}//disc.easyai.id${path}`, request.url));
-  }
-
-  if (path.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL(`${protocol}//dashboard.easyai.id${path}`, request.url));
   }
 
   return NextResponse.next();

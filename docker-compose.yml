@@ -28,6 +28,24 @@ services:
       - "3000"
     volumes:
       - uploads_data:/app/public/uploads
+    networks:
+      default:
+      dokploy-network:
+        aliases:
+          - easycorphr-recruitmenthr-mwgfsj-app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dokploy-network"
+      - "traefik.http.routers.easycorphr-http.rule=Host(`hr.easycorp.id`)"
+      - "traefik.http.routers.easycorphr-http.entrypoints=web"
+      - "traefik.http.routers.easycorphr-http.middlewares=redirect-to-https@file"
+      - "traefik.http.routers.easycorphr-https.rule=Host(`hr.easycorp.id`)"
+      - "traefik.http.routers.easycorphr-https.entrypoints=websecure"
+      - "traefik.http.routers.easycorphr-https.tls=true"
+      - "traefik.http.routers.easycorphr-https.tls.certresolver=letsencrypt"
+      - "traefik.http.services.easycorphr.loadbalancer.server.port=3000"
+      - "traefik.http.routers.easycorphr-http.service=easycorphr"
+      - "traefik.http.routers.easycorphr-https.service=easycorphr"
     healthcheck:
       test:
         - CMD
@@ -46,3 +64,7 @@ services:
 
 volumes:
   uploads_data:
+
+networks:
+  dokploy-network:
+    external: true

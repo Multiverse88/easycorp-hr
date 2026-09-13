@@ -57,31 +57,31 @@ Sistem rekrutmen internal untuk PT EasyLegal yang membantu proses rekrutmen dari
 
 ## Arsitektur
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
-│                      Browser                            │
-├──────────────────┬──────────────────────────────────────┤
-│  disc.easyai.id  │       dashboard.easyai.id            │
-│  (Kandidat)      │       (HR Internal)                  │
-├──────────────────┴──────────────────────────────────────┤
+│                       Browser                           │
+├─────────────────────────────────────────────────────────┤
+│                  hr.easycorp.id                         │
+│          HR Internal + Portal Kandidat                  │
+├─────────────────────────────────────────────────────────┤
 │                       Proxy                             │
-│              (Subdomain Routing)                        │
+│          Session HR + Route Publik Kandidat             │
 ├─────────────────────────────────────────────────────────┤
-│                   Next.js App                          │
-│           (Server Components + API Routes)             │
+│                    Next.js App                          │
+│           Server Components + API Routes                │
 ├─────────────────────────────────────────────────────────┤
-│                    Supabase                            │
-│              (Auth + PostgreSQL)                        │
+│                    PostgreSQL                           │
 └─────────────────────────────────────────────────────────┘
 ```
 
-## Subdomain Routing
+## Routing Domain
 
-| Subdomain | Akses | Halaman |
-|-----------|-------|---------|
-| `easyai.id` | - | Redirect ke subdomain |
-| `disc.easyai.id` | Kandidat | `/masuk`, `/apply/[token]`, `/disc/[token]` |
-| `dashboard.easyai.id` | HR Internal | `/login`, `/dashboard/*` |
+| Domain | Akses | Halaman |
+|--------|-------|---------|
+| `hr.easycorp.id` | HR Internal | `/login`, `/dashboard/*` |
+| `hr.easycorp.id` | Kandidat | `/masuk`, `/apply/[token]`, `/disc/[token]` |
+
+Domain lama diarahkan ke path setara di `hr.easycorp.id`.
 
 ## Struktur Folder
 

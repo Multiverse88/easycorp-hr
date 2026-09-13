@@ -9,7 +9,7 @@ export function ShareInvitation({ candidate }: { candidate: Candidate }) {
   const [sending, setSending] = useState(false);
   const [invitation, setInvitation] = useState({
     token: candidate.token,
-    inviteLink: `https://disc.easyai.id/apply/${candidate.token}`,
+    inviteLink: `https://hr.easycorp.id/apply/${candidate.token}`,
   });
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -21,7 +21,7 @@ Lengkapi biodata dan mulai asesmen melalui tautan berikut:
 ${inviteLink}
 
 Anda juga dapat masuk melalui halaman kandidat:
-https://disc.easyai.id/masuk
+https://hr.easycorp.id/masuk
 Token: ${token}
 
 Terima kasih,
