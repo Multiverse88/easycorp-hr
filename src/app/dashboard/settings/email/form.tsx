@@ -44,7 +44,8 @@ export function EmailTemplateForm({ initialTemplate }: { initialTemplate: any })
       .replace(/{{logoUrl}}/g, logoUrl)
       .replace(/{{candidateName}}/g, 'Budi Santoso')
       .replace(/{{position}}/g, 'Software Engineer')
-      .replace(/{{link}}/g, 'https://easycorp.com/tes/abc-123')
+      .replace(/{{link}}/g, 'https://disc.easyai.id/apply/ABC-123')
+      .replace(/{{loginLink}}/g, 'https://disc.easyai.id/masuk')
       .replace(/{{token}}/g, 'ABC-123')
       .replace(/{{expiresAt}}/g, '31 Desember 2026');
   };
@@ -74,7 +75,7 @@ export function EmailTemplateForm({ initialTemplate }: { initialTemplate: any })
             <Input 
               value={template.subject}
               onChange={(e) => setTemplate({...template, subject: e.target.value})}
-              placeholder="Undangan Asesmen - EasyCorp"
+              placeholder="Undangan Asesmen - EasyLegal"
             />
           </CardContent>
         </Card>
@@ -101,7 +102,8 @@ export function EmailTemplateForm({ initialTemplate }: { initialTemplate: any })
             <ul className="text-sm text-indigo-700 space-y-1 font-mono">
               <li><strong className="text-indigo-900">{"{{candidateName}}"}</strong> : Nama lengkap kandidat</li>
               <li><strong className="text-indigo-900">{"{{position}}"}</strong> : Posisi yang dilamar</li>
-              <li><strong className="text-indigo-900">{"{{link}}"}</strong> : Tautan langsung ke portal ujian</li>
+              <li><strong className="text-indigo-900">{"{{link}}"}</strong> : Tautan biodata kandidat</li>
+              <li><strong className="text-indigo-900">{"{{loginLink}}"}</strong> : Halaman masuk kandidat</li>
               <li><strong className="text-indigo-900">{"{{token}}"}</strong> : Kode token akses</li>
               <li><strong className="text-indigo-900">{"{{expiresAt}}"}</strong> : Tanggal batas akhir akses token</li>
             </ul>

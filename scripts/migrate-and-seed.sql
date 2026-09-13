@@ -117,6 +117,23 @@ CREATE TABLE profiles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 7. APPLICATION SETTINGS
+CREATE TABLE app_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO app_settings (key, value)
+VALUES (
+  'candidate_invitation_email',
+  jsonb_build_object(
+    'subject', 'Undangan Asesmen - EasyLegal',
+    'textTemplate', E'Halo {{candidateName}},\n\nAnda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi {{position}}.\n\nLengkapi biodata dan mulai asesmen melalui tautan berikut:\n{{link}}\n\nAnda juga dapat masuk melalui halaman kandidat:\n{{loginLink}}\nToken: {{token}}\n\nToken ini berlaku hingga {{expiresAt}}.\n\nTerima kasih,\nTim HR EasyLegal',
+    'htmlTemplate', '<p>Halo <strong>{{candidateName}}</strong>,</p><p>Anda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi <strong>{{position}}</strong>.</p><p><a href="{{link}}">Lengkapi Biodata dan Mulai Asesmen</a></p><p>Anda juga dapat masuk melalui <a href="{{loginLink}}">halaman kandidat</a> menggunakan token berikut:</p><p><strong>{{token}}</strong></p><p>Token ini berlaku hingga <strong>{{expiresAt}}</strong>.</p><p>Terima kasih,<br><strong>Tim HR EasyLegal</strong></p>'
+  )
+);
+
 -- INDEXES
 CREATE INDEX idx_candidates_token ON candidates(token);
 CREATE INDEX idx_candidates_manpower ON candidates(manpower_request_id);
@@ -134,6 +151,8 @@ ALTER TABLE selection_test_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interview_evaluations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE disc_tests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
+
 
 -- PROFILES: users can read own profile
 CREATE POLICY "Users can read own profile"

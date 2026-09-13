@@ -1,16 +1,28 @@
-import fs from 'fs/promises';
-import path from 'path';
+import defaultTemplate from './email-template.json';
+import { prisma } from './prisma';
 
-export async function loadEmailTemplate() {
-  const TEMPLATE_PATH = path.join(process.cwd(), 'src/lib/email-template.json');
+export type EmailTemplate = {
+  subject: string;
+  textTemplate: string;
+  htmlTemplate: string;
+};
+
+const EMAIL_TEMPLATE_KEY = 'candidate_invitation_email';
+
+export async function loadEmailTemplate(): Promise<EmailTemplate> {
   try {
-    const data = await fs.readFile(TEMPLATE_PATH, 'utf-8');
-    return JSON.parse(data);
+    const setting = await prisma.appSetting.findUnique({ where: { key: EMAIL_TEMPLATE_KEY } });
+    return setting?.value ? setting.value as unknown as EmailTemplate : defaultTemplate;
   } catch (error) {
-    return {
-      subject: "Undangan Asesmen - EasyCorp",
-      textTemplate: "Halo {{candidateName}},\n\nAnda diundang untuk mengikuti tahapan asesmen di EasyCorp untuk posisi {{position}}.\n\nSilakan akses tautan berikut untuk memulai:\n{{link}}\n\nAtau Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:\nToken: {{token}}\n\nToken asesmen ini akan aktif hingga: {{expiresAt}}.\n\nTerima kasih,\nTim HR EasyCorp",
-      htmlTemplate: "<p>Halo <strong>{{candidateName}}</strong>,</p><p>Anda diundang untuk mengikuti tahapan asesmen di EasyCorp untuk posisi <strong>{{position}}</strong>.</p><p>Silakan klik tombol di bawah ini untuk memulai:</p><p><a href=\"{{link}}\">Mulai Asesmen</a></p><p>Atau Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:</p><ul><li><strong>Token:</strong> {{token}}</li></ul><p><em>Token asesmen ini akan aktif hingga: {{expiresAt}}.</em></p><p>Terima kasih,<br><strong>Tim HR EasyCorp</strong></p>"
-    };
+    console.error('Gagal membaca template email:', error);
+    return defaultTemplate;
   }
+}
+
+export async function persistEmailTemplate(template: EmailTemplate): Promise<void> {
+  await prisma.appSetting.upsert({
+    where: { key: EMAIL_TEMPLATE_KEY },
+    create: { key: EMAIL_TEMPLATE_KEY, value: template },
+    update: { value: template },
+  });
 }

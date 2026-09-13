@@ -103,10 +103,11 @@ export default async function KandidatDetailPage({ params }: { params: Promise<{
             <div>
               <div className="text-sm text-muted-foreground mb-1.5">Token Akses Tes</div>
               <div className="flex flex-col gap-2">
-                <Link href={`https://disc.easyai.id/disc/${candidate.token}`} target="_blank">
+                <Link href={`https://disc.easyai.id/apply/${candidate.token}`} target="_blank">
                   <Button variant="outline" className="font-mono font-bold text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100 w-fit cursor-pointer flex items-center gap-2">
                     {candidate.token}
-                    <span className="text-xs font-normal">→ Buka Web Ujian</span>
+                    <span className="text-xs font-normal">→ Buka Biodata Kandidat</span>
+
                   </Button>
                 </Link>
                 <div className="mt-1">

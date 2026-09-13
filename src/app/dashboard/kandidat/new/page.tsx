@@ -39,7 +39,7 @@ export default function TambahKandidatPage() {
   const [sendingEmailShare, setSendingEmailShare] = useState(false);
   
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ id: string; token: string; link: string } | null>(null);
+  const [result, setResult] = useState<{ id: string; token: string; link: string; loginLink: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
@@ -83,14 +83,15 @@ export default function TambahKandidatPage() {
           telepon: telepon.trim(),
           posisi_dilamar: posisiDilamar.trim(),
         },
-        {
-          sendEmail: sendEmail && !!email.trim(),
-          origin: window.location.origin,
-        }
+        { sendEmail: sendEmail && !!email.trim() }
       );
 
-      const link = `${window.location.origin}/disc/${candidate.token}`;
-      setResult({ id: candidate.id, token: candidate.token, link });
+      setResult({
+        id: candidate.id,
+        token: candidate.token,
+        link: candidate.inviteLink,
+        loginLink: candidate.loginLink,
+      });
       
       if (sendEmail && email.trim()) {
         setEmailStatus({
@@ -118,12 +119,13 @@ export default function TambahKandidatPage() {
     if (!result) return '';
     return `Halo ${nama},
 
-Anda diundang untuk mengikuti tahapan asesmen di EasyLegal untuk posisi ${posisiDilamar || 'Kandidat'}.
+Anda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${posisiDilamar || 'Kandidat'}.
 
-Silakan akses tautan berikut untuk memulai:
+Lengkapi biodata dan mulai asesmen melalui tautan berikut:
 ${result.link}
 
-Orang Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
+Anda juga dapat masuk melalui halaman kandidat:
+${result.loginLink}
 Token: ${result.token}
 
 Terima kasih,
@@ -149,20 +151,23 @@ Tim HR EasyLegal`;
     setSendingEmailShare(true);
     setEmailStatus(null);
     try {
-      const res = await resendInvitationEmail(result.id, window.location.origin);
+      const res = await resendInvitationEmail(result.id);
       if (res.success) {
+        setResult((current) => current && res.token && res.inviteLink && res.loginLink
+          ? { ...current, token: res.token, link: res.inviteLink, loginLink: res.loginLink }
+          : current);
         setEmailStatus({ sent: true });
+      } else if (res.error === 'SMTP_NOT_CONFIGURED') {
+        const rotatedResult = res.token && res.inviteLink && res.loginLink
+          ? { ...result, token: res.token, link: res.inviteLink, loginLink: res.loginLink }
+          : result;
+        setResult(rotatedResult);
+        setEmailStatus({ sent: false, error: 'SMTP_NOT_CONFIGURED' });
+        const subject = encodeURIComponent('Undangan Asesmen - EasyLegal');
+        const body = encodeURIComponent(`Halo ${nama},\n\nAnda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${posisiDilamar || 'Kandidat'}.\n\nLengkapi biodata dan mulai asesmen melalui tautan berikut:\n${rotatedResult.link}\n\nAnda juga dapat masuk melalui halaman kandidat:\n${rotatedResult.loginLink}\nToken: ${rotatedResult.token}\n\nTerima kasih,\nTim HR EasyLegal`);
+        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
       } else {
-        if (res.error === 'SMTP_NOT_CONFIGURED') {
-          setEmailStatus({ sent: false, error: 'SMTP_NOT_CONFIGURED' });
-          // Fallback to mailto
-          const subject = encodeURIComponent('Undangan Asesmen - EasyLegal');
-          const body = encodeURIComponent(getShareMessage());
-          const mailto = `mailto:${email}?subject=${subject}&body=${body}`;
-          window.location.href = mailto;
-        } else {
-          setEmailStatus({ sent: false, error: res.error });
-        }
+        setEmailStatus({ sent: false, error: res.error });
       }
     } catch (err) {
       console.error('Error sending email share:', err);

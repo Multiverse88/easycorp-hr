@@ -1,7 +1,8 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { sendAssessmentInvitation } from '@/lib/email';
+import { sendAssessmentInvitation, type SendEmailResult } from '@/lib/email';
+import crypto from 'crypto';
 
 function toDateStr(val: any): string {
   if (!val) return '';
@@ -599,7 +600,9 @@ export async function getCandidateByToken(token: string): Promise<Candidate | un
   }
 
   try {
-    const row = await prisma.candidate.findUnique({ where: { token } });
+    const row = await prisma.candidate.findFirst({
+      where: { token, tokenExpiresAt: { gte: new Date() } },
+    });
     if (!row) return undefined;
     return mapCandidate(row);
   } catch {
@@ -607,12 +610,37 @@ export async function getCandidateByToken(token: string): Promise<Candidate | un
   }
 }
 
+export type CandidateInvitation = {
+  token: string;
+  inviteLink: string;
+  loginLink: string;
+  expiresAt: string;
+};
+
+function candidateAppUrl(): string {
+  return (process.env.CANDIDATE_APP_URL || 'https://disc.easyai.id').replace(/\/$/, '');
+}
+
+function getCandidateInvitation(token: string, expiresAt: string): CandidateInvitation {
+  const origin = candidateAppUrl();
+  return {
+    token,
+    inviteLink: `${origin}/apply/${token}`,
+    loginLink: `${origin}/masuk`,
+    expiresAt,
+  };
+}
+
+function createCandidateToken(): string {
+  return `token-${crypto.randomBytes(24).toString('base64url')}`;
+}
+
 export async function createCandidate(
   cand: Omit<Candidate, 'id' | 'token' | 'token_expires_at' | 'status' | 'created_at'>,
-  options?: { sendEmail?: boolean; origin?: string }
-): Promise<Candidate & { emailSent?: boolean; emailError?: string }> {
+  options?: { sendEmail?: boolean }
+): Promise<Candidate & CandidateInvitation & { emailSent?: boolean; emailError?: string }> {
   const id = `cnd-${Date.now()}`;
-  const token = `token-${Math.random().toString(36).substring(2, 15)}`;
+  const token = createCandidateToken();
 
   const expiry = new Date();
   expiry.setDate(expiry.getDate() + 14);
@@ -640,19 +668,21 @@ export async function createCandidate(
     details: { nama: cand.nama, email: cand.email, posisi_dilamar: cand.posisi_dilamar } 
   });
 
-  const result = mapCandidate(row) as Candidate & { emailSent?: boolean; emailError?: string };
+  const invitation = getCandidateInvitation(token, token_expires_at);
+  const result = Object.assign(mapCandidate(row), invitation) as Candidate & CandidateInvitation & {
+    emailSent?: boolean;
+    emailError?: string;
+  };
 
   if (options?.sendEmail && cand.email) {
-    const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://disc.easyai.id';
-    const link = `${origin}/disc/${token}`;
-    
     try {
       const emailRes = await sendAssessmentInvitation({
         candidateName: cand.nama,
         candidateEmail: cand.email,
         position: cand.posisi_dilamar,
         token,
-        link,
+        link: invitation.inviteLink,
+        loginLink: invitation.loginLink,
         expiresAt: token_expires_at,
       });
       
@@ -687,34 +717,51 @@ export async function getPapikostikTestResultByCandidate(candidateId: string): P
 }
 
 export async function resendInvitationEmail(
-  candidateId: string,
-  origin: string
-): Promise<{ success: boolean; error?: string }> {
+  candidateId: string
+): Promise<SendEmailResult & Partial<CandidateInvitation>> {
   const candidate = await getCandidateById(candidateId);
-  if (!candidate) {
-    return { success: false, error: 'KANDIDAT_TIDAK_DITEMUKAN' };
-  }
-  
-  if (!candidate.email) {
-    return { success: false, error: 'EMAIL_KANDIDAT_KOSONG' };
-  }
-  
-  const productionOrigin = process.env.NEXT_PUBLIC_APP_URL || 'https://disc.easyai.id';
-  const link = `${productionOrigin}/disc/${candidate.token}`;
-  
+  if (!candidate) return { success: false, error: 'KANDIDAT_TIDAK_DITEMUKAN' };
+  if (!candidate.email) return { success: false, error: 'EMAIL_KANDIDAT_KOSONG' };
+
+  const token = createCandidateToken();
+  const expiry = new Date();
+  expiry.setDate(expiry.getDate() + 14);
+  const expiresAt = expiry.toISOString();
+  const invitation = getCandidateInvitation(token, expiresAt);
+
   try {
-    const res = await sendAssessmentInvitation({
+    await prisma.$transaction([
+      prisma.candidate.update({
+        where: { id: candidateId },
+        data: { token, tokenExpiresAt: expiry },
+      }),
+      prisma.papikostikSession.updateMany({
+        where: { candidateId },
+        data: { token },
+      }),
+    ]);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'GAGAL_MEMPERBARUI_TOKEN' };
+  }
+
+  try {
+    const result = await sendAssessmentInvitation({
       candidateName: candidate.nama,
       candidateEmail: candidate.email,
       position: candidate.posisi_dilamar,
-      token: candidate.token,
-      link,
-      expiresAt: candidate.token_expires_at,
+      token,
+      link: invitation.inviteLink,
+      loginLink: invitation.loginLink,
+      expiresAt,
     });
-    return res;
+    return { ...result, ...invitation };
   } catch (err) {
     console.error('Error in resendInvitationEmail:', err);
-    return { success: false, error: err instanceof Error ? err.message : 'SMTP_ERROR' };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'SMTP_ERROR',
+      ...invitation,
+    };
   }
 }
 
@@ -745,9 +792,12 @@ export async function updateCandidateStatus(id: string, status: Candidate['statu
 }
 
 export async function saveCandidateBio(token: string, bio: { pendidikan: string; pengalaman: string; keahlian: string }): Promise<Candidate | undefined> {
+  const candidate = await getCandidateByToken(token);
+  if (!candidate) return undefined;
+
   try {
     const row = await prisma.candidate.update({
-      where: { token },
+      where: { id: candidate.id },
       data: {
         pendidikan: bio.pendidikan,
         pengalaman: bio.pengalaman,
@@ -1131,8 +1181,13 @@ export async function getPapikostikSessionByToken(token: string): Promise<Papiko
     } as PapikostikSession;
   }
 
+  const candidate = await getCandidateByToken(token);
+  if (!candidate) return undefined;
+
   try {
-    const row = await prisma.papikostikSession.findUnique({ where: { token } });
+    const row = await prisma.papikostikSession.findFirst({
+      where: { token, candidateId: candidate.id },
+    });
     if (!row) return undefined;
     return {
       id: row.id,

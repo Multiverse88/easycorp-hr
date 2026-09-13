@@ -13,6 +13,7 @@ export interface InvitationEmailParams {
   position: string;
   token: string;
   link: string;
+  loginLink: string;
   expiresAt: string;
 }
 
@@ -22,7 +23,7 @@ export async function sendAssessmentInvitation(params: InvitationEmailParams): P
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASSWORD;
   const secure = process.env.SMTP_SECURE === 'true';
-  const fromName = process.env.SMTP_FROM_NAME || 'EasyCorp Recruitment';
+  const fromName = process.env.SMTP_FROM_NAME || 'EasyLegal Recruitment';
   const fromEmail = process.env.SMTP_FROM_EMAIL || user;
 
   // Validate presence of required env variables
@@ -51,24 +52,38 @@ export async function sendAssessmentInvitation(params: InvitationEmailParams): P
       month: 'long',
       day: 'numeric',
     });
-
     const templateData = await loadEmailTemplate();
-    const processTemplate = (tmpl: string) => {
-      return tmpl
-        .replace(/{{logoUrl}}/g, 'cid:logo-ec')
-        .replace(/{{candidateName}}/g, params.candidateName)
-        .replace(/{{position}}/g, params.position || 'Kandidat')
-        .replace(/{{link}}/g, params.link)
-        .replace(/{{token}}/g, params.token)
-        .replace(/{{expiresAt}}/g, formattedDate);
+
+    const textValues = {
+      logoUrl: 'cid:logo-ec',
+      candidateName: params.candidateName,
+      position: params.position || 'Kandidat',
+      link: params.link,
+      loginLink: params.loginLink,
+      token: params.token,
+      expiresAt: formattedDate,
     };
+    const escapeHtml = (value: string) => value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    const renderTemplate = (template: string, values: Record<string, string>) =>
+      Object.entries(values).reduce(
+        (rendered, [key, value]) => rendered.replaceAll(`{{${key}}}`, value),
+        template
+      );
+    const htmlValues = Object.fromEntries(
+      Object.entries(textValues).map(([key, value]) => [key, key === 'logoUrl' ? value : escapeHtml(value)])
+    );
 
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
       to: params.candidateEmail,
-      subject: processTemplate(templateData.subject || 'Undangan Asesmen - EasyCorp'),
-      text: processTemplate(templateData.textTemplate),
-      html: processTemplate(templateData.htmlTemplate),
+      subject: renderTemplate(templateData.subject || 'Undangan Asesmen - EasyLegal', textValues),
+      text: renderTemplate(templateData.textTemplate, textValues),
+      html: renderTemplate(templateData.htmlTemplate, htmlValues),
       attachments: [
         {
           filename: 'logo-ec.png',

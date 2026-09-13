@@ -27,7 +27,7 @@ export default function MasukPage() {
         return;
       }
 
-      window.location.href = `/disc/${candidate.token}`;
+      window.location.href = candidate.pendidikan ? `/disc/${candidate.token}` : `/apply/${candidate.token}`;
     } catch {
       setError('Terjadi kesalahan. Silakan coba lagi.');
       setLoading(false);

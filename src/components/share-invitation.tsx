@@ -7,24 +7,25 @@ import { Candidate, resendInvitationEmail } from '@/lib/db';
 
 export function ShareInvitation({ candidate }: { candidate: Candidate }) {
   const [sending, setSending] = useState(false);
+  const [invitation, setInvitation] = useState({
+    token: candidate.token,
+    inviteLink: `https://disc.easyai.id/apply/${candidate.token}`,
+  });
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  const getShareMessage = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const link = `${origin}/disc/${candidate.token}`;
-    return `Halo ${candidate.nama},
+  const getShareMessage = (token = invitation.token, inviteLink = invitation.inviteLink) => `Halo ${candidate.nama},
 
-Anda diundang untuk mengikuti tahapan asesmen di EasyCorp untuk posisi ${candidate.posisi_dilamar || 'Kandidat'}.
+Anda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${candidate.posisi_dilamar || 'Kandidat'}.
 
-Silakan akses tautan berikut untuk memulai:
-${link}
+Lengkapi biodata dan mulai asesmen melalui tautan berikut:
+${inviteLink}
 
-Orang Anda juga dapat masuk melalui halaman utama menggunakan Token Asesmen Anda:
-Token: ${candidate.token}
+Anda juga dapat masuk melalui halaman kandidat:
+https://disc.easyai.id/masuk
+Token: ${token}
 
 Terima kasih,
-Tim HR EasyCorp`;
-  };
+Tim HR EasyLegal`;
 
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(getShareMessage());
@@ -49,16 +50,17 @@ Tim HR EasyCorp`;
     setStatus(null);
     
     try {
-      const origin = window.location.origin;
-      const res = await resendInvitationEmail(candidate.id, origin);
+      const res = await resendInvitationEmail(candidate.id);
+      if (res.token && res.inviteLink) {
+        setInvitation({ token: res.token, inviteLink: res.inviteLink });
+      }
       if (res.success) {
-        setStatus({ type: 'success', message: 'Email undangan berhasil dikirim!' });
+        setStatus({ type: 'success', message: 'Email undangan berhasil dikirim dengan token baru.' });
       } else {
         if (res.error === 'SMTP_NOT_CONFIGURED') {
-          // Fallback to mailto
           setStatus({ type: 'error', message: 'SMTP belum diatur. Membuka email client...' });
-          const subject = encodeURIComponent('Undangan Asesmen - EasyCorp');
-          const body = encodeURIComponent(getShareMessage());
+          const subject = encodeURIComponent('Undangan Asesmen - EasyLegal');
+          const body = encodeURIComponent(getShareMessage(res.token, res.inviteLink));
           const mailto = `mailto:${candidate.email || ''}?subject=${subject}&body=${body}`;
           window.location.href = mailto;
         } else {

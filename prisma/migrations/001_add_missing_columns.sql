@@ -40,3 +40,10 @@ CREATE TABLE IF NOT EXISTS easycorp.papikostik_test_results (
   completed_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   FOREIGN KEY (candidate_id) REFERENCES easycorp.candidates(id) ON DELETE CASCADE
 );
+
+-- 7. Create persistent application settings table
+CREATE TABLE IF NOT EXISTS easycorp.app_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
