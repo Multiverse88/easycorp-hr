@@ -27,6 +27,7 @@ export async function proxy(request: NextRequest) {
     path.startsWith('/apply/') ||
     path.startsWith('/koran/') ||
     path.startsWith('/papikostik/') ||
+    path.startsWith('/mulai/') ||
     path.startsWith('/masuk');
 
   // Semua halaman publik memakai satu domain kanonis.
