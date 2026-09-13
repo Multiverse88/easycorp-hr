@@ -54,8 +54,12 @@ function WptTestContent() {
     if (token) loadCandidate();
   }, [token, router, isPreview]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(async (force: boolean = false) => {
     if (!candidate || autoSubmittedRef.current) return;
+    if (!force && answers.some(a => a.answer.trim() === '')) {
+      setSubmitError('Jawab semua soal terlebih dahulu sebelum mengirim.');
+      return;
+    }
     autoSubmittedRef.current = true;
     try {
       setSubmitting(true);
@@ -83,7 +87,7 @@ function WptTestContent() {
     if (loading || submitted || submitting || error || showInstructions) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) { if (timerRef.current) clearInterval(timerRef.current); handleSubmit(); return 0; }
+        if (prev <= 1) { if (timerRef.current) clearInterval(timerRef.current); handleSubmit(true); return 0; }
         return prev - 1;
       });
     }, 1000);
@@ -411,12 +415,12 @@ function WptTestContent() {
             {submitError && <p className="text-red-600 text-xs mt-0.5">{submitError}</p>}
           </div>
           <button
-            onClick={handleSubmit}
-            disabled={submitting}
+            onClick={() => handleSubmit()}
+            disabled={submitting || !isTestComplete}
             className={`flex items-center gap-2.5 px-8 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97] w-full sm:w-auto justify-center ${
               isTestComplete
                 ? 'bg-[#9A0000] text-white hover:bg-red-800 shadow-lg shadow-[#9A0000]/20'
-                : 'bg-slate-100 text-slate-900 opacity-50 border border-slate-200'
+                : 'bg-slate-100 text-slate-900 border border-slate-200 cursor-not-allowed opacity-50'
             }`}
           >
             {submitting ? (
