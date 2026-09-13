@@ -1,4 +1,26 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: easycorphr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: easycorphr
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      default:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easycorphr -d easycorphr"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   app:
     build:
       context: .
@@ -26,6 +48,9 @@ services:
       N8N_JWT_SECRET: ${N8N_JWT_SECRET:-}
     expose:
       - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - uploads_data:/app/public/uploads
     networks:
@@ -73,6 +98,7 @@ services:
 
 volumes:
   uploads_data:
+  postgres_data:
 
 networks:
   dokploy-network:

@@ -12,9 +12,11 @@ import {
   Trash2,
   ToggleLeft,
   ToggleRight,
+  RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { fetchGlintsJobsByCompany } from '@/lib/glints';
 
 type Job = {
   id: string;
@@ -30,9 +32,11 @@ type Job = {
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
 
   const [title, setTitle] = useState('');
   const [jobFunction, setJobFunction] = useState('');
@@ -120,6 +124,39 @@ export default function JobsPage() {
     }
   }
 
+  async function handleSyncGlints() {
+    setSyncing(true);
+    setSyncMessage('');
+    setError('');
+    try {
+      const glintsJobs = await fetchGlintsJobsByCompany('easylegal');
+
+      if (glintsJobs.length === 0) {
+        setSyncMessage('Tidak ada loker aktif EasyLegal ditemukan di Glints saat ini.');
+        return;
+      }
+
+      const res = await fetch('/api/jobs/sync-glints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobs: glintsJobs }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Gagal sinkronisasi dari Glints');
+        return;
+      }
+      setSyncMessage(
+        `Ditemukan ${data.found} loker EasyLegal di Glints (${data.created} baru, ${data.updated} diperbarui).`
+      );
+      await fetchJobs();
+    } catch {
+      setError('Gagal mengambil data dari Glints. Coba lagi beberapa saat.');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   function formatSalary(val: number) {
     return `Rp ${(val / 1000).toFixed(0)}rb`;
   }
@@ -148,11 +185,33 @@ export default function JobsPage() {
               </p>
             </div>
           </div>
-          <div className="inline-flex w-fit items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-sm">
-            <Briefcase className="h-4 w-4 text-primary" />
-            {jobs.filter(j => j.isActive).length} posisi aktif
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              onClick={handleSyncGlints}
+              disabled={syncing}
+              variant="outline"
+              className="h-11 rounded-xl border-border font-semibold"
+            >
+              {syncing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              Sync dari Glints
+            </Button>
+            <div className="inline-flex w-fit items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-sm">
+              <Briefcase className="h-4 w-4 text-primary" />
+              {jobs.filter(j => j.isActive).length} posisi aktif
+            </div>
           </div>
         </div>
+
+        {syncMessage && (
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-600">
+            {syncMessage}
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
           {/* Form tambah posisi */}
