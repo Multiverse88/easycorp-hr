@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { getCandidateByToken, getKoranTestResultByCandidate, Candidate } from '@/lib/db';
-import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, Camera, SunMedium, ImageIcon, AlertCircle } from 'lucide-react';
+import { getCandidateByToken, getKoranTestResultByCandidate, skipKoranTest, Candidate } from '@/lib/db';
+import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, Camera, SunMedium, ImageIcon, AlertCircle, Clock } from 'lucide-react';
 
 function KoranTestContent() {
   const router = useRouter();
@@ -21,6 +21,8 @@ function KoranTestContent() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
+  const [skipped, setSkipped] = useState(false);
+  const [skipping, setSkipping] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -80,6 +82,17 @@ function KoranTestContent() {
     }
   };
 
+  const handleSkip = async () => {
+    if (!candidate) return;
+    setSkipping(true);
+    try {
+      await skipKoranTest(candidate.id, candidate.nama);
+    } finally {
+      setSkipping(false);
+      setSkipped(true);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[100dvh] bg-white flex items-center justify-center">
@@ -94,6 +107,35 @@ function KoranTestContent() {
         <div className="w-full max-w-sm text-center">
           <h2 className="text-2xl font-light text-slate-900 mb-3">Akses Tidak Valid</h2>
           <p className="text-slate-900 text-sm leading-relaxed">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- SKIPPED SCREEN ---
+  if (skipped) {
+    return (
+      <div className="min-h-[100dvh] bg-[#f9f9f7] flex items-center justify-center px-6" style={{ fontFamily: "'Geist', system-ui, sans-serif" }}>
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#9A0000]/5 rounded-full blur-[160px]" />
+        </div>
+        <div className="relative z-10 w-full max-w-sm text-center">
+          <div className="w-20 h-20 rounded-3xl bg-red-50 border border-[#9A0000]/20 flex items-center justify-center mx-auto mb-8">
+            <Clock className="w-9 h-9 text-[#9A0000]" />
+          </div>
+          <h2 className="text-3xl font-light text-slate-900 mb-4 tracking-tight">Dilewati untuk Sekarang</h2>
+          <p className="text-slate-900 text-sm leading-relaxed mb-6">
+            Tidak masalah, <strong className="text-slate-700">{candidate?.nama}</strong>. Tes Koran dapat Anda kerjakan kapan saja nanti melalui tautan yang sama.
+          </p>
+          <button
+            onClick={() => setSkipped(false)}
+            className="text-sm font-semibold text-[#9A0000] hover:text-red-800 transition-colors"
+          >
+            Kembali &amp; kerjakan sekarang
+          </button>
+          <div className="text-[10px] font-medium text-[#9A0000] uppercase tracking-[0.3em] border-t border-slate-100 pt-6 mt-10">
+            EasyCorp HR System
+          </div>
         </div>
       </div>
     );
@@ -164,6 +206,14 @@ function KoranTestContent() {
           >
             Siap, Lanjut Unggah Screenshot
             <ArrowRight className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={handleSkip}
+            disabled={skipping}
+            className="w-full mt-3 flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl border border-slate-200 text-slate-900 text-sm font-medium hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 disabled:opacity-50"
+          >
+            {skipping ? 'Menyimpan...' : 'Lewati untuk sekarang, kerjakan nanti'}
           </button>
 
           <p className="text-center text-xs text-[#9A0000] mt-4">

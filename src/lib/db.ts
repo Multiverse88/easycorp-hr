@@ -850,6 +850,15 @@ export async function saveWptDraft(
   }
 }
 
+export async function skipKoranTest(candidateId: string, candidateName: string): Promise<void> {
+  await logActivity({
+    action: 'UPDATE',
+    table_name: 'koran_tests',
+    record_id: candidateId,
+    description: `Kandidat ${candidateName} melewati Tes Koran untuk sementara, dapat dikerjakan lagi nanti melalui tautan yang sama`,
+  });
+}
+
 // ==========================================
 // 3. INTERVIEW EVALUATIONS (FR-HRGA-001.03)
 // ==========================================
