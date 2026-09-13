@@ -36,6 +36,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=dokploy-network"
+      - "traefik.http.routers.easycorphr-disc-http.rule=Host(`disc.easycorp.id`)"
+      - "traefik.http.routers.easycorphr-disc-http.entrypoints=web"
+      - "traefik.http.routers.easycorphr-disc-http.middlewares=redirect-to-https@file"
+      - "traefik.http.routers.easycorphr-disc-https.rule=Host(`disc.easycorp.id`)"
+      - "traefik.http.routers.easycorphr-disc-https.entrypoints=websecure"
+      - "traefik.http.routers.easycorphr-disc-https.tls=true"
+      - "traefik.http.routers.easycorphr-disc-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.easycorphr-disc-https.service=easycorphr"
       - "traefik.http.routers.easycorphr-http.rule=Host(`hr.easycorp.id`)"
       - "traefik.http.routers.easycorphr-http.entrypoints=web"
       - "traefik.http.routers.easycorphr-http.middlewares=redirect-to-https@file"
@@ -46,6 +54,7 @@ services:
       - "traefik.http.services.easycorphr.loadbalancer.server.port=3000"
       - "traefik.http.routers.easycorphr-http.service=easycorphr"
       - "traefik.http.routers.easycorphr-https.service=easycorphr"
+      - "traefik.http.routers.easycorphr-disc-http.service=easycorphr"
     healthcheck:
       test:
         - CMD
