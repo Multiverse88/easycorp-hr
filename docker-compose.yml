@@ -1,26 +1,48 @@
-version: '3.8'
-
 services:
-  recruit-el-app:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: recruit-el-app
-    restart: always
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CANDIDATE_APP_URL: ${CANDIDATE_APP_URL:-https://hr.easycorp.id}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-EasyLegal Recruitment}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      NEXT_PUBLIC_APIFY_TOKEN: ${NEXT_PUBLIC_APIFY_TOKEN:-}
+      N8N_WHATSAPP_WEBHOOK_URL: ${N8N_WHATSAPP_WEBHOOK_URL:-}
+      N8N_JWT_SECRET: ${N8N_JWT_SECRET:-}
+    expose:
+      - "3000"
     volumes:
-      - ./public/uploads:/app/public/uploads
-    networks:
-      - supabase_network_supabase_BKyh
+      - uploads_data:/app/public/uploads
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/masuk').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
 
-networks:
-  supabase_network_supabase_BKyh:
-    external: true
+volumes:
+  uploads_data:
