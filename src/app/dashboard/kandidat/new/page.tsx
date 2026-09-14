@@ -37,6 +37,8 @@ export default function TambahKandidatPage() {
   const [sendEmail, setSendEmail] = useState(true);
   const [emailStatus, setEmailStatus] = useState<{ sent: boolean; error?: string } | null>(null);
   const [sendingEmailShare, setSendingEmailShare] = useState(false);
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [whatsAppStatus, setWhatsAppStatus] = useState<{ sent: boolean; error?: string } | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ id: string; token: string; link: string; loginLink: string } | null>(null);
@@ -144,6 +146,29 @@ Tim HR EasyLegal`;
       url = `https://wa.me/${phoneStr}?text=${text}`;
     }
     window.open(url, '_blank');
+  };
+
+  const handleSendFonnteWhatsApp = async () => {
+    if (!result || !telepon.trim()) return;
+    setSendingWhatsApp(true);
+    setWhatsAppStatus(null);
+    try {
+      const res = await fetch('/api/candidate/send-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: telepon, message: getShareMessage() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWhatsAppStatus({ sent: false, error: data.error || 'Gagal mengirim WhatsApp' });
+        return;
+      }
+      setWhatsAppStatus({ sent: true });
+    } catch {
+      setWhatsAppStatus({ sent: false, error: 'Gagal mengirim WhatsApp' });
+    } finally {
+      setSendingWhatsApp(false);
+    }
   };
 
   const handleShareEmail = async () => {
@@ -603,8 +628,51 @@ Tim HR EasyLegal`;
                       className="h-14 rounded-xl bg-[#25D366] font-black text-white shadow-xl shadow-[#25D366]/20 transition-all hover:bg-[#25D366]/90 active:scale-[0.98]"
                     >
                       <MessageCircle className="mr-2 h-4 w-4" />
-                      Kirim via WhatsApp
+                      Buka WhatsApp
                     </Button>
+                    <Button
+                      type="button"
+                      onClick={handleSendFonnteWhatsApp}
+                      disabled={sendingWhatsApp || !telepon.trim()}
+                      className="h-14 rounded-xl bg-[#128C7E] font-black text-white shadow-xl shadow-[#128C7E]/20 transition-all hover:bg-[#128C7E]/90 active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {sendingWhatsApp ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                      )}
+                      Kirim Otomatis (Fonnte)
+                    </Button>
+                  </div>
+
+                  {whatsAppStatus && (
+                    <div className={`flex items-start gap-3 rounded-xl border p-4 text-sm font-semibold
+                      ${whatsAppStatus.sent
+                        ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                        : 'border-destructive/20 bg-destructive/10 text-destructive'
+                      }`}
+                    >
+                      {whatsAppStatus.sent ? (
+                        <>
+                          <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                          <div>
+                            <p className="font-bold">Pesan WhatsApp berhasil dikirim!</p>
+                            <p className="text-xs font-medium opacity-85 mt-0.5">Token dan tautan asesmen telah dikirimkan ke {telepon}.</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                          <div>
+                            <p className="font-bold">Gagal mengirim WhatsApp</p>
+                            <p className="text-xs font-medium opacity-85 mt-0.5">{whatsAppStatus.error}. Silakan gunakan tombol &quot;Buka WhatsApp&quot; atau kirim secara manual.</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="grid gap-3 pt-1 sm:grid-cols-1">
                     <Button 
                       type="button" 
                       onClick={handleShareEmail}
