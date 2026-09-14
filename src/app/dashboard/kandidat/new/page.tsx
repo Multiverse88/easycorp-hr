@@ -35,6 +35,7 @@ export default function TambahKandidatPage() {
   const [telepon, setTelepon] = useState('');
   
   const [sendEmail, setSendEmail] = useState(true);
+  const [sendWhatsApp, setSendWhatsApp] = useState(true);
   const [emailStatus, setEmailStatus] = useState<{ sent: boolean; error?: string } | null>(null);
   const [sendingEmailShare, setSendingEmailShare] = useState(false);
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
@@ -71,10 +72,47 @@ export default function TambahKandidatPage() {
     }
   }
 
+  const buildShareMessage = (token: string, link: string, loginLink: string) => `Halo ${nama},
+
+Anda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${posisiDilamar || 'Kandidat'}.
+
+Lengkapi biodata dan mulai asesmen melalui tautan berikut:
+${link}
+
+Anda juga dapat masuk melalui halaman kandidat:
+${loginLink}
+Token: ${token}
+
+Terima kasih,
+Tim HR EasyLegal`;
+
+  const sendFonnteWhatsApp = async (phone: string, message: string) => {
+    setSendingWhatsApp(true);
+    setWhatsAppStatus(null);
+    try {
+      const res = await fetch('/api/candidate/send-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, message }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWhatsAppStatus({ sent: false, error: data.error || 'Gagal mengirim WhatsApp' });
+        return;
+      }
+      setWhatsAppStatus({ sent: true });
+    } catch {
+      setWhatsAppStatus({ sent: false, error: 'Gagal mengirim WhatsApp' });
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setEmailStatus(null);
+    setWhatsAppStatus(null);
     setLoading(true);
 
     try {
@@ -103,6 +141,13 @@ export default function TambahKandidatPage() {
       } else {
         setEmailStatus(null);
       }
+
+      if (sendWhatsApp && telepon.trim()) {
+        await sendFonnteWhatsApp(
+          telepon.trim(),
+          buildShareMessage(candidate.token, candidate.inviteLink, candidate.loginLink)
+        );
+      }
     } catch {
       setError('Gagal membuat kandidat');
     } finally {
@@ -119,19 +164,7 @@ export default function TambahKandidatPage() {
 
   const getShareMessage = () => {
     if (!result) return '';
-    return `Halo ${nama},
-
-Anda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${posisiDilamar || 'Kandidat'}.
-
-Lengkapi biodata dan mulai asesmen melalui tautan berikut:
-${result.link}
-
-Anda juga dapat masuk melalui halaman kandidat:
-${result.loginLink}
-Token: ${result.token}
-
-Terima kasih,
-Tim HR EasyLegal`;
+    return buildShareMessage(result.token, result.link, result.loginLink);
   };
 
   const handleShareWhatsApp = () => {
@@ -148,27 +181,9 @@ Tim HR EasyLegal`;
     window.open(url, '_blank');
   };
 
-  const handleSendFonnteWhatsApp = async () => {
+  const handleSendFonnteWhatsApp = () => {
     if (!result || !telepon.trim()) return;
-    setSendingWhatsApp(true);
-    setWhatsAppStatus(null);
-    try {
-      const res = await fetch('/api/candidate/send-whatsapp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: telepon, message: getShareMessage() }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setWhatsAppStatus({ sent: false, error: data.error || 'Gagal mengirim WhatsApp' });
-        return;
-      }
-      setWhatsAppStatus({ sent: true });
-    } catch {
-      setWhatsAppStatus({ sent: false, error: 'Gagal mengirim WhatsApp' });
-    } finally {
-      setSendingWhatsApp(false);
-    }
+    return sendFonnteWhatsApp(telepon.trim(), getShareMessage());
   };
 
   const handleShareEmail = async () => {
@@ -462,6 +477,26 @@ Tim HR EasyLegal`;
                         </Label>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           Kandidat akan otomatis menerima email berisi token dan tautan asesmen.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {telepon.trim() && (
+                    <div className="flex items-start space-x-3 rounded-xl border border-border bg-muted/20 p-4 transition-all hover:bg-muted/30 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <input
+                        id="sendWhatsApp"
+                        type="checkbox"
+                        checked={sendWhatsApp}
+                        onChange={(e) => setSendWhatsApp(e.target.checked)}
+                        className="mt-1 h-4.5 w-4.5 rounded border-border text-primary focus:ring-2 focus:ring-primary/30 cursor-pointer"
+                      />
+                      <div className="flex-1 cursor-pointer select-none" onClick={() => setSendWhatsApp(!sendWhatsApp)}>
+                        <Label htmlFor="sendWhatsApp" className="text-sm font-bold text-foreground cursor-pointer block">
+                          Kirim WhatsApp Undangan Otomatis
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Kandidat akan otomatis menerima pesan WhatsApp berisi token dan tautan asesmen (via Fonnte).
                         </p>
                       </div>
                     </div>
