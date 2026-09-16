@@ -173,7 +173,7 @@ function KoranTestContent() {
             <button
               type="button"
               onClick={() => { setPdfPage(1); setShowPdfModal(true); }}
-              className="w-full flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm text-left hover:border-[#9A0000]/30 transition-colors"
+              className="pulse-border w-full flex items-center gap-4 p-5 bg-white rounded-2xl border-2 border-[#9A0000]/25 shadow-sm text-left transition-colors"
             >
               <div className="w-10 h-10 rounded-xl bg-red-50 border border-[#9A0000]/15 flex items-center justify-center shrink-0 text-[#9A0000]">
                 <FileImage className="w-5 h-5" />
