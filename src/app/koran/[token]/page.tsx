@@ -165,19 +165,25 @@ function KoranTestContent() {
           </div>
 
           <h1 className="text-4xl font-light text-slate-900 tracking-tight mb-3">Panduan Unggah</h1>
-          <p className="text-slate-900 text-sm leading-relaxed mb-10">
-            Ini adalah tahap terakhir evaluasi. Silakan lihat{' '}
-            <button
-              type="button"
-              onClick={() => { setPdfPage(1); setShowPdfModal(true); }}
-              className="text-[#9A0000] font-semibold underline underline-offset-2 hover:text-red-800"
-            >
-              panduan mengerjakan Tes Koran ini
-            </button>
-            , kerjakan <strong className="text-[#9A0000]">Tes Koran (Pauli/Kraepelin)</strong>, lalu unggah screenshot hasilnya.
+          <p className="text-slate-900 text-sm leading-relaxed mb-6">
+            Ini adalah tahap terakhir evaluasi. Kerjakan <strong className="text-[#9A0000]">Tes Koran (Pauli/Kraepelin)</strong>, lalu unggah screenshot hasilnya.
           </p>
 
           <div className="space-y-4 mb-10">
+            <button
+              type="button"
+              onClick={() => { setPdfPage(1); setShowPdfModal(true); }}
+              className="w-full flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm text-left hover:border-[#9A0000]/30 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-xl bg-red-50 border border-[#9A0000]/15 flex items-center justify-center shrink-0 text-[#9A0000]">
+                <FileImage className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-slate-900 font-semibold text-sm mb-0.5">Panduan Mengerjakan Tes Koran</p>
+                <p className="text-slate-900 text-sm leading-relaxed">Kerjakan Tes Koran (Pauli/Kraepelin), lalu unggah screenshot hasilnya. Ketuk untuk melihat panduan lengkap.</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-300 shrink-0" />
+            </button>
             {[
               {
                 icon: <SunMedium className="w-5 h-5" />,
