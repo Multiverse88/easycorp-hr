@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getCandidateByToken, getKoranTestResultByCandidate, skipKoranTest, Candidate } from '@/lib/db';
 import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, SunMedium, ImageIcon, Clock, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -25,6 +25,7 @@ function KoranTestContent() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [showPdfModal, setShowPdfModal] = useState(true);
   const [pdfPage, setPdfPage] = useState(1);
+  const pdfSwipeStartX = useRef<number | null>(null);
   const [skipped, setSkipped] = useState(false);
   const [skipping, setSkipping] = useState(false);
 
@@ -95,6 +96,22 @@ function KoranTestContent() {
       setSkipping(false);
       setSkipped(true);
     }
+  };
+
+  const handlePdfSwipeStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    pdfSwipeStartX.current = e.touches[0].clientX;
+  };
+
+  const handlePdfSwipeEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (pdfSwipeStartX.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - pdfSwipeStartX.current;
+    const SWIPE_THRESHOLD = 50;
+    if (deltaX > SWIPE_THRESHOLD) {
+      setPdfPage((p) => Math.max(1, p - 1));
+    } else if (deltaX < -SWIPE_THRESHOLD) {
+      setPdfPage((p) => Math.min(PANDUAN_PDF_PAGE_COUNT, p + 1));
+    }
+    pdfSwipeStartX.current = null;
   };
 
   if (loading) {
@@ -275,7 +292,11 @@ function KoranTestContent() {
                 </div>
               </div>
 
-              <div className="relative flex-1 bg-slate-100 overflow-hidden flex items-center justify-center">
+              <div
+                className="relative flex-1 bg-slate-100 overflow-hidden flex items-center justify-center touch-pan-y"
+                onTouchStart={handlePdfSwipeStart}
+                onTouchEnd={handlePdfSwipeEnd}
+              >
                 <img
                   src={`/documents/panduan-tes-koran/page-${pdfPage}.png`}
                   alt={`Panduan Tes Koran halaman ${pdfPage}`}
