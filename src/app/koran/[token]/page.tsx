@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getCandidateByToken, getKoranTestResultByCandidate, skipKoranTest, Candidate } from '@/lib/db';
-import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, Camera, SunMedium, ImageIcon, AlertCircle, Clock } from 'lucide-react';
+import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, SunMedium, ImageIcon, Clock } from 'lucide-react';
 
 function KoranTestContent() {
   const router = useRouter();
@@ -161,31 +161,45 @@ function KoranTestContent() {
           </div>
 
           <h1 className="text-4xl font-light text-slate-900 tracking-tight mb-3">Panduan Unggah</h1>
-          <p className="text-slate-900 text-sm leading-relaxed mb-10">
-            Ini adalah tahap terakhir evaluasi. Unggah <strong className="text-[#9A0000]">screenshot hasil Tes Koran</strong> dari aplikasi yang Anda gunakan di Play Store.
+          <p className="text-slate-900 text-sm leading-relaxed mb-6">
+            Ini adalah tahap terakhir evaluasi. Baca panduan lengkap di bawah ini, kerjakan <strong className="text-[#9A0000]">Tes Koran (Pauli/Kraepelin)</strong>, lalu unggah screenshot hasilnya.
           </p>
+
+          <div className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-200">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-red-50 border border-[#9A0000]/15 flex items-center justify-center shrink-0 text-[#9A0000]">
+                  <FileImage className="w-4 h-4" />
+                </div>
+                <p className="text-slate-900 font-semibold text-sm truncate">Panduan Lengkap Tes Koran (PDF)</p>
+              </div>
+              <a
+                href="/documents/panduan-tes-koran.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#9A0000] text-xs font-semibold shrink-0 hover:underline"
+              >
+                Buka Penuh
+              </a>
+            </div>
+            <iframe
+              src="/documents/panduan-tes-koran.pdf"
+              title="Panduan Tes Koran"
+              className="w-full h-[420px] bg-slate-50"
+            />
+          </div>
 
           <div className="space-y-4 mb-10">
             {[
               {
-                icon: <Camera className="w-5 h-5" />,
-                title: 'Kerjakan Tes di Aplikasi Play Store',
-                desc: 'Buka aplikasi Tes Koran di Play Store, kerjakan tesnya hingga selesai, lalu ambil screenshot layar hasil tes.',
-              },
-              {
                 icon: <SunMedium className="w-5 h-5" />,
-                title: 'Screenshot Jelas & Tidak Terpotong',
-                desc: 'Pastikan screenshot menampilkan seluruh layar hasil tes. Jangan crop atau edit gambarnya sebelum diunggah.',
+                title: 'Screenshot Menampilkan Data Lengkap',
+                desc: 'Pastikan screenshot memuat tanggal & jam pengerjaan, grafik jawaban benar/salah, total benar & salah, waktu 30 menit, serta nilai kecepatan, akurasi, keajegan, dan ketahanan.',
               },
               {
                 icon: <ImageIcon className="w-5 h-5" />,
-                title: 'Format: JPG, PNG, atau WEBP',
-                desc: 'Screenshot dari smartphone biasanya tersimpan otomatis sebagai JPG atau PNG. Langsung unggah dari galeri.',
-              },
-              {
-                icon: <AlertCircle className="w-5 h-5" />,
-                title: 'Pastikan Semua Angka & Skor Terlihat',
-                desc: 'Sistem AI akan menganalisis hasil secara otomatis. Screenshot yang buram atau terpotong dapat mempengaruhi akurasi analisis.',
+                title: 'Jangan Dipotong atau Diedit',
+                desc: 'Unggah screenshot asli tanpa crop atau edit. Pastikan gambar jelas dan seluruh angka terbaca. Format: JPG, PNG, atau WEBP.',
               },
             ].map((step, i) => (
               <div key={i} className="flex gap-4 p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">

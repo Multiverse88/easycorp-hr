@@ -20,6 +20,8 @@ Anda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${candidate
 Lengkapi biodata dan mulai asesmen melalui tautan berikut:
 ${inviteLink}
 
+Maksimal Pengerjaan 24 jam setelah menerima undangan ini.
+
 Anda juga dapat masuk melalui halaman kandidat:
 https://hr.easycorp.id/masuk
 Token: ${token}

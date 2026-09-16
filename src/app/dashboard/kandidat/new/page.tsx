@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CandidateSearchField, PoolCandidate, PoolStatus } from '@/components/candidate-search';
 import { createCandidate, resendInvitationEmail } from '@/lib/db';
 import {
   AlertCircle,
@@ -48,27 +49,86 @@ export default function TambahKandidatPage() {
 
   const [jobOptions, setJobOptions] = useState<string[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
-  const [hasFetchedJobs, setHasFetchedJobs] = useState(false);
 
-  async function handleOpenChange(open: boolean) {
-    if (open && !hasFetchedJobs) {
-      setLoadingJobs(true);
-      try {
-        const res = await fetch(`/api/jobs?t=${Date.now()}`);
-        const data: unknown = await res.json();
-        if (Array.isArray(data)) {
-          const titles = data
-            .filter((item: { isActive?: boolean }) => item.isActive !== false)
-            .map((item: { title?: unknown }) => item.title)
-            .filter((title): title is string => typeof title === 'string' && title.trim().length > 0);
-          setJobOptions(titles);
-        }
-      } catch (error) {
-        console.error("Failed to fetch jobs:", error);
-      } finally {
-        setLoadingJobs(false);
-        setHasFetchedJobs(true);
+  // Pool kandidat dari spreadsheet (AppSheet) — web app hanya membaca, realtime.
+  const [pool, setPool] = useState<PoolCandidate[]>([]);
+  const [poolStatus, setPoolStatus] = useState<PoolStatus>('loading');
+  const [selectedPool, setSelectedPool] = useState<PoolCandidate | null>(null);
+  const [poolUpdatedAt, setPoolUpdatedAt] = useState<string | null>(null);
+  const poolHashRef = useRef('');
+
+  async function fetchJobs() {
+    setLoadingJobs(true);
+    try {
+      const res = await fetch('/api/jobs');
+      const data: unknown = await res.json();
+      if (Array.isArray(data)) {
+        const titles = data
+          .filter((item: { isActive?: boolean }) => item.isActive !== false)
+          .map((item: { title?: unknown }) => item.title)
+          .filter((title): title is string => typeof title === 'string' && title.trim().length > 0);
+        setJobOptions(titles);
       }
+    } catch (error) {
+      console.error("Failed to fetch jobs:", error);
+    } finally {
+      setLoadingJobs(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  // Polling data pool tiap detik; hash membuat respons kecil saat tidak ada perubahan
+  useEffect(() => {
+    let alive = true;
+    async function tick() {
+      try {
+        const qs = poolHashRef.current ? `?hash=${encodeURIComponent(poolHashRef.current)}` : '';
+        const res = await fetch(`/api/talent-pool${qs}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!alive) return;
+        if (data.configured === false) {
+          setPoolStatus('unconfigured');
+          return;
+        }
+        if (data.unavailable === true) {
+          setPoolStatus((prev) => (prev === 'ready' ? prev : 'unavailable'));
+          return;
+        }
+        if (data.changed === false) return;
+        poolHashRef.current = data.hash ?? '';
+        setPool(data.candidates ?? []);
+        setPoolUpdatedAt(
+          data.updatedAt ? new Date(data.updatedAt).toLocaleTimeString('id-ID') : null
+        );
+        setPoolStatus('ready');
+      } catch {
+        if (alive) {
+          setPoolStatus((prev) => (prev === 'ready' || prev === 'unconfigured' ? prev : 'unavailable'));
+        }
+      }
+    }
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  function handlePoolSelect(candidate: PoolCandidate | null) {
+    setSelectedPool(candidate);
+    if (candidate) {
+      setNama(candidate.nama);
+      if (candidate.wa) setTelepon(candidate.wa);
+      if (candidate.posisi) setPosisiDilamar(candidate.posisi);
+    } else {
+      setNama('');
+      setTelepon('');
+      setPosisiDilamar('');
     }
   }
 
@@ -78,6 +138,8 @@ Anda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${posisiDil
 
 Lengkapi biodata dan mulai asesmen melalui tautan berikut:
 ${link}
+
+Maksimal Pengerjaan 24 jam setelah menerima undangan ini.
 
 Anda juga dapat masuk melalui halaman kandidat:
 ${loginLink}
@@ -111,6 +173,22 @@ Tim HR EasyLegal`;
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (poolStatus === 'ready' && !selectedPool) {
+      setError('Kandidat harus dipilih dari data spreadsheet — ketik nama untuk mencari.');
+      return;
+    }
+    if (!nama.trim()) {
+      setError('Nama kandidat wajib diisi.');
+      return;
+    }
+    if (!posisiDilamar.trim()) {
+      setError('Pilih posisi dari Kelola Posisi terlebih dahulu.');
+      return;
+    }
+    if (jobOptions.length > 0 && !jobOptions.includes(posisiDilamar.trim())) {
+      setError('Posisi tidak terdaftar di Kelola Posisi. Pilih dari daftar yang tersedia.');
+      return;
+    }
     setEmailStatus(null);
     setWhatsAppStatus(null);
     setLoading(true);
@@ -204,7 +282,7 @@ Tim HR EasyLegal`;
         setResult(rotatedResult);
         setEmailStatus({ sent: false, error: 'SMTP_NOT_CONFIGURED' });
         const subject = encodeURIComponent('Undangan Asesmen - EasyLegal');
-        const body = encodeURIComponent(`Halo ${nama},\n\nAnda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${posisiDilamar || 'Kandidat'}.\n\nLengkapi biodata dan mulai asesmen melalui tautan berikut:\n${rotatedResult.link}\n\nAnda juga dapat masuk melalui halaman kandidat:\n${rotatedResult.loginLink}\nToken: ${rotatedResult.token}\n\nTerima kasih,\nTim HR EasyLegal`);
+        const body = encodeURIComponent(`Halo ${nama},\n\nAnda diundang untuk mengikuti tahapan asesmen EasyLegal untuk posisi ${posisiDilamar || 'Kandidat'}.\n\nLengkapi biodata dan mulai asesmen melalui tautan berikut:\n${rotatedResult.link}\n\nMaksimal Pengerjaan 24 jam setelah menerima undangan ini.\n\nAnda juga dapat masuk melalui halaman kandidat:\n${rotatedResult.loginLink}\nToken: ${rotatedResult.token}\n\nTerima kasih,\nTim HR EasyLegal`);
         window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
       } else {
         setEmailStatus({ sent: false, error: res.error });
@@ -222,6 +300,7 @@ Tim HR EasyLegal`;
     setPosisiDilamar('');
     setEmail('');
     setTelepon('');
+    setSelectedPool(null);
     setSendEmail(true);
     setEmailStatus(null);
     setSendingEmailShare(false);
@@ -355,7 +434,7 @@ Tim HR EasyLegal`;
                         Data kandidat
                       </h2>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Isi minimal nama kandidat, lalu pilih posisi yang dilamar.
+                        Cari kandidat dari data spreadsheet (realtime), lalu pilih posisi yang dilamar.
                       </p>
                     </div>
                     <div className="hidden rounded-xl bg-background px-3 py-2 text-xs font-bold text-muted-foreground ring-1 ring-border sm:block">
@@ -374,21 +453,17 @@ Tim HR EasyLegal`;
                   
                   <div className="space-y-2.5">
                     <Label htmlFor="nama" className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">
-                      Nama Lengkap <span className="text-primary">*</span>
+                      Cari Kandidat <span className="text-primary">*</span>
                     </Label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                        <User className="h-4 w-4 text-muted-foreground/60" />
-                      </div>
-                      <Input
-                        id="nama"
-                        value={nama}
-                        onChange={(e) => setNama(e.target.value)}
-                        placeholder="Contoh: Budi Santoso"
-                        className="h-14 rounded-xl border-border bg-muted/30 pl-11 font-semibold transition-all placeholder:text-muted-foreground/50 hover:bg-muted/50 focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10"
-                        required
-                      />
-                    </div>
+                    <CandidateSearchField
+                      candidates={pool}
+                      status={poolStatus}
+                      selected={selectedPool}
+                      onSelect={handlePoolSelect}
+                      manualValue={nama}
+                      onManualChange={setNama}
+                      lastUpdated={poolUpdatedAt}
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -400,24 +475,26 @@ Tim HR EasyLegal`;
                         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-4">
                           <Briefcase className="h-4 w-4 text-muted-foreground/60" />
                         </div>
-                        <Select value={posisiDilamar} onValueChange={(val) => setPosisiDilamar(val || '')} onOpenChange={handleOpenChange}>
-                          <SelectTrigger 
+                        <Select value={posisiDilamar} onValueChange={(val) => setPosisiDilamar(val || '')} onOpenChange={(open) => open && fetchJobs()}>
+                          <SelectTrigger
                             id="posisi"
                             className="h-14 w-full rounded-xl border-border bg-muted/30 pl-11 font-semibold transition-all data-[placeholder]:text-muted-foreground/50 hover:bg-muted/50 focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10"
                           >
-                            <SelectValue placeholder="Pilih posisi" />
+                            <SelectValue placeholder={loadingJobs ? 'Memuat posisi...' : 'Pilih posisi'} />
                           </SelectTrigger>
-                          <SelectContent className="rounded-xl border-border bg-background/95 backdrop-blur-md">
+                          <SelectContent className="rounded-xl border border-border bg-background/95 backdrop-blur-md">
                             {loadingJobs ? (
                               <div className="p-4 text-center text-sm font-medium text-muted-foreground">Memuat posisi...</div>
                             ) : jobOptions.length > 0 ? (
-                              jobOptions.map((job, idx) => (
-                                <SelectItem key={idx} value={job} className="rounded-lg">
+                              jobOptions.map((job) => (
+                                <SelectItem key={job} value={job} className="rounded-lg">
                                   {job}
                                 </SelectItem>
                               ))
                             ) : (
-                              <div className="p-4 text-center text-sm font-medium text-muted-foreground">Tidak ada posisi tersedia</div>
+                              <div className="p-4 text-center text-sm font-medium text-muted-foreground">
+                                Tidak ada posisi tersedia. Tambahkan dulu di halaman Kelola Posisi.
+                              </div>
                             )}
                           </SelectContent>
                         </Select>
