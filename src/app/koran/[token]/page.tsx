@@ -3,7 +3,9 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getCandidateByToken, getKoranTestResultByCandidate, skipKoranTest, Candidate } from '@/lib/db';
-import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, SunMedium, ImageIcon, Clock, X } from 'lucide-react';
+import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, SunMedium, ImageIcon, Clock, X, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PANDUAN_PDF_PAGE_COUNT = 4;
 
 function KoranTestContent() {
   const router = useRouter();
@@ -22,6 +24,7 @@ function KoranTestContent() {
   const [dragActive, setDragActive] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfPage, setPdfPage] = useState(1);
   const [skipped, setSkipped] = useState(false);
   const [skipping, setSkipping] = useState(false);
 
@@ -166,7 +169,7 @@ function KoranTestContent() {
             Ini adalah tahap terakhir evaluasi. Silakan lihat{' '}
             <button
               type="button"
-              onClick={() => setShowPdfModal(true)}
+              onClick={() => { setPdfPage(1); setShowPdfModal(true); }}
               className="text-[#9A0000] font-semibold underline underline-offset-2 hover:text-red-800"
             >
               panduan mengerjakan Tes Koran ini
@@ -241,7 +244,10 @@ function KoranTestContent() {
                   <div className="w-8 h-8 rounded-lg bg-red-50 border border-[#9A0000]/15 flex items-center justify-center shrink-0 text-[#9A0000]">
                     <FileImage className="w-4 h-4" />
                   </div>
-                  <p className="text-slate-900 font-semibold text-sm truncate">Panduan Lengkap Tes Koran (PDF)</p>
+                  <div className="min-w-0">
+                    <p className="text-slate-900 font-semibold text-sm truncate">Panduan Lengkap Tes Koran</p>
+                    <p className="text-slate-400 text-xs">Halaman {pdfPage} dari {PANDUAN_PDF_PAGE_COUNT}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <a
@@ -262,12 +268,47 @@ function KoranTestContent() {
                   </button>
                 </div>
               </div>
-              <iframe
-                src="/documents/panduan-tes-koran.pdf"
-                title="Panduan Tes Koran"
-                className="w-full flex-1 bg-slate-50"
-              />
-            </div>
+
+              <div className="relative flex-1 bg-slate-100 overflow-hidden flex items-center justify-center">
+                <img
+                  src={`/documents/panduan-tes-koran/page-${pdfPage}.png`}
+                  alt={`Panduan Tes Koran halaman ${pdfPage}`}
+                  className="max-w-full max-h-full object-contain"
+                />
+                {pdfPage > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setPdfPage((p) => p - 1)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center text-slate-700 hover:bg-white"
+                    aria-label="Halaman sebelumnya"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                )}
+                {pdfPage < PANDUAN_PDF_PAGE_COUNT && (
+                  <button
+                    type="button"
+                    onClick={() => setPdfPage((p) => p + 1)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center text-slate-700 hover:bg-white"
+                    aria-label="Halaman berikutnya"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center justify-center gap-1.5 py-3 border-t border-slate-200 shrink-0">
+                {Array.from({ length: PANDUAN_PDF_PAGE_COUNT }).map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setPdfPage(i + 1)}
+                    className={`w-2 h-2 rounded-full transition-colors ${pdfPage === i + 1 ? 'bg-[#9A0000]' : 'bg-slate-300'}`}
+                    aria-label={`Halaman ${i + 1}`}
+                  />
+                ))}
+              </div>
+              </div>
           </div>
         )}
       </div>
