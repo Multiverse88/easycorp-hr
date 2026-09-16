@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { getCandidateByToken, getKoranTestResultByCandidate, skipKoranTest, Candidate } from '@/lib/db';
-import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, SunMedium, ImageIcon, Clock } from 'lucide-react';
+import { UploadCloud, CheckCircle2, ShieldCheck, FileImage, ArrowRight, SunMedium, ImageIcon, Clock, X } from 'lucide-react';
 
 function KoranTestContent() {
   const router = useRouter();
@@ -21,6 +21,7 @@ function KoranTestContent() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
+  const [showPdfModal, setShowPdfModal] = useState(false);
   const [skipped, setSkipped] = useState(false);
   const [skipping, setSkipping] = useState(false);
 
@@ -161,33 +162,17 @@ function KoranTestContent() {
           </div>
 
           <h1 className="text-4xl font-light text-slate-900 tracking-tight mb-3">Panduan Unggah</h1>
-          <p className="text-slate-900 text-sm leading-relaxed mb-6">
-            Ini adalah tahap terakhir evaluasi. Baca panduan lengkap di bawah ini, kerjakan <strong className="text-[#9A0000]">Tes Koran (Pauli/Kraepelin)</strong>, lalu unggah screenshot hasilnya.
+          <p className="text-slate-900 text-sm leading-relaxed mb-10">
+            Ini adalah tahap terakhir evaluasi. Silakan lihat{' '}
+            <button
+              type="button"
+              onClick={() => setShowPdfModal(true)}
+              className="text-[#9A0000] font-semibold underline underline-offset-2 hover:text-red-800"
+            >
+              panduan mengerjakan Tes Koran ini
+            </button>
+            , kerjakan <strong className="text-[#9A0000]">Tes Koran (Pauli/Kraepelin)</strong>, lalu unggah screenshot hasilnya.
           </p>
-
-          <div className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-200">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-red-50 border border-[#9A0000]/15 flex items-center justify-center shrink-0 text-[#9A0000]">
-                  <FileImage className="w-4 h-4" />
-                </div>
-                <p className="text-slate-900 font-semibold text-sm truncate">Panduan Lengkap Tes Koran (PDF)</p>
-              </div>
-              <a
-                href="/documents/panduan-tes-koran.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#9A0000] text-xs font-semibold shrink-0 hover:underline"
-              >
-                Buka Penuh
-              </a>
-            </div>
-            <iframe
-              src="/documents/panduan-tes-koran.pdf"
-              title="Panduan Tes Koran"
-              className="w-full h-[420px] bg-slate-50"
-            />
-          </div>
 
           <div className="space-y-4 mb-10">
             {[
@@ -241,6 +226,50 @@ function KoranTestContent() {
             ← Kembali ke pilihan tahap
           </button>
         </div>
+
+        {showPdfModal && (
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowPdfModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl h-[85dvh] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-200 shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-red-50 border border-[#9A0000]/15 flex items-center justify-center shrink-0 text-[#9A0000]">
+                    <FileImage className="w-4 h-4" />
+                  </div>
+                  <p className="text-slate-900 font-semibold text-sm truncate">Panduan Lengkap Tes Koran (PDF)</p>
+                </div>
+                <div className="flex items-center gap-4 shrink-0">
+                  <a
+                    href="/documents/panduan-tes-koran.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#9A0000] text-xs font-semibold hover:underline"
+                  >
+                    Buka Penuh
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setShowPdfModal(false)}
+                    className="text-slate-400 hover:text-slate-600"
+                    aria-label="Tutup"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <iframe
+                src="/documents/panduan-tes-koran.pdf"
+                title="Panduan Tes Koran"
+                className="w-full flex-1 bg-slate-50"
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
