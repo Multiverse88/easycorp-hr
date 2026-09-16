@@ -23,7 +23,7 @@ function KoranTestContent() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
-  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(true);
   const [pdfPage, setPdfPage] = useState(1);
   const [skipped, setSkipped] = useState(false);
   const [skipping, setSkipping] = useState(false);
