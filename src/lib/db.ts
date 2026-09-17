@@ -907,6 +907,17 @@ export async function saveInterviewEvaluation(evalData: Omit<InterviewEvaluation
   return mapInterviewEvaluation(row);
 }
 
+export async function deleteInterviewEvaluation(id: string): Promise<void> {
+  await prisma.interviewEvaluation.delete({ where: { id } });
+
+  logActivity({
+    action: 'DELETE',
+    table_name: 'interview_evaluations',
+    record_id: id,
+    description: `Evaluasi interview ${id} dihapus`
+  });
+}
+
 // ==========================================
 // 4. SELECTION TEST RESULTS (FR-HRGA-001.02)
 // ==========================================

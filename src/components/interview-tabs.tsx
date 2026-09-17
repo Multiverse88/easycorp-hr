@@ -58,7 +58,9 @@ function InterviewEvaluationForm({ candidateId, candidateName, position }: Inter
 
     setIsSubmitting(true);
 
-    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${time}`;
+    const [hh, mm, ss] = time.split(':').map(Number);
+    const combinedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hh || 0, mm || 0, ss || 0);
+    const formattedDate = combinedDate.toISOString();
 
     const formData = {
       candidate_id: candidateId,
@@ -86,9 +88,13 @@ function InterviewEvaluationForm({ candidateId, candidateName, position }: Inter
       if (response.ok) {
         setSubmitted(true);
         router.refresh();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || 'Gagal menyimpan evaluasi interview.');
       }
     } catch (error) {
       console.error('Error:', error);
+      alert('Terjadi kesalahan jaringan. Evaluasi belum tersimpan.');
     } finally {
       setIsSubmitting(false);
     }

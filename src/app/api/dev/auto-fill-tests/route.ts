@@ -187,7 +187,7 @@ export async function POST(req: Request) {
         data: {
           id: `ie-dev-${Date.now()}`,
           candidateId,
-          tanggal: new Date().toISOString().split('T')[0],
+          tanggal: new Date().toISOString(),
           tahap: 'HRGA',
           interviewer: 'Developer Auto',
           metode: 'Online',
