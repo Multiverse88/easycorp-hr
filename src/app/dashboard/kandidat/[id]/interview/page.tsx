@@ -6,6 +6,7 @@ import { InterviewTabs } from '@/components/interview-tabs';
 import { CandidateQuickActions } from '@/components/candidate-quick-actions';
 import { FileDown } from 'lucide-react';
 import Link from 'next/link';
+import { formatDateTime } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +90,7 @@ function InterviewEvaluationResult({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <div className="text-sm text-muted-foreground">Tanggal</div>
-            <div className="font-medium">{evaluation.tanggal}</div>
+            <div className="font-medium">{formatDateTime(evaluation.tanggal)}</div>
           </div>
           <div>
             <div className="text-sm text-muted-foreground">Tahap</div>

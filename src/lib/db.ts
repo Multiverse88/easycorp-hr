@@ -228,7 +228,7 @@ function mapInterviewEvaluation(row: any): InterviewEvaluation {
   return {
     id: row.id,
     candidate_id: row.candidateId,
-    tanggal: row.tanggal,
+    tanggal: row.tanggal instanceof Date ? row.tanggal.toISOString() : row.tanggal,
     tahap: row.tahap,
     interviewer: row.interviewer,
     metode: row.metode,
