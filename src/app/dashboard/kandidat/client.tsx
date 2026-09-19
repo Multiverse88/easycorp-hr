@@ -112,7 +112,7 @@ export function KandidatListClient({ initialCandidates }: { initialCandidates: C
             <tbody>
               {filteredAndSortedCandidates.length > 0 ? (
                 filteredAndSortedCandidates.map((cand) => {
-                  const maxTests = 4; // DISC, WPT, PAPI, Koran
+                  const maxTests = 5; // DISC, WPT, PAPI, Koran, Interview
                   const testsDone = cand.testCount || 0;
                   const isAllTestsDone = testsDone === maxTests;
                   

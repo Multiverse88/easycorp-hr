@@ -505,7 +505,7 @@ export async function getCandidatesWithAnalysis(): Promise<CandidateWithScore[]>
 
     const candidateIds = candidates.map(c => c.id);
 
-    const [analyses, discTests, wptTests, koranTests, papiTests] = await Promise.all([
+    const [analyses, discTests, wptTests, koranTests, papiTests, interviewEvals] = await Promise.all([
       prisma.candidateAiAnalysis.findMany({
         where: { candidateId: { in: candidateIds } },
         orderBy: { createdAt: 'desc' },
@@ -514,6 +514,7 @@ export async function getCandidatesWithAnalysis(): Promise<CandidateWithScore[]>
       prisma.wptTest.findMany({ where: { candidateId: { in: candidateIds } } }),
       prisma.koranTest.findMany({ where: { candidateId: { in: candidateIds } } }),
       prisma.papikostikTestResult.findMany({ where: { candidateId: { in: candidateIds } } }),
+      prisma.interviewEvaluation.findMany({ where: { candidateId: { in: candidateIds } } }),
     ]);
 
     const analysesByCandidate: Record<string, any[]> = {};
@@ -528,6 +529,7 @@ export async function getCandidatesWithAnalysis(): Promise<CandidateWithScore[]>
     const wptSet = new Set(wptTests.map(t => t.candidateId));
     const koranSet = new Set(koranTests.map(t => t.candidateId));
     const papiSet = new Set(papiTests.map(t => t.candidateId));
+    const interviewSet = new Set(interviewEvals.map(t => t.candidateId));
 
     return candidates.map((cand) => {
       let score = 0;
@@ -538,6 +540,7 @@ export async function getCandidatesWithAnalysis(): Promise<CandidateWithScore[]>
       if (wptSet.has(cand.id)) testCount++;
       if (koranSet.has(cand.id)) testCount++;
       if (papiSet.has(cand.id)) testCount++;
+      if (interviewSet.has(cand.id)) testCount++;
       
       const candAnalyses = analysesByCandidate[cand.id];
       
